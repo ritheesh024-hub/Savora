@@ -1,6 +1,7 @@
+
 "use client"
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,9 +9,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { 
   BarChart3, Users, IndianRupee, MessageSquare, Sparkles, Loader2, 
-  TrendingUp, Package, Clock, CheckCircle2, AlertCircle, ShoppingCart,
-  ArrowUpRight, MoreHorizontal, Settings, Megaphone, UtensilsCrossed,
-  LayoutDashboard, Zap
+  Package, Clock, CheckCircle2, ShoppingCart,
+  ArrowUpRight, MoreHorizontal, Megaphone,
+  LayoutDashboard, Zap, Star
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MENU_ITEMS } from '@/app/lib/menu-data';
@@ -29,7 +30,6 @@ const INITIAL_ORDERS = [
   { id: "#EB-9232", customer: "Priya V.", items: "Veg Maggie, Sundae", total: "₹218", status: "Preparing", time: "15 mins ago" },
   { id: "#EB-9233", customer: "Anand K.", items: "Paneer Momos (x2)", total: "₹258", status: "Pending", time: "22 mins ago" },
   { id: "#EB-9234", customer: "Sneha G.", items: "Egg Maggie Special", total: "₹89", status: "Delivered", time: "45 mins ago" },
-  { id: "#EB-9235", customer: "Vikram R.", items: "Hyderabadi Biryani (x3)", total: "₹747", status: "Cancelled", time: "1 hour ago" },
 ];
 
 export const AdminSection = () => {
@@ -38,7 +38,6 @@ export const AdminSection = () => {
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [orders, setOrders] = useState(INITIAL_ORDERS);
   
-  // Marketing AI State
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoResult, setPromoResult] = useState<any>(null);
   const [selectedPromoDish, setSelectedPromoDish] = useState(MENU_ITEMS[0]);
@@ -78,9 +77,8 @@ export const AdminSection = () => {
   };
 
   return (
-    <section className="py-8 bg-muted/20">
+    <section className="py-8 bg-muted/20 min-h-screen">
       <div className="container mx-auto px-4">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
             <h1 className="text-3xl font-headline font-black tracking-tight flex items-center gap-2">
@@ -105,7 +103,6 @@ export const AdminSection = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-8 animate-in fade-in duration-500">
              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                {[
@@ -160,7 +157,6 @@ export const AdminSection = () => {
              </div>
           </TabsContent>
 
-          {/* Orders Tab */}
           <TabsContent value="orders" className="animate-in fade-in slide-in-from-bottom duration-500">
             <Card className="rounded-3xl shadow-md border-none overflow-hidden">
               <Table>
@@ -205,7 +201,6 @@ export const AdminSection = () => {
             </Card>
           </TabsContent>
 
-          {/* Inventory Tab */}
           <TabsContent value="inventory" className="animate-in fade-in slide-in-from-bottom duration-500">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {MENU_ITEMS.map((item) => (
@@ -234,7 +229,6 @@ export const AdminSection = () => {
             </div>
           </TabsContent>
 
-          {/* Marketing AI Tab */}
           <TabsContent value="marketing" className="space-y-6 animate-in fade-in duration-500">
              <div className="grid lg:grid-cols-3 gap-6">
                 <Card className="rounded-3xl border-none shadow-md">
@@ -289,9 +283,6 @@ export const AdminSection = () => {
                               </Button>
                            </div>
                         </div>
-                        <p className="text-[10px] text-center font-black uppercase text-muted-foreground tracking-[0.3em]">
-                           AI Powered Content Engine
-                        </p>
                      </div>
                    ) : (
                      <div className="text-center space-y-3 opacity-30">
@@ -302,7 +293,6 @@ export const AdminSection = () => {
                 </Card>
              </div>
              
-             {/* Feedback Integration */}
              <div className="grid lg:grid-cols-3 gap-6">
                 <Card className="rounded-3xl border-none shadow-md">
                    <CardHeader>

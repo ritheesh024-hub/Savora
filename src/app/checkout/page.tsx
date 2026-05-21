@@ -15,7 +15,6 @@ import {
   ChevronRight, 
   ChevronLeft, 
   CreditCard, 
-  Wallet, 
   Smartphone, 
   Truck, 
   ShoppingBag, 
@@ -271,7 +270,7 @@ export default function CheckoutPage() {
                   <div className="bg-card border-none shadow-xl rounded-[40px] p-8 text-center space-y-6 animate-in zoom-in duration-500">
                     <p className="text-xs font-black uppercase tracking-[0.4em] text-muted-foreground">Scan & Pay Securely</p>
                     <div className="w-56 h-56 mx-auto relative bg-secondary rounded-[32px] overflow-hidden border-8 border-white shadow-inner">
-                      {qrImage && <Image src={qrImage} alt="UPI QR" fill className="p-4" />}
+                      <Image src={qrImage} alt="UPI QR" fill className="p-4" />
                     </div>
                     <div>
                       <p className="text-lg font-black text-primary">8639366800@ybl</p>
@@ -304,7 +303,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="bg-secondary/50 p-6 rounded-3xl inline-flex flex-col items-center">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black mb-2">Order Tracking ID</p>
-                  <p className="font-mono text-2xl font-black text-primary">{orderId || '#EB-99999'}</p>
+                  <p className="font-mono text-2xl font-black text-primary">{orderId}</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link href={`/orders/${orderId}`}>
@@ -335,10 +334,6 @@ export default function CheckoutPage() {
                       <span className={deliveryFee === 0 ? "text-green-600 font-black" : "font-bold"}>
                         {deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}
                       </span>
-                    </div>
-                    <div className="flex justify-between text-base font-medium">
-                      <span className="text-muted-foreground">GST (0%)</span>
-                      <span className="text-green-600 font-black">₹0</span>
                     </div>
                   </div>
                   <div className="border-t border-dashed pt-6">
