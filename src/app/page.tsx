@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -10,7 +9,7 @@ import {
   ShoppingBag, ArrowRight, Star, MapPin, 
   Phone, Instagram, Twitter, Facebook, Lock, 
   Clock, HelpCircle, Loader2, Sparkles, 
-  ChefHat, Truck, Award
+  ChefHat, Truck, Award, AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,10 +32,12 @@ export default function Home() {
 
   const menuQuery = useMemo(() => {
     if (!db) return null;
+    // We order by createdAt to show newest first. 
+    // If this fails, it might be due to a missing Firestore index.
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(10));
   }, [db]);
 
-  const { data: trendingItems, loading } = useCollection<FoodItem>(menuQuery);
+  const { data: trendingItems, loading, error } = useCollection<FoodItem>(menuQuery);
 
   const getImg = (id: string) => placeholderData.placeholderImages.find(img => img.id === id)?.imageUrl || '';
 
@@ -108,22 +109,6 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="relative z-30">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="glass rounded-3xl md:rounded-[40px] p-2 md:p-4 shadow-2xl shadow-black/10 border border-white/20">
-              <div className="flex overflow-x-auto gap-2 md:gap-3 pb-2 md:pb-0 scrollbar-hide items-center lg:justify-center">
-                {CATEGORIES.map((cat, idx) => (
-                  <Link href={`/menu?category=${cat}`} key={idx} className="flex-shrink-0 group">
-                    <div className="px-5 py-3 md:px-8 md:py-4 rounded-2xl md:rounded-[28px] border border-transparent hover:bg-primary/10 hover:border-primary/20 transition-all text-center">
-                      <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary whitespace-nowrap">{cat}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section className="py-16 md:py-32 overflow-hidden">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-16 gap-6">
@@ -141,6 +126,12 @@ export default function Home() {
             {loading ? (
               <div className="flex justify-center py-20">
                 <Loader2 className="w-10 h-10 md:w-12 md:h-12 animate-spin text-primary" />
+              </div>
+            ) : error ? (
+              <div className="text-center py-20 bg-destructive/5 rounded-[40px] border border-destructive/20 border-dashed">
+                <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-4" />
+                <p className="text-destructive font-bold">Failed to load trending items.</p>
+                <p className="text-xs text-muted-foreground mt-2">Check console or security rules.</p>
               </div>
             ) : trendingItems.length > 0 ? (
               <Carousel 
@@ -201,97 +192,6 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-8 md:py-12">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="relative h-[200px] md:h-[300px] rounded-[32px] md:rounded-[50px] overflow-hidden group">
-              <Image 
-                src="https://picsum.photos/seed/food-offer/1600/400" 
-                alt="Offer" 
-                fill 
-                className="object-cover transition-transform duration-1000 group-hover:scale-110"
-                data-ai-hint="spicy food"
-              />
-              <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 md:p-8">
-                <h3 className="text-3xl md:text-7xl font-headline font-black text-white mb-4 md:mb-6 animate-pulse">FLAT 20% OFF</h3>
-                <p className="text-xs md:text-xl text-white/90 font-bold mb-6 md:mb-8 uppercase tracking-[0.2em] md:tracking-[0.4em]">On your first order above ₹299</p>
-                <Link href="/menu">
-                  <Button className="bg-white text-primary hover:bg-white/90 rounded-full h-11 md:h-14 px-8 md:px-10 font-black text-sm md:text-lg">Claim Now</Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-16 md:py-32">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center mb-12 md:mb-20">
-              <h2 className="text-3xl md:text-5xl font-headline font-black mb-4">Loved by <span className="text-primary italic">Foodies</span></h2>
-              <p className="text-muted-foreground text-sm md:text-lg max-w-2xl mx-auto">Join thousands of students and locals who've found their flavor sanctuary.</p>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6 md:gap-10">
-              {[
-                { name: "Rahul S.", role: "AU Student", text: "The Maggie here is just different. The spices are authentic and the delivery is always under 20 mins. Life saver during exams!" },
-                { name: "Ananya M.", role: "Local Guide", text: "Best Biryani in the Pocharam area. Period. The quality of rice and the tenderness of chicken is top notch." },
-                { name: "Vikram K.", role: "Techie", text: "Ezzy Bites is my go-to for late night cravings. The AI Savor tool actually suggested a Maggie I love!" }
-              ].map((t, i) => (
-                <div key={i} className="p-8 md:p-10 rounded-[32px] md:rounded-[40px] bg-secondary/30 relative">
-                   <Star className="w-6 h-6 md:w-8 md:h-8 text-primary absolute -top-3 md:-top-4 left-8 md:left-10 fill-primary" />
-                   <p className="text-base md:text-lg font-medium leading-relaxed italic mb-6 md:mb-8">"{t.text}"</p>
-                   <div>
-                     <p className="font-black text-base md:text-lg">{t.name}</p>
-                     <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-primary/60">{t.role}</p>
-                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-16 md:py-32 bg-card border-y relative overflow-hidden">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-              <div className="space-y-10 md:space-y-12">
-                <div>
-                   <h2 className="text-4xl md:text-6xl font-headline font-black mb-4 md:mb-6">Find Your <span className="text-primary">Spot.</span></h2>
-                   <p className="text-muted-foreground text-base md:text-xl">Located at the heart of the educational hub, ready to serve the brightest minds.</p>
-                </div>
-                <div className="space-y-6 md:space-y-8">
-                  {[
-                    { icon: MapPin, title: "Location", val: "Anurag University Road, Pocharam, Hyderabad" },
-                    { icon: Clock, title: "Timings", val: "Daily: 10:00 AM - 10:00 PM" },
-                    { icon: Phone, title: "Hotline", val: "+91 8639366800" }
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex gap-4 md:gap-6 items-start">
-                      <div className="w-10 h-10 md:w-14 md:h-14 bg-primary/10 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0">
-                        <item.icon className="w-5 h-5 md:w-7 md:h-7 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-black text-lg md:text-xl mb-1">{item.title}</h4>
-                        <p className="text-sm md:text-muted-foreground font-medium">{item.val}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button variant="outline" className="h-14 md:h-16 px-8 md:px-10 rounded-full font-black uppercase tracking-widest text-[10px] gap-3 border-2 w-full sm:w-auto" onClick={() => window.open('https://maps.app.goo.gl/FxiaeZmqrcevTR459', '_blank')}>
-                   Open in Maps <ArrowRight className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="rounded-3xl md:rounded-[60px] overflow-hidden h-[350px] md:h-[600px] shadow-[0_20px_60px_rgba(0,0,0,0.1)] md:shadow-[0_40px_100px_rgba(0,0,0,0.1)] border-4 md:border-8 border-white group relative mx-2">
-                <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3806.827222661053!2d78.6475753!3d17.4199147!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb9f7833a69719%3A0xc660d2b51351119b!2sAnurag%20University!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin" 
-                  width="100%" 
-                  height="100%" 
-                  style={{ border: 0 }} 
-                  allowFullScreen 
-                  loading="lazy" 
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="grayscale hover:grayscale-0 transition-all duration-1000"
-                ></iframe>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section className="py-16 md:py-32 container mx-auto px-4 md:px-6 max-w-4xl">
           <div className="text-center mb-12 md:mb-20">
             <HelpCircle className="w-12 h-12 md:w-16 md:h-16 text-primary mx-auto mb-4 md:mb-6" />
@@ -342,35 +242,8 @@ export default function Home() {
               <h4 className="font-black text-xl md:text-2xl uppercase tracking-widest">Explore</h4>
               <ul className="space-y-4 md:space-y-5 text-muted-foreground font-bold text-sm md:text-base">
                 <li><Link href="/menu" className="hover:text-primary transition-colors">Menu</Link></li>
-                <li><Link href="/orders" className="hover:text-primary transition-colors">Track Order</Link></li>
-                <li><Link href="/offers" className="hover:text-primary transition-colors">Exclusive Offers</Link></li>
+                <li><Link href="/admin/login" className="hover:text-primary transition-colors">Admin Portal</Link></li>
               </ul>
-            </div>
-
-            <div className="space-y-8 md:space-y-10">
-              <h4 className="font-black text-xl md:text-2xl uppercase tracking-widest">Support</h4>
-              <ul className="space-y-4 md:space-y-5 text-muted-foreground font-bold text-sm md:text-base">
-                <li><Link href="/faq" className="hover:text-primary transition-colors">Help Center</Link></li>
-                <li><Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
-                <li className="pt-4 md:pt-6">
-                  <Link href="/admin/login" className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-muted-foreground/30 hover:text-primary transition-colors">
-                    <Lock className="w-3.5 h-3.5" />
-                    Admin Portal
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div className="space-y-8 md:space-y-10">
-              <h4 className="font-black text-xl md:text-2xl uppercase tracking-widest">Vibe Check</h4>
-              <div className="p-8 md:p-10 bg-primary/5 rounded-3xl md:rounded-[40px] border border-primary/10 relative overflow-hidden group">
-                <Sparkles className="absolute -right-4 -top-4 w-16 h-16 md:w-20 md:h-20 text-primary opacity-5 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-black mb-4 md:mb-6 uppercase tracking-widest">Join the Newsletter</p>
-                <div className="flex flex-col gap-3 md:gap-4">
-                  <input type="text" placeholder="Email" className="bg-background border rounded-xl md:rounded-2xl px-5 py-3 md:px-6 md:py-4 text-xs md:text-sm outline-none focus:ring-2 focus:ring-primary/20" />
-                  <Button className="rounded-xl md:rounded-2xl h-12 md:h-14 font-black uppercase tracking-widest text-[10px] md:text-xs">Subscribe</Button>
-                </div>
-              </div>
             </div>
           </div>
           
@@ -378,10 +251,6 @@ export default function Home() {
             <p className="text-[10px] md:text-sm text-muted-foreground font-bold uppercase tracking-widest opacity-50 text-center md:text-left">
               © {currentYear || 2025} Ezzy Bites Cafe. All rights reserved.
             </p>
-            <div className="flex flex-wrap justify-center items-center gap-6 md:gap-10 grayscale opacity-30">
-              <div className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] md:tracking-[0.4em]">Razorpay Secure</div>
-              <div className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] md:tracking-[0.4em]">PCI DSS Compliant</div>
-            </div>
           </div>
         </div>
       </footer>

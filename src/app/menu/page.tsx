@@ -1,10 +1,9 @@
-
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { FoodCard } from '@/components/FoodCard';
 import { CATEGORIES } from '@/app/lib/menu-data';
-import { Search, Loader2, PackageX } from 'lucide-react';
+import { Search, Loader2, PackageX, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useCollection } from '@/firebase';
@@ -18,6 +17,7 @@ export default function MenuPage() {
 
   const productsQuery = useMemo(() => {
     if (!db) return null;
+    // Newest items first. Requires a Firestore index on createdAt.
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'));
   }, [db]);
 
@@ -74,8 +74,10 @@ export default function MenuPage() {
              <p className="font-bold text-muted-foreground">Fetching fresh bites...</p>
           </div>
         ) : error ? (
-           <div className="py-20 text-center">
+           <div className="py-20 text-center bg-destructive/5 rounded-[40px] border border-destructive/20 border-dashed">
+             <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-4" />
              <p className="text-destructive font-bold">Failed to load menu. Please refresh.</p>
+             <p className="text-xs text-muted-foreground mt-2">Error: {error.message}</p>
            </div>
         ) : filteredItems.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
