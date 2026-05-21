@@ -30,7 +30,7 @@ export const AdminSection = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
   
-  // Real-time Queries
+  // Real-time Queries for live dashboard
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(50));
@@ -43,7 +43,7 @@ export const AdminSection = () => {
   }, [db]);
   const { data: dbMenu, loading: menuLoading } = useCollection<any>(menuQuery);
 
-  // Marketing State
+  // Marketing AI State
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoResult, setPromoResult] = useState<any>(null);
   const [selectedPromoDish, setSelectedPromoDish] = useState<any>(null);
@@ -63,7 +63,7 @@ export const AdminSection = () => {
     rating: '4.5'
   });
 
-  // Calculate Stats
+  // Calculate Real-time Stats
   const stats = useMemo(() => {
     if (!realOrders) return { revenue: 0, count: 0, delivered: 0 };
     const deliveredOrders = realOrders.filter(o => o.status === 'Delivered');
@@ -71,7 +71,7 @@ export const AdminSection = () => {
     return { revenue, count: realOrders.length, delivered: deliveredOrders.length };
   }, [realOrders]);
 
-  // Order Actions
+  // Order Lifecycle Management
   const handleUpdateStatus = (id: string, newStatus: string) => {
     if (!db) return;
     const orderRef = doc(db, 'orders', id);
@@ -90,7 +90,7 @@ export const AdminSection = () => {
       .catch(() => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'delete' })));
   };
 
-  // Menu Actions
+  // Menu Persistence Actions
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -121,7 +121,8 @@ export const AdminSection = () => {
       rating: '4.5' 
     });
     if (fileInputRef.current) fileInputRef.current.value = '';
-    setTimeout(() => firstInputRef.current?.focus(), 100);
+    // Use timeout to ensure DOM is ready for focus
+    setTimeout(() => firstInputRef.current?.focus(), 150);
   };
 
   const handleSaveMenuItem = async () => {
@@ -147,25 +148,26 @@ export const AdminSection = () => {
       updatedAt: serverTimestamp()
     };
 
-    try {
-      await setDoc(itemRef, finalData, { merge: true });
-      toast({ title: editingItem ? "Item Updated" : "Dish Published 🚀", description: `${finalData.name} is now live.` });
-      
-      if (editingItem) {
-        setIsMenuDialogOpen(false);
-      } else {
-        // Continuous add: keep dialog open but reset form
-        resetForm();
-      }
-    } catch (error: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-        path: itemRef.path, 
-        operation: 'write', 
-        requestResourceData: finalData 
-      }));
-    } finally {
-      setSaveLoading(false);
-    }
+    // Use setDoc for reliable creates/updates
+    setDoc(itemRef, finalData, { merge: true })
+      .then(() => {
+        toast({ title: editingItem ? "Item Updated" : "Dish Published 🚀", description: `${finalData.name} is now live.` });
+        if (editingItem) {
+          setIsMenuDialogOpen(false);
+        } else {
+          resetForm(); // Reset and allow continuous adding
+        }
+      })
+      .catch(async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: itemRef.path, 
+          operation: 'write', 
+          requestResourceData: finalData 
+        }));
+      })
+      .finally(() => {
+        setSaveLoading(false);
+      });
   };
 
   const handleEditClick = (item: any) => {
@@ -186,12 +188,9 @@ export const AdminSection = () => {
   const handleDeleteItem = async (id: string) => {
     if (!db || !window.confirm("Are you sure you want to remove this dish from the menu?")) return;
     const itemRef = doc(db, 'menu', id);
-    try {
-      await deleteDoc(itemRef);
-      toast({ title: "Item Removed", description: "Dish has been deleted from the database." });
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: itemRef.path, operation: 'delete' }));
-    }
+    deleteDoc(itemRef)
+      .then(() => toast({ title: "Item Removed", description: "Dish deleted from database." }))
+      .catch((e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: itemRef.path, operation: 'delete' })));
   };
 
   const handleGeneratePromo = async () => {
@@ -214,7 +213,7 @@ export const AdminSection = () => {
   return (
     <section className="py-6 md:py-10 bg-secondary/5 min-h-screen">
       <div className="container mx-auto px-4 max-w-6xl">
-        {/* Header */}
+        {/* Real-time Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 animate-in fade-in slide-in-from-top duration-700">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
@@ -228,7 +227,7 @@ export const AdminSection = () => {
           <div className="flex items-center gap-3">
              <Badge variant="outline" className="bg-green-100/50 text-green-700 border-green-200 px-4 py-1.5 text-[10px] uppercase font-black rounded-full animate-pulse">
                <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2" />
-               Live System
+               Connected Live
              </Badge>
           </div>
         </div>
