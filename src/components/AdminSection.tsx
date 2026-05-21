@@ -60,7 +60,8 @@ export const AdminSection = () => {
   const handleUpdateStatus = (id: string, newStatus: string) => {
     if (!db) return;
     const orderRef = doc(db, 'orders', id);
-    updateDoc(orderRef, { status: newStatus }).catch(async () => {
+    // Non-blocking write
+    updateDoc(orderRef, { status: newStatus }).catch(async (e) => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ 
         path: orderRef.path, operation: 'update', requestResourceData: { status: newStatus }
       }));
@@ -69,8 +70,10 @@ export const AdminSection = () => {
 
   const handleDeleteOrder = (id: string) => {
     if (!db || !window.confirm("Delete order?")) return;
-    deleteDoc(doc(db, 'orders', id)).catch(async (e) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `orders/${id}`, operation: 'delete' }));
+    const orderRef = doc(db, 'orders', id);
+    // Non-blocking delete
+    deleteDoc(orderRef).catch(async (e) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'delete' }));
     });
   };
 
@@ -103,6 +106,7 @@ export const AdminSection = () => {
       createdAt: editingItem?.createdAt || serverTimestamp()
     };
 
+    // Non-blocking write
     setDoc(itemRef, finalData, { merge: true })
       .then(() => {
         setSaveLoading(false);
@@ -126,17 +130,17 @@ export const AdminSection = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary rounded-2xl shadow-xl text-white"><LayoutDashboard /></div>
-            <h1 className="text-4xl font-black font-headline tracking-tight">Ezzy<span className="text-primary">Console</span></h1>
+            <h1 className="text-4xl font-black font-headline tracking-tight text-foreground">Ezzy<span className="text-primary">Console</span></h1>
           </div>
           <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 px-4 py-1.5 uppercase font-black text-[10px]">Live Firestore Connected</Badge>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-8">
           <TabsList className="bg-card p-1.5 rounded-2xl border w-full flex shadow-sm overflow-x-auto scrollbar-hide">
-            <TabsTrigger value="overview" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px]">Stats</TabsTrigger>
-            <TabsTrigger value="orders" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px]">Orders</TabsTrigger>
-            <TabsTrigger value="inventory" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px]">Inventory</TabsTrigger>
-            <TabsTrigger value="marketing" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px] gap-2 flex items-center justify-center">
+            <TabsTrigger value="overview" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px] whitespace-nowrap px-6">Stats</TabsTrigger>
+            <TabsTrigger value="orders" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px] whitespace-nowrap px-6">Orders</TabsTrigger>
+            <TabsTrigger value="inventory" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px] whitespace-nowrap px-6">Inventory</TabsTrigger>
+            <TabsTrigger value="marketing" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px] gap-2 flex items-center justify-center whitespace-nowrap px-6">
               <Sparkles className="w-4 h-4" /> AI Marketing
             </TabsTrigger>
           </TabsList>
@@ -161,7 +165,7 @@ export const AdminSection = () => {
           </TabsContent>
 
           <TabsContent value="orders">
-            <Card className="rounded-3xl shadow-xl border-none overflow-hidden">
+            <Card className="rounded-3xl shadow-xl border-none overflow-hidden bg-card">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-muted/30">
@@ -178,12 +182,24 @@ export const AdminSection = () => {
                       <TableRow><TableCell colSpan={3} className="py-20 text-center text-muted-foreground font-medium">No orders yet.</TableCell></TableRow>
                     ) : realOrders?.map((order: any) => (
                       <TableRow key={order.id}>
-                        <TableCell className="px-6 font-bold">{order.customerName}<br/><span className="text-[10px] opacity-50">₹{order.total} • {order.paymentMethod}</span></TableCell>
-                        <TableCell className="px-6"><Badge variant="secondary">{order.status}</Badge></TableCell>
+                        <TableCell className="px-6 font-bold">
+                          {order.customerName}
+                          <br/>
+                          <span className="text-[10px] opacity-50 font-medium">₹{order.total} • {order.paymentMethod}</span>
+                        </TableCell>
+                        <TableCell className="px-6">
+                          <Badge variant="secondary" className="rounded-full font-bold">{order.status}</Badge>
+                        </TableCell>
                         <TableCell className="px-6 text-right space-x-2">
-                          <Button size="icon" variant="outline" onClick={() => handleUpdateStatus(order.id, 'Preparing')}><Clock className="w-4 h-4"/></Button>
-                          <Button size="icon" variant="outline" onClick={() => handleUpdateStatus(order.id, 'Delivered')}><CheckCircle2 className="w-4 h-4"/></Button>
-                          <Button size="icon" variant="ghost" onClick={() => handleDeleteOrder(order.id)} className="text-destructive"><Trash2 className="w-4 h-4"/></Button>
+                          <Button size="icon" variant="outline" className="rounded-xl" onClick={() => handleUpdateStatus(order.id, 'Preparing')}>
+                            <Clock className="w-4 h-4"/>
+                          </Button>
+                          <Button size="icon" variant="outline" className="rounded-xl" onClick={() => handleUpdateStatus(order.id, 'Delivered')}>
+                            <CheckCircle2 className="w-4 h-4"/>
+                          </Button>
+                          <Button size="icon" variant="ghost" className="rounded-xl text-destructive hover:bg-destructive/10" onClick={() => handleDeleteOrder(order.id)}>
+                            <Trash2 className="w-4 h-4"/>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -194,26 +210,45 @@ export const AdminSection = () => {
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-8">
-            <Button onClick={() => { resetForm(); setIsMenuDialogOpen(true); }} className="rounded-2xl h-14 px-10 font-black uppercase tracking-widest text-[11px] gap-2 shadow-xl w-full sm:w-auto">
+            <Button onClick={() => { resetForm(); setIsMenuDialogOpen(true); }} className="rounded-2xl h-14 px-10 font-black uppercase tracking-widest text-[11px] gap-2 shadow-xl w-full sm:w-auto transition-transform active:scale-95">
               <Plus /> Add New Dish
             </Button>
 
             <Dialog open={isMenuDialogOpen} onOpenChange={setIsMenuDialogOpen}>
-              <DialogContent className="max-w-2xl p-0 rounded-[32px] overflow-hidden border-none shadow-3xl">
-                <div className="bg-primary p-8 text-white"><DialogTitle className="text-2xl font-black font-headline uppercase">{editingItem ? 'Edit Dish' : 'Publish New Dish'}</DialogTitle></div>
+              <DialogContent className="max-w-2xl p-0 rounded-[32px] overflow-hidden border-none shadow-3xl bg-card">
+                <div className="bg-primary p-8 text-white">
+                  <DialogTitle className="text-2xl font-black font-headline uppercase">
+                    {editingItem ? 'Edit Dish' : 'Publish New Dish'}
+                  </DialogTitle>
+                </div>
                 <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Dish Name</Label>
-                    <Input ref={firstInputRef} value={menuFormData.name} onChange={e => setMenuFormData({...menuFormData, name: e.target.value})} placeholder="e.g. Schezwan Maggie" className="h-12 rounded-xl" />
+                    <Input 
+                      ref={firstInputRef} 
+                      value={menuFormData.name} 
+                      onChange={e => setMenuFormData({...menuFormData, name: e.target.value})} 
+                      placeholder="e.g. Schezwan Maggie" 
+                      className="h-12 rounded-xl focus:ring-primary/20" 
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Price (₹)</Label>
-                      <Input type="number" value={menuFormData.price} onChange={e => setMenuFormData({...menuFormData, price: e.target.value})} className="h-12 rounded-xl" />
+                      <Input 
+                        type="number" 
+                        value={menuFormData.price} 
+                        onChange={e => setMenuFormData({...menuFormData, price: e.target.value})} 
+                        className="h-12 rounded-xl focus:ring-primary/20" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Category</Label>
-                      <select value={menuFormData.category} onChange={e => setMenuFormData({...menuFormData, category: e.target.value})} className="w-full h-12 rounded-xl border bg-secondary/20 px-4 text-sm font-bold uppercase outline-none focus:ring-2 focus:ring-primary/20">
+                      <select 
+                        value={menuFormData.category} 
+                        onChange={e => setMenuFormData({...menuFormData, category: e.target.value})} 
+                        className="w-full h-12 rounded-xl border bg-secondary/20 px-4 text-sm font-bold uppercase outline-none focus:ring-2 focus:ring-primary/20"
+                      >
                         {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
@@ -228,7 +263,7 @@ export const AdminSection = () => {
                           value={menuFormData.imageUrl} 
                           onChange={e => setMenuFormData({...menuFormData, imageUrl: e.target.value})} 
                           placeholder="Enter image URL" 
-                          className="h-12 rounded-xl pl-10" 
+                          className="h-12 rounded-xl pl-10 focus:ring-primary/20" 
                         />
                       </div>
                     </div>
@@ -249,11 +284,18 @@ export const AdminSection = () => {
 
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Description</Label>
-                    <Textarea value={menuFormData.description} onChange={e => setMenuFormData({...menuFormData, description: e.target.value})} placeholder="Taste description..." className="rounded-xl min-h-[100px]" />
+                    <Textarea 
+                      value={menuFormData.description} 
+                      onChange={e => setMenuFormData({...menuFormData, description: e.target.value})} 
+                      placeholder="Describe the flavors..." 
+                      className="rounded-xl min-h-[100px] focus:ring-primary/20" 
+                    />
                   </div>
                 </div>
                 <div className="p-8 bg-secondary/10 flex gap-4">
-                  <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black uppercase" onClick={() => setIsMenuDialogOpen(false)} disabled={saveLoading}>Close</Button>
+                  <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black uppercase" onClick={() => setIsMenuDialogOpen(false)} disabled={saveLoading}>
+                    Close
+                  </Button>
                   <Button className="flex-1 h-14 rounded-2xl font-black uppercase shadow-lg shadow-primary/20" onClick={handleSaveMenuItem} disabled={saveLoading}>
                     {saveLoading ? <Loader2 className="animate-spin" /> : editingItem ? 'Update' : 'Publish'}
                   </Button>
@@ -263,13 +305,16 @@ export const AdminSection = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {menuLoading ? (
-                <div className="col-span-full py-20 text-center"><Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" /></div>
+                <div className="col-span-full py-20 text-center">
+                  <Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" />
+                  <p className="mt-4 text-sm font-bold text-muted-foreground uppercase tracking-widest">Loading Inventory...</p>
+                </div>
               ) : dbMenu?.length === 0 ? (
-                <div className="col-span-full py-20 text-center bg-card rounded-3xl border border-dashed">
+                <div className="col-span-full py-20 text-center bg-card rounded-3xl border border-dashed border-muted">
                   <p className="text-muted-foreground font-medium">No dishes added yet. Click "Add New Dish" to get started.</p>
                 </div>
               ) : dbMenu?.map((item: any) => (
-                <Card key={item.id} className="rounded-[32px] border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
+                <Card key={item.id} className="rounded-[32px] border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all bg-card">
                   <div className="h-48 relative">
                     <img 
                       src={item.imageUrl} 
@@ -279,7 +324,9 @@ export const AdminSection = () => {
                         (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
                       }}
                     />
-                    <Badge className="absolute top-4 left-4 bg-white/90 backdrop-blur text-[9px] uppercase font-black">{item.category}</Badge>
+                    <Badge className="absolute top-4 left-4 bg-white/90 backdrop-blur text-[9px] uppercase font-black text-foreground border-none">
+                      {item.category}
+                    </Badge>
                   </div>
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-6">
@@ -290,10 +337,28 @@ export const AdminSection = () => {
                       <p className="text-xl font-black text-primary">₹{item.price}</p>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1 rounded-xl h-12 font-black text-[10px] uppercase gap-2" onClick={() => { setEditingItem(item); setMenuFormData({ ...item, price: item.price.toString() }); setIsMenuDialogOpen(true); }}>
+                      <Button 
+                        variant="outline" 
+                        className="flex-1 rounded-xl h-12 font-black text-[10px] uppercase gap-2 hover:bg-primary/5 hover:text-primary transition-colors" 
+                        onClick={() => { 
+                          setEditingItem(item); 
+                          setMenuFormData({ ...item, price: item.price.toString() }); 
+                          setIsMenuDialogOpen(true); 
+                        }}
+                      >
                         <Edit2 className="w-4 h-4" /> Edit
                       </Button>
-                      <Button variant="ghost" className="rounded-xl h-12 px-4 text-destructive hover:bg-destructive/10" onClick={() => { if(confirm("Remove dish permanently?")) deleteDoc(doc(db, 'products', item.id)); }}>
+                      <Button 
+                        variant="ghost" 
+                        className="rounded-xl h-12 px-4 text-destructive hover:bg-destructive/10 transition-colors" 
+                        onClick={() => { 
+                          if(confirm("Remove dish permanently?")) {
+                            deleteDoc(doc(db, 'products', item.id)).catch(async (e) => {
+                              errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `products/${item.id}`, operation: 'delete' }));
+                            });
+                          }
+                        }}
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -310,24 +375,43 @@ export const AdminSection = () => {
                   <p className="text-muted-foreground mb-10 text-base md:text-lg">Select a dish to generate a viral social media promotion instantly.</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
                     {dbMenu?.slice(0, 8).map((item: any) => (
-                      <button key={item.id} onClick={() => setSelectedPromoDish(item)} className={`p-4 rounded-2xl border-2 text-[10px] font-black uppercase transition-all ${selectedPromoDish?.id === item.id ? 'border-primary bg-primary/5 scale-105' : 'border-muted hover:border-primary/20'}`}>{item.name}</button>
+                      <button 
+                        key={item.id} 
+                        onClick={() => setSelectedPromoDish(item)} 
+                        className={`p-4 rounded-2xl border-2 text-[10px] font-black uppercase transition-all ${selectedPromoDish?.id === item.id ? 'border-primary bg-primary/5 scale-105' : 'border-muted hover:border-primary/20'}`}
+                      >
+                        {item.name}
+                      </button>
                     ))}
                   </div>
-                  <Button size="lg" className="rounded-2xl h-16 px-10 font-black uppercase tracking-widest gap-3 shadow-xl shadow-primary/20 w-full sm:w-auto" onClick={async () => {
-                    setPromoLoading(true);
-                    try {
-                      const res = await dailySpecialGenerator({ dishName: selectedPromoDish.name, basePrice: selectedPromoDish.price, discountPercent: 20 });
-                      setPromoResult(res);
-                    } catch { toast({ variant: "destructive", title: "AI Error" }); }
-                    finally { setPromoLoading(false); }
-                  }} disabled={promoLoading || !selectedPromoDish}>
+                  <Button 
+                    size="lg" 
+                    className="rounded-2xl h-16 px-10 font-black uppercase tracking-widest gap-3 shadow-xl shadow-primary/20 w-full sm:w-auto active:scale-95 transition-transform" 
+                    onClick={async () => {
+                      setPromoLoading(true);
+                      try {
+                        const res = await dailySpecialGenerator({ dishName: selectedPromoDish.name, basePrice: selectedPromoDish.price, discountPercent: 20 });
+                        setPromoResult(res);
+                      } catch { 
+                        toast({ variant: "destructive", title: "AI Error", description: "Could not generate promotion." }); 
+                      } finally { 
+                        setPromoLoading(false); 
+                      }
+                    }} 
+                    disabled={promoLoading || !selectedPromoDish}
+                  >
                     {promoLoading ? <Loader2 className="animate-spin" /> : <Megaphone />} Create Viral Post
                   </Button>
                   {promoResult && (
-                    <div className="mt-12 p-8 bg-primary/5 rounded-[32px] border-2 border-primary/10 space-y-6 animate-in zoom-in">
+                    <div className="mt-12 p-8 bg-primary/5 rounded-[32px] border-2 border-primary/10 space-y-6 animate-in zoom-in duration-500">
                       <h4 className="text-2xl md:text-3xl font-black">{promoResult.promoTitle} {promoResult.emoji}</h4>
                       <p className="text-base md:text-lg italic opacity-80 leading-relaxed">"{promoResult.promoDescription}"</p>
-                      <Button className="w-full h-14 rounded-2xl font-black uppercase gap-2" onClick={() => { navigator.clipboard.writeText(`${promoResult.promoTitle}\n\n${promoResult.promoDescription}\n\nPrice: ₹${promoResult.finalPrice}`); toast({ title: "Copied!" }); }}>Copy Content</Button>
+                      <Button className="w-full h-14 rounded-2xl font-black uppercase gap-2 shadow-lg" onClick={() => { 
+                        navigator.clipboard.writeText(`${promoResult.promoTitle}\n\n${promoResult.promoDescription}\n\nPrice: ₹${promoResult.finalPrice}`); 
+                        toast({ title: "Copied to clipboard!" }); 
+                      }}>
+                        Copy Content
+                      </Button>
                     </div>
                   )}
                 </div>
