@@ -1,5 +1,6 @@
 
-import React from 'react';
+"use client"
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { SavorTool } from '@/components/SavorTool';
 import { FoodCard } from '@/components/FoodCard';
@@ -8,8 +9,17 @@ import { ShoppingBag, ArrowRight, Zap, Star, MapPin, Phone, Instagram, Twitter, 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
+import placeholderData from '@/app/lib/placeholder-images.json';
 
 export default function Home() {
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
+
+  const getImg = (id: string) => placeholderData.placeholderImages.find(img => img.id === id)?.imageUrl || '';
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -19,7 +29,7 @@ export default function Home() {
         <section className="relative h-[85vh] flex items-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <Image 
-              src="https://picsum.photos/seed/foodbg/1920/1080" 
+              src={getImg('hero-bg')} 
               alt="Hero Food" 
               fill 
               className="object-cover brightness-[0.6]"
@@ -48,9 +58,11 @@ export default function Home() {
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="rounded-full h-14 px-8 text-lg font-bold bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20">
-                  View Menu
-                </Button>
+                <Link href="/menu">
+                  <Button size="lg" variant="outline" className="rounded-full h-14 px-8 text-lg font-bold bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20">
+                    View Menu
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -66,21 +78,27 @@ export default function Home() {
               </Link>
             </div>
             <div className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide">
-              {CATEGORIES.map((cat, idx) => (
-                <button key={idx} className="flex-shrink-0 group">
-                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-secondary border border-transparent group-hover:border-primary group-hover:shadow-lg transition-all overflow-hidden mb-3">
-                    <Image 
-                      src={`https://picsum.photos/seed/cat-${cat}/200/200`} 
-                      alt={cat} 
-                      width={200} 
-                      height={200}
-                      className="object-cover w-full h-full transform group-hover:scale-110 transition-transform duration-500"
-                      data-ai-hint={cat.toLowerCase()}
-                    />
-                  </div>
-                  <span className="text-sm font-bold text-center block group-hover:text-primary transition-colors">{cat}</span>
-                </button>
-              ))}
+              {CATEGORIES.filter(c => c !== 'All').map((cat, idx) => {
+                const catImgId = `cat-${cat.toLowerCase().replace(' ', '-')}`;
+                const catImg = getImg(catImgId);
+                return (
+                  <Link href={`/menu?category=${cat}`} key={idx} className="flex-shrink-0 group">
+                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-secondary border border-transparent group-hover:border-primary group-hover:shadow-lg transition-all overflow-hidden mb-3">
+                      {catImg && (
+                        <Image 
+                          src={catImg} 
+                          alt={cat} 
+                          width={200} 
+                          height={200}
+                          className="object-cover w-full h-full transform group-hover:scale-110 transition-transform duration-500"
+                          data-ai-hint={cat.toLowerCase()}
+                        />
+                      )}
+                    </div>
+                    <span className="text-sm font-bold text-center block group-hover:text-primary transition-colors">{cat}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -210,7 +228,7 @@ export default function Home() {
           
           <div className="border-t pt-10 text-center">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} Easy Bites Cafe. All rights reserved. 
+              © {currentYear || 2025} Easy Bites Cafe. All rights reserved. 
               <br className="md:hidden" /> Crafted for a premium dining experience.
             </p>
           </div>

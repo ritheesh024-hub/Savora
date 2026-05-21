@@ -1,6 +1,6 @@
 
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useStore } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
@@ -12,13 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { CheckCircle2, ChevronRight, ChevronLeft, CreditCard, Wallet, Smartphone, Truck, ShoppingBag, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import placeholderData from '@/app/lib/placeholder-images.json';
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const { cart, getTotal, clearCart } = useStore();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -26,6 +26,11 @@ export default function CheckoutPage() {
     instructions: '',
     paymentMethod: 'cod'
   });
+
+  useEffect(() => {
+    // Prevent hydration mismatch by generating random order ID on client mount
+    setOrderId(`EB-${Math.floor(Math.random() * 90000) + 10000}`);
+  }, []);
 
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 149 ? 0 : 40;
@@ -42,6 +47,8 @@ export default function CheckoutPage() {
     clearCart();
     setStep(4); // Success step
   };
+
+  const qrImage = placeholderData.placeholderImages.find(img => img.id === 'qr-code')?.imageUrl || '';
 
   if (cart.length === 0 && step < 4) {
     return (
@@ -231,12 +238,14 @@ export default function CheckoutPage() {
                   <div className="bg-card border rounded-2xl p-6 text-center space-y-4 animate-in zoom-in duration-300">
                     <p className="text-sm font-bold uppercase text-muted-foreground">Scan QR to Pay</p>
                     <div className="w-48 h-48 mx-auto relative bg-secondary rounded-xl overflow-hidden">
-                      <Image 
-                        src="https://picsum.photos/seed/qr/200/200" 
-                        alt="QR Code" 
-                        fill 
-                        className="p-2"
-                      />
+                      {qrImage && (
+                        <Image 
+                          src={qrImage} 
+                          alt="QR Code" 
+                          fill 
+                          className="p-2"
+                        />
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">Cafe UPI ID: 8639366800@ybl</p>
                   </div>
@@ -266,7 +275,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="bg-secondary p-4 rounded-xl inline-block">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Order ID</p>
-                  <p className="font-mono text-lg font-bold">#EB-{Math.floor(Math.random() * 90000) + 10000}</p>
+                  <p className="font-mono text-lg font-bold">{orderId || '#EB-LOADING'}</p>
                 </div>
                 <div className="pt-6">
                   <Link href="/">

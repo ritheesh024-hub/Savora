@@ -1,5 +1,8 @@
 
 import { FoodItem } from './store';
+import placeholderData from './placeholder-images.json';
+
+const getImg = (id: string) => placeholderData.placeholderImages.find(img => img.id === id)?.imageUrl || '';
 
 export const MENU_ITEMS: FoodItem[] = [
   {
@@ -8,7 +11,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Freshly prepared spicy masala maggie with chopped veggies.',
     price: 69,
     category: 'Maggie',
-    image: 'https://picsum.photos/seed/maggie1/600/400',
+    image: getImg('food-maggie-1'),
     isVeg: true,
     rating: 4.5,
     isAvailable: true
@@ -19,7 +22,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Maggie infused with scrambled eggs and special cafe spices.',
     price: 89,
     category: 'Maggie',
-    image: 'https://picsum.photos/seed/maggie2/600/400',
+    image: getImg('food-maggie-2'),
     isVeg: false,
     rating: 4.2,
     isAvailable: true
@@ -30,7 +33,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Long grain basmati rice cooked with tender chicken and authentic spices.',
     price: 249,
     category: 'Biryani',
-    image: 'https://picsum.photos/seed/biryani1/600/400',
+    image: getImg('food-biryani-1'),
     isVeg: false,
     rating: 4.9,
     isAvailable: true
@@ -41,7 +44,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Delicate dumplings filled with spiced paneer and herbs (8 pcs).',
     price: 129,
     category: 'Momos',
-    image: 'https://picsum.photos/seed/momos1/600/400',
+    image: getImg('food-momos-1'),
     isVeg: true,
     rating: 4.6,
     isAvailable: true
@@ -52,7 +55,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Vanilla ice cream topped with rich chocolate syrup and nuts.',
     price: 149,
     category: 'Ice Creams',
-    image: 'https://picsum.photos/seed/icecream1/600/400',
+    image: getImg('food-icecream-1'),
     isVeg: true,
     rating: 4.8,
     isAvailable: true
@@ -63,7 +66,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Stir fried maggie with chunks of spicy roasted chicken.',
     price: 109,
     category: 'Maggie',
-    image: 'https://picsum.photos/seed/maggie3/600/400',
+    image: getImg('food-maggie-3'),
     isVeg: false,
     rating: 4.4,
     isAvailable: true
