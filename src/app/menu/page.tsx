@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { FoodCard } from '@/components/FoodCard';
 import { CATEGORIES } from '@/app/lib/menu-data';
-import { Search, Filter, Sparkles, Loader2, PackageX } from 'lucide-react';
+import { Search, Loader2, PackageX } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useCollection } from '@/firebase';
@@ -15,13 +15,13 @@ export default function MenuPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const db = useFirestore();
 
-  // Optimized Firestore Query with useMemo to prevent infinite loops
-  const menuQuery = useMemo(() => {
+  // Real-time Firestore query for products
+  const productsQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'menu'), orderBy('name'));
+    return query(collection(db, 'products'), orderBy('createdAt', 'desc'));
   }, [db]);
 
-  const { data: menuItems, loading, error } = useCollection<any>(menuQuery);
+  const { data: menuItems, loading, error } = useCollection<any>(productsQuery);
 
   const filteredItems = useMemo(() => {
     if (!menuItems) return [];
@@ -36,7 +36,7 @@ export default function MenuPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pt-24 md:pt-32">
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-headline font-black mb-4">Our <span className="text-primary">Delicious</span> Menu</h1>
           <p className="text-muted-foreground max-w-2xl">
@@ -73,7 +73,7 @@ export default function MenuPage() {
         {loading ? (
           <div className="py-20 flex flex-col items-center gap-4">
              <Loader2 className="w-10 h-10 animate-spin text-primary" />
-             <p className="font-bold text-muted-foreground">Loading fresh menu...</p>
+             <p className="font-bold text-muted-foreground">Fetching fresh bites...</p>
           </div>
         ) : error ? (
            <div className="py-20 text-center">

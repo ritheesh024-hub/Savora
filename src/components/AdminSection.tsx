@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { 
   IndianRupee, Sparkles, Loader2, 
   Package, Clock, CheckCircle2,
-  Megaphone, LayoutDashboard, Trash2, Plus, Edit2, Link as LinkIcon, RefreshCw
+  Megaphone, LayoutDashboard, Trash2, Plus, Edit2, Link as LinkIcon
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -35,7 +35,7 @@ export const AdminSection = () => {
 
   const menuQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'menu'), orderBy('name'));
+    return query(collection(db, 'products'), orderBy('createdAt', 'desc'));
   }, [db]);
   const { data: dbMenu, loading: menuLoading } = useCollection<any>(menuQuery);
 
@@ -47,7 +47,7 @@ export const AdminSection = () => {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [menuFormData, setMenuFormData] = useState({
-    name: '', description: '', price: '', category: 'Veg Maggie', image: '', isVeg: true, isAvailable: true, rating: '4.5'
+    name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5'
   });
 
   const stats = useMemo(() => {
@@ -76,19 +76,19 @@ export const AdminSection = () => {
 
   const resetForm = () => {
     setEditingItem(null);
-    setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', image: '', isVeg: true, isAvailable: true, rating: '4.5' });
+    setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5' });
     setTimeout(() => firstInputRef.current?.focus(), 150);
   };
 
-  const handleSaveMenuItem = async () => {
-    if (!db || !menuFormData.name || !menuFormData.image) {
+  const handleSaveMenuItem = () => {
+    if (!db || !menuFormData.name || !menuFormData.imageUrl) {
       toast({ variant: "destructive", title: "Missing Data", description: "Name and Image URL are mandatory." });
       return;
     }
     
     setSaveLoading(true);
-    const itemId = editingItem ? editingItem.id : `ITEM-${Date.now()}`;
-    const itemRef = doc(db, 'menu', itemId);
+    const itemId = editingItem ? editingItem.id : `PROD-${Date.now()}`;
+    const itemRef = doc(db, 'products', itemId);
     
     const finalData = {
       id: itemId,
@@ -96,25 +96,28 @@ export const AdminSection = () => {
       description: menuFormData.description.trim(),
       price: Number(menuFormData.price) || 0,
       category: menuFormData.category,
-      image: menuFormData.image.trim(),
+      imageUrl: menuFormData.imageUrl.trim(),
       isVeg: menuFormData.isVeg,
       isAvailable: menuFormData.isAvailable,
       rating: Number(menuFormData.rating) || 4.5,
-      updatedAt: serverTimestamp()
+      createdAt: editingItem?.createdAt || serverTimestamp()
     };
 
-    try {
-      await setDoc(itemRef, finalData, { merge: true });
-      toast({ title: editingItem ? "Item Updated" : "Dish Added! 🚀" });
-      if (editingItem) setIsMenuDialogOpen(false);
-      resetForm();
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-        path: itemRef.path, operation: 'write', requestResourceData: finalData 
-      }));
-    } finally {
-      setSaveLoading(false);
-    }
+    setDoc(itemRef, finalData, { merge: true })
+      .then(() => {
+        setSaveLoading(false);
+        toast({ title: editingItem ? "Item Updated" : "Dish Added Permanently! 🚀" });
+        if (editingItem) {
+          setIsMenuDialogOpen(false);
+        }
+        resetForm();
+      })
+      .catch(async (e) => {
+        setSaveLoading(false);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: itemRef.path, operation: 'write', requestResourceData: finalData 
+        }));
+      });
   };
 
   return (
@@ -125,7 +128,7 @@ export const AdminSection = () => {
             <div className="p-3 bg-primary rounded-2xl shadow-xl text-white"><LayoutDashboard /></div>
             <h1 className="text-4xl font-black font-headline tracking-tight">Ezzy<span className="text-primary">Console</span></h1>
           </div>
-          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 px-4 py-1.5 uppercase font-black text-[10px] animate-pulse">Live Connected</Badge>
+          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 px-4 py-1.5 uppercase font-black text-[10px]">Live Firestore Connected</Badge>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-8">
@@ -222,27 +225,24 @@ export const AdminSection = () => {
                       <div className="relative">
                         <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input 
-                          value={menuFormData.image} 
-                          onChange={e => setMenuFormData({...menuFormData, image: e.target.value})} 
-                          placeholder="Enter image URL (JPG, PNG, WebP)" 
+                          value={menuFormData.imageUrl} 
+                          onChange={e => setMenuFormData({...menuFormData, imageUrl: e.target.value})} 
+                          placeholder="Enter image URL" 
                           className="h-12 rounded-xl pl-10" 
                         />
                       </div>
                     </div>
                     
-                    {menuFormData.image && (
+                    {menuFormData.imageUrl && (
                       <div className="relative rounded-3xl overflow-hidden border shadow-sm h-48 bg-secondary/20 group">
                         <img 
-                          src={menuFormData.image} 
+                          src={menuFormData.imageUrl} 
                           className="h-full w-full object-cover" 
                           alt="Preview" 
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Invalid+Image+URL';
                           }}
                         />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                          <span className="text-white text-[10px] font-black uppercase tracking-widest">Image Preview</span>
-                        </div>
                       </div>
                     )}
                   </div>
@@ -263,7 +263,7 @@ export const AdminSection = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {menuLoading ? (
-                <div className="col-span-full py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" /></div>
+                <div className="col-span-full py-20 text-center"><Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" /></div>
               ) : dbMenu?.length === 0 ? (
                 <div className="col-span-full py-20 text-center bg-card rounded-3xl border border-dashed">
                   <p className="text-muted-foreground font-medium">No dishes added yet. Click "Add New Dish" to get started.</p>
@@ -272,7 +272,7 @@ export const AdminSection = () => {
                 <Card key={item.id} className="rounded-[32px] border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
                   <div className="h-48 relative">
                     <img 
-                      src={item.image} 
+                      src={item.imageUrl} 
                       alt={item.name} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       onError={(e) => {
@@ -293,7 +293,7 @@ export const AdminSection = () => {
                       <Button variant="outline" className="flex-1 rounded-xl h-12 font-black text-[10px] uppercase gap-2" onClick={() => { setEditingItem(item); setMenuFormData({ ...item, price: item.price.toString() }); setIsMenuDialogOpen(true); }}>
                         <Edit2 className="w-4 h-4" /> Edit
                       </Button>
-                      <Button variant="ghost" className="rounded-xl h-12 px-4 text-destructive hover:bg-destructive/10" onClick={() => { if(confirm("Remove dish?")) deleteDoc(doc(db, 'menu', item.id)); }}>
+                      <Button variant="ghost" className="rounded-xl h-12 px-4 text-destructive hover:bg-destructive/10" onClick={() => { if(confirm("Remove dish permanently?")) deleteDoc(doc(db, 'products', item.id)); }}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>

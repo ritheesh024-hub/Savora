@@ -1,3 +1,4 @@
+
 "use client"
 import React from 'react';
 import Image from 'next/image';
@@ -6,7 +7,6 @@ import { FoodItem, useStore } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import placeholderData from '@/app/lib/placeholder-images.json';
 import { cn } from '@/lib/utils';
 
 export const FoodCard = ({ item }: { item: FoodItem }) => {
@@ -14,9 +14,6 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
   
   const cartItem = cart.find(i => i.id === item.id);
   const quantity = cartItem?.quantity || 0;
-
-  const imgData = placeholderData.placeholderImages.find(img => img.imageUrl === item.image);
-  const aiHint = imgData?.imageHint || item.category.toLowerCase();
 
   const handleAdd = () => {
     addToCart(item);
@@ -28,7 +25,7 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
 
   return (
     <div className="group bg-card rounded-[32px] border border-border/50 overflow-hidden hover:shadow-[0_40px_80px_rgba(0,0,0,0.1)] transition-all duration-700 flex flex-col h-full shadow-sm relative">
-      {/* Premium Badge */}
+      {/* Best Seller Badge */}
       {item.rating >= 4.7 && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-primary text-white px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-primary/30">
           <Sparkles className="w-3 h-3" /> Best Seller
@@ -38,11 +35,11 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
       {/* Image Container */}
       <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
         <Image 
-          src={item.image} 
+          src={item.imageUrl} 
           alt={item.name} 
           fill 
           className="object-cover group-hover:scale-110 transition-transform duration-1000"
-          data-ai-hint={aiHint}
+          unoptimized={item.imageUrl.startsWith('http')}
         />
         <div className="absolute top-4 left-4 flex gap-2 z-10">
           {item.isVeg ? (
@@ -66,9 +63,6 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
             {item.rating}
           </Badge>
         </div>
-        
-        {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       </div>
 
       {/* Content */}

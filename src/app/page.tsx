@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -6,7 +7,7 @@ import { FoodCard } from '@/components/FoodCard';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { CATEGORIES } from '@/app/lib/menu-data';
 import { 
-  ShoppingBag, ArrowRight, Zap, Star, MapPin, 
+  ShoppingBag, ArrowRight, Star, MapPin, 
   Phone, Instagram, Twitter, Facebook, Lock, 
   Clock, HelpCircle, Loader2, Sparkles, 
   ChefHat, Truck, Award
@@ -19,7 +20,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import placeholderData from '@/app/lib/placeholder-images.json';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, limit } from 'firebase/firestore';
+import { collection, query, limit, orderBy } from 'firebase/firestore';
 
 export default function Home() {
   const [currentYear, setCurrentYear] = useState<number | null>(null);
@@ -31,7 +32,7 @@ export default function Home() {
 
   const menuQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'menu'), limit(10));
+    return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(10));
   }, [db]);
 
   const { data: trendingItems, loading } = useCollection<any>(menuQuery);
@@ -45,7 +46,6 @@ export default function Home() {
       <main className="flex-1">
         {/* Cinematic Hero Section */}
         <section className="relative min-h-[85vh] md:h-screen flex items-center overflow-hidden">
-          {/* Animated Background Layers */}
           <div className="absolute inset-0 z-0">
             <Image 
               src={getImg('hero-bg')} 
@@ -57,7 +57,6 @@ export default function Home() {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent z-10" />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
-            {/* Animated Glow Elements */}
             <div className="absolute top-1/4 -left-20 w-64 h-64 md:w-96 md:h-96 bg-primary/20 rounded-full blur-[80px] md:blur-[120px] animate-pulse" />
             <div className="absolute bottom-1/4 -right-20 w-64 h-64 md:w-96 md:h-96 bg-accent/20 rounded-full blur-[80px] md:blur-[120px] animate-pulse delay-1000" />
           </div>
@@ -93,7 +92,6 @@ export default function Home() {
                 </Link>
               </div>
 
-              {/* Stats Bar */}
               <div className="mt-12 md:mt-20 flex flex-wrap gap-8 md:gap-12 border-l border-white/20 pl-6 md:pl-12 animate-in fade-in duration-1000 delay-700">
                 {[
                   { label: "Delivery Time", val: "25m" },
@@ -110,7 +108,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Categories Bar - Floating Style */}
+        {/* Categories Section */}
         <section className="relative -mt-8 md:-mt-10 z-30">
           <div className="container mx-auto px-4 md:px-6">
             <div className="glass rounded-3xl md:rounded-[40px] p-2 md:p-4 shadow-2xl shadow-black/10 border border-white/20">
@@ -127,7 +125,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Trending Section with Carousel */}
+        {/* Trending Section */}
         <section className="py-16 md:py-32 overflow-hidden">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-16 gap-6">
@@ -173,7 +171,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Why Choose Us - Features Section */}
+        {/* Features Section */}
         <section className="py-16 md:py-32 bg-secondary/30 relative overflow-hidden">
           <div className="container mx-auto px-4 md:px-6">
             <div className="grid lg:grid-cols-4 gap-12 lg:gap-8">
@@ -200,14 +198,12 @@ export default function Home() {
           </div>
         </section>
 
-        {/* AI Savor Tool - Cinematic Style */}
         <section className="py-16 md:py-32 bg-background">
           <div className="container mx-auto px-4 md:px-6">
             <SavorTool />
           </div>
         </section>
 
-        {/* Special Offer Banner */}
         <section className="py-8 md:py-12">
           <div className="container mx-auto px-4 md:px-6">
             <div className="relative h-[200px] md:h-[300px] rounded-[32px] md:rounded-[50px] overflow-hidden group">
@@ -229,7 +225,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Testimonials Section */}
+        {/* Testimonials */}
         <section className="py-16 md:py-32">
           <div className="container mx-auto px-4 md:px-6">
             <div className="text-center mb-12 md:mb-20">
@@ -255,7 +251,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Info & Map Section */}
+        {/* Location Section */}
         <section className="py-16 md:py-32 bg-card border-y relative overflow-hidden">
           <div className="container mx-auto px-4 md:px-6">
             <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
@@ -324,7 +320,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Premium Footer */}
+      {/* Footer */}
       <footer className="bg-background border-t pt-20 md:pt-32 pb-12 md:pb-16">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-16 mb-16 md:mb-24">

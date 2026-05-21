@@ -9,10 +9,11 @@ export interface FoodItem {
   description: string;
   price: number;
   category: string;
-  image: string;
+  imageUrl: string;
   isVeg: boolean;
   rating: number;
   isAvailable: boolean;
+  createdAt?: any;
 }
 
 interface CartItem extends FoodItem {

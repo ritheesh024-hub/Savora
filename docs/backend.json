@@ -59,13 +59,13 @@
         "description": { "type": "string" },
         "price": { "type": "number" },
         "category": { "type": "string" },
-        "image": { "type": "string" },
+        "imageUrl": { "type": "string" },
         "isVeg": { "type": "boolean" },
         "rating": { "type": "number" },
         "isAvailable": { "type": "boolean" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "price", "category", "image", "isVeg", "isAvailable"]
+      "required": ["name", "price", "category", "imageUrl", "isAvailable"]
     }
   },
   "auth": {
@@ -80,9 +80,9 @@
       "schema": "#/entities/Order",
       "description": "Collection of customer orders"
     },
-    "/menu/{itemId}": {
+    "/products/{productId}": {
       "schema": "#/entities/FoodItem",
-      "description": "Collection of dynamic menu items"
+      "description": "Collection of dynamic menu items (products)"
     }
   }
 }
