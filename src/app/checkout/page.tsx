@@ -47,6 +47,7 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
+    // Generate order ID on client to avoid hydration mismatch
     setOrderId(`EB-${Math.floor(Math.random() * 90000) + 10000}`);
   }, []);
 
@@ -79,6 +80,7 @@ export default function CheckoutPage() {
 
     setLoading(true);
 
+    // Artificial delay for non-COD payment simulation
     if (formData.paymentMethod !== 'cod') {
       await new Promise(resolve => setTimeout(resolve, 1200));
     }
@@ -106,20 +108,33 @@ export default function CheckoutPage() {
 
     const orderRef = doc(collection(db, 'orders'), currentOrderId);
     
+    // Robust async flow using non-blocking pattern but guaranteed loading clear
     setDoc(orderRef, orderData)
       .then(() => {
         setLoading(false);
         clearCart();
         setStep(4);
-        toast({ title: "Order Success!", description: "Check status in tracking." });
+        toast({ 
+          title: "Order Success! 🚀", 
+          description: "Your Ezzy Bites order is on the way." 
+        });
       })
-      .catch(async () => {
+      .catch(async (error) => {
         setLoading(false);
+        console.error("Order error:", error);
+        
+        // Emit contextual security error if applicable
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: orderRef.path,
           operation: 'create',
           requestResourceData: orderData,
         }));
+
+        toast({
+          variant: "destructive",
+          title: "Order Failed",
+          description: "There was a problem placing your order. Please try again."
+        });
       });
   };
 
@@ -148,7 +163,7 @@ export default function CheckoutPage() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8 md:py-12">
-        {/* Step Indicator - More compact for mobile */}
+        {/* Step Indicator */}
         <div className="max-w-2xl mx-auto mb-10 md:mb-16">
           <div className="flex items-center justify-between relative px-2">
             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
