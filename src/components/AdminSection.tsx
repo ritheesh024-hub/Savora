@@ -39,7 +39,6 @@ export const AdminSection = () => {
 
   const menuQuery = useMemo(() => {
     if (!db) return null;
-    // Order by name instead of updatedAt to avoid local "disappearing" act due to null serverTimestamp in local cache
     return query(collection(db, 'menu'), orderBy('name'));
   }, [db]);
   const { data: dbMenu, loading: menuLoading } = useCollection<any>(menuQuery);
@@ -73,18 +72,24 @@ export const AdminSection = () => {
   }, [realOrders]);
 
   // Actions
-  const handleUpdateStatus = (id: string, newStatus: string) => {
+  const handleUpdateStatus = async (id: string, newStatus: string) => {
     if (!db) return;
     const orderRef = doc(db, 'orders', id);
-    updateDoc(orderRef, { status: newStatus })
-      .catch((e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'update' })));
+    try {
+      await updateDoc(orderRef, { status: newStatus });
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'update' }));
+    }
   };
 
-  const handleDeleteOrder = (id: string) => {
+  const handleDeleteOrder = async (id: string) => {
     if (!db || !window.confirm("Delete order record?")) return;
     const orderRef = doc(db, 'orders', id);
-    deleteDoc(orderRef)
-      .catch(() => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'delete' })));
+    try {
+      await deleteDoc(orderRef);
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'delete' }));
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,16 +122,19 @@ export const AdminSection = () => {
       rating: '4.5' 
     });
     if (fileInputRef.current) fileInputRef.current.value = '';
+    // Use a slight delay to ensure the modal is focused/rendered
     setTimeout(() => firstInputRef.current?.focus(), 150);
   };
 
-  const handleSaveMenuItem = () => {
+  const handleSaveMenuItem = async () => {
     if (!db || !menuFormData.name || !menuFormData.image) {
       toast({ variant: "destructive", title: "Missing Fields", description: "Name and Image are required." });
       return;
     }
     
+    if (saveLoading) return; // Prevent double submissions
     setSaveLoading(true);
+    
     const isEditing = !!editingItem;
     const itemId = isEditing ? editingItem.id : `ITEM-${Date.now()}`;
     const itemRef = doc(db, 'menu', itemId);
@@ -144,24 +152,38 @@ export const AdminSection = () => {
       updatedAt: serverTimestamp()
     };
 
-    // Optimistic Save
-    setDoc(itemRef, finalData, { merge: true })
-      .then(() => {
-        toast({ title: isEditing ? "Item Updated" : "Dish Published 🚀", description: `${finalData.name} is now live.` });
-      })
-      .catch((error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-          path: itemRef.path, 
-          operation: 'write', 
-          requestResourceData: finalData 
-        }));
-      })
-      .finally(() => {
-        // ALWAYS clear loading and close/reset form to prevent infinite spinner
-        setSaveLoading(false);
-        setIsMenuDialogOpen(false);
-        resetForm();
+    try {
+      // Use await to ensure the operation completes before proceeding
+      await setDoc(itemRef, finalData, { merge: true });
+      
+      toast({ 
+        title: isEditing ? "Item Updated" : "Dish Published 🚀", 
+        description: `${finalData.name} is now live.` 
       });
+
+      // If editing, close modal. If adding, keep open for next item as requested.
+      if (isEditing) {
+        setIsMenuDialogOpen(false);
+      }
+      
+      // Always reset form for fresh entry
+      resetForm();
+      
+    } catch (error: any) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+        path: itemRef.path, 
+        operation: 'write', 
+        requestResourceData: finalData 
+      }));
+      toast({
+        variant: "destructive",
+        title: "Publishing Failed",
+        description: "Check permissions or internet connection."
+      });
+    } finally {
+      // CRITICAL: Ensure loading is stopped in all cases
+      setSaveLoading(false);
+    }
   };
 
   const handleEditClick = (item: any) => {
@@ -179,17 +201,25 @@ export const AdminSection = () => {
     setIsMenuDialogOpen(true);
   };
 
-  const handleDeleteItem = (id: string) => {
+  const handleDeleteItem = async (id: string) => {
     if (!db || !window.confirm("Remove this dish from menu?")) return;
     const itemRef = doc(db, 'menu', id);
-    deleteDoc(itemRef).catch((e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: itemRef.path, operation: 'delete' })));
+    try {
+      await deleteDoc(itemRef);
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: itemRef.path, operation: 'delete' }));
+    }
   };
 
   const handleGeneratePromo = async () => {
     if (!selectedPromoDish) return;
     setPromoLoading(true);
     try {
-      const result = await dailySpecialGenerator({ dishName: selectedPromoDish.name, basePrice: selectedPromoDish.price, discountPercent: 15 });
+      const result = await dailySpecialGenerator({ 
+        dishName: selectedPromoDish.name, 
+        basePrice: selectedPromoDish.price, 
+        discountPercent: 15 
+      });
       setPromoResult(result);
     } catch (error) {
       toast({ variant: "destructive", title: "AI Generation Failed" });
@@ -284,11 +314,17 @@ export const AdminSection = () => {
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-8">
-            <Button className="rounded-2xl h-14 px-10 font-black uppercase tracking-widest text-[11px] gap-2 shadow-xl" onClick={() => { resetForm(); setIsMenuDialogOpen(true); }}>
+            <Button 
+              className="rounded-2xl h-14 px-10 font-black uppercase tracking-widest text-[11px] gap-2 shadow-xl" 
+              onClick={() => { resetForm(); setIsMenuDialogOpen(true); }}
+            >
               <Plus className="w-5 h-5" /> Add New Dish
             </Button>
 
-            <Dialog open={isMenuDialogOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsMenuDialogOpen(open); }}>
+            <Dialog open={isMenuDialogOpen} onOpenChange={(open) => { 
+              if(!open) resetForm(); 
+              setIsMenuDialogOpen(open); 
+            }}>
               <DialogContent className="max-w-2xl p-0 rounded-[32px] overflow-hidden border-none shadow-3xl bg-card">
                 <div className="bg-primary p-6 text-white">
                   <DialogTitle className="text-xl font-black uppercase tracking-tight font-headline">
@@ -297,56 +333,127 @@ export const AdminSection = () => {
                 </div>
                 <div className="p-8 space-y-5 max-h-[70vh] overflow-y-auto">
                   <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Title</Label>
-                    <Input ref={firstInputRef} value={menuFormData.name} onChange={e => setMenuFormData({...menuFormData, name: e.target.value})} className="rounded-xl h-12 bg-secondary/20" />
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Dish Name</Label>
+                    <Input 
+                      ref={firstInputRef} 
+                      value={menuFormData.name} 
+                      onChange={e => setMenuFormData({...menuFormData, name: e.target.value})} 
+                      placeholder="e.g. Peri Peri Maggie"
+                      className="rounded-xl h-12 bg-secondary/20" 
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Price (₹)</Label>
-                      <Input type="number" value={menuFormData.price} onChange={e => setMenuFormData({...menuFormData, price: e.target.value})} className="rounded-xl h-12 bg-secondary/20" />
+                      <Input 
+                        type="number" 
+                        value={menuFormData.price} 
+                        onChange={e => setMenuFormData({...menuFormData, price: e.target.value})} 
+                        className="rounded-xl h-12 bg-secondary/20" 
+                      />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Category</Label>
-                      <select className="w-full h-12 rounded-xl border bg-secondary/20 px-3 text-sm font-bold uppercase" value={menuFormData.category} onChange={e => setMenuFormData({...menuFormData, category: e.target.value})}>
+                      <select 
+                        className="w-full h-12 rounded-xl border bg-secondary/20 px-3 text-sm font-bold uppercase" 
+                        value={menuFormData.category} 
+                        onChange={e => setMenuFormData({...menuFormData, category: e.target.value})}
+                      >
                         {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Photo</Label>
-                    <div className="border-2 border-dashed rounded-2xl p-6 text-center bg-secondary/10 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                      {menuFormData.image ? <img src={menuFormData.image} className="h-32 w-full object-cover rounded-xl" /> : <div className="text-xs font-black uppercase py-4">Upload Image</div>}
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Photo Upload</Label>
+                    <div 
+                      className="border-2 border-dashed rounded-2xl p-6 text-center bg-secondary/10 cursor-pointer hover:bg-secondary/20 transition-colors" 
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {menuFormData.image ? (
+                        <div className="relative group">
+                          <img src={menuFormData.image} className="h-40 w-full object-cover rounded-xl shadow-lg" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-xl flex items-center justify-center transition-opacity">
+                            <RefreshCw className="text-white w-8 h-8" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center py-6 gap-2">
+                          <Upload className="w-10 h-10 text-muted-foreground opacity-50" />
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Click to upload image</p>
+                          <p className="text-[8px] text-muted-foreground">Max 750KB recommended</p>
+                        </div>
+                      )}
                       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                     </div>
                   </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Description</Label>
+                    <Textarea 
+                      value={menuFormData.description} 
+                      onChange={e => setMenuFormData({...menuFormData, description: e.target.value})} 
+                      placeholder="Describe the dish..."
+                      className="rounded-xl min-h-[80px] bg-secondary/20" 
+                    />
+                  </div>
                 </div>
-                <div className="p-6 bg-secondary/20 flex gap-3 border-t">
-                  <Button variant="outline" className="flex-1 rounded-xl h-12 font-black uppercase" onClick={() => setIsMenuDialogOpen(false)} disabled={saveLoading}>Cancel</Button>
-                  <Button className="flex-1 rounded-xl h-12 font-black uppercase" onClick={handleSaveMenuItem} disabled={saveLoading}>
-                    {saveLoading ? <Loader2 className="animate-spin w-4 h-4" /> : editingItem ? 'Update' : 'Publish'}
+                <div className="p-6 bg-secondary/10 flex gap-3 border-t">
+                  <Button variant="outline" className="flex-1 rounded-xl h-12 font-black uppercase" onClick={() => setIsMenuDialogOpen(false)} disabled={saveLoading}>
+                    Close
+                  </Button>
+                  <Button className="flex-1 rounded-xl h-12 font-black uppercase shadow-lg shadow-primary/20" onClick={handleSaveMenuItem} disabled={saveLoading}>
+                    {saveLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : editingItem ? 'Update Dish' : 'Publish Dish'}
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {menuLoading ? <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" /> : dbMenu?.map((item: any) => (
-                <Card key={item.id} className="rounded-3xl border-none shadow-lg overflow-hidden bg-card transition-all hover:shadow-2xl">
-                  <div className="h-40 bg-muted relative">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                    <Badge className="absolute top-3 left-3 bg-white/90 text-[8px] font-black uppercase">{item.isVeg ? 'Veg' : 'Non-Veg'}</Badge>
-                  </div>
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-4">
-                      <h4 className="font-black truncate">{item.name}</h4>
-                      <p className="font-black text-primary">₹{item.price}</p>
+              {menuLoading ? (
+                <div className="col-span-full py-20 flex flex-col items-center gap-4">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                  <p className="font-bold text-muted-foreground">Loading inventory...</p>
+                </div>
+              ) : (
+                dbMenu?.map((item: any) => (
+                  <Card key={item.id} className="rounded-3xl border-none shadow-lg overflow-hidden bg-card transition-all hover:shadow-2xl animate-in zoom-in duration-300">
+                    <div className="h-44 bg-muted relative">
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      <Badge className="absolute top-3 left-3 bg-white/90 backdrop-blur shadow-sm text-[8px] font-black uppercase">
+                        {item.isVeg ? 'Veg' : 'Non-Veg'}
+                      </Badge>
+                      {!item.isAvailable && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Badge variant="destructive" className="uppercase font-black">Sold Out</Badge>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1 rounded-xl h-10 font-black text-[10px] uppercase gap-2" onClick={() => handleEditClick(item)}><Edit2 className="w-3.5 h-3.5" /> Edit</Button>
-                      <Button variant="ghost" className="rounded-xl h-10 px-3 text-destructive" onClick={() => handleDeleteItem(item.id)}><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                    <CardContent className="p-5">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="min-w-0 flex-1 mr-2">
+                          <h4 className="font-black truncate text-base">{item.name}</h4>
+                          <p className="text-[10px] text-muted-foreground font-medium truncate">{item.category}</p>
+                        </div>
+                        <p className="font-black text-primary text-lg">₹{item.price}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          className="flex-1 rounded-xl h-11 font-black text-[10px] uppercase gap-2" 
+                          onClick={() => handleEditClick(item)}
+                        >
+                          <Edit2 className="w-3.5 h-3.5" /> Edit
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          className="rounded-xl h-11 px-4 text-destructive hover:bg-destructive/5" 
+                          onClick={() => handleDeleteItem(item.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
               ))}
             </div>
           </TabsContent>
@@ -355,24 +462,46 @@ export const AdminSection = () => {
              <Card className="rounded-[40px] border-none shadow-xl bg-card p-10">
                 <div className="max-w-2xl">
                   <h3 className="text-3xl font-black uppercase tracking-tight mb-4">AI Marketing</h3>
+                  <p className="text-muted-foreground mb-8 font-medium">Pick a dish and let our AI create a viral promotion for your social media.</p>
+                  
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
                     {dbMenu?.slice(0, 8).map((item: any) => (
-                      <button key={item.id} onClick={() => setSelectedPromoDish(item)} className={`p-3 rounded-xl border-2 text-[10px] font-black uppercase ${selectedPromoDish?.id === item.id ? 'border-primary bg-primary/5' : 'border-muted'}`}>
+                      <button 
+                        key={item.id} 
+                        onClick={() => setSelectedPromoDish(item)} 
+                        className={`p-3 rounded-xl border-2 text-[10px] font-black uppercase transition-all ${selectedPromoDish?.id === item.id ? 'border-primary bg-primary/5 scale-105' : 'border-muted hover:border-primary/30'}`}
+                      >
                         {item.name}
                       </button>
                     ))}
                   </div>
-                  <Button size="lg" className="rounded-2xl h-14 px-8 font-black uppercase tracking-widest gap-2" onClick={handleGeneratePromo} disabled={promoLoading || !selectedPromoDish}>
-                    {promoLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Megaphone className="w-5 h-5" />} Generate Promo
+                  
+                  <Button 
+                    size="lg" 
+                    className="rounded-2xl h-14 px-8 font-black uppercase tracking-widest gap-2 shadow-xl shadow-primary/20" 
+                    onClick={handleGeneratePromo} 
+                    disabled={promoLoading || !selectedPromoDish}
+                  >
+                    {promoLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Megaphone className="w-5 h-5" />} 
+                    Generate Promo
                   </Button>
+                  
                   {promoResult && (
-                    <div className="mt-10 p-6 bg-primary/5 rounded-3xl border-2 border-primary/20 space-y-4 animate-in zoom-in">
-                      <h4 className="font-black text-xl">{promoResult.promoTitle} {promoResult.emoji}</h4>
-                      <p className="text-sm italic opacity-80">"{promoResult.promoDescription}"</p>
-                      <Button className="w-full h-12 rounded-xl font-black uppercase" onClick={() => {
-                        navigator.clipboard.writeText(`${promoResult.promoTitle} ${promoResult.emoji}\n\n${promoResult.promoDescription}\n\n₹${promoResult.finalPrice}`);
-                        toast({ title: "Copied!" });
-                      }}>Copy Post</Button>
+                    <div className="mt-10 p-8 bg-primary/5 rounded-3xl border-2 border-primary/20 space-y-5 animate-in zoom-in">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-black text-2xl">{promoResult.promoTitle} {promoResult.emoji}</h4>
+                        <Badge className="bg-primary text-white font-black">₹{promoResult.finalPrice}</Badge>
+                      </div>
+                      <p className="text-sm italic opacity-80 leading-relaxed font-medium">"{promoResult.promoDescription}"</p>
+                      <Button 
+                        className="w-full h-12 rounded-xl font-black uppercase gap-2" 
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${promoResult.promoTitle} ${promoResult.emoji}\n\n${promoResult.promoDescription}\n\nOrder now at just ₹${promoResult.finalPrice}!`);
+                          toast({ title: "Content Copied!" });
+                        }}
+                      >
+                        <RefreshCw className="w-4 h-4" /> Copy Post Text
+                      </Button>
                     </div>
                   )}
                 </div>
