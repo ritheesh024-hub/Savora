@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -6,9 +5,16 @@ import { SavorTool } from '@/components/SavorTool';
 import { FoodCard } from '@/components/FoodCard';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { CATEGORIES } from '@/app/lib/menu-data';
-import { ShoppingBag, ArrowRight, Zap, Star, MapPin, Phone, Instagram, Twitter, Facebook, Lock, Clock, HelpCircle, Loader2 } from 'lucide-react';
+import { 
+  ShoppingBag, ArrowRight, Zap, Star, MapPin, 
+  Phone, Instagram, Twitter, Facebook, Lock, 
+  Clock, HelpCircle, Loader2, Sparkles, 
+  ChefHat, Truck, Award
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Link from 'next/link';
 import Image from 'next/image';
 import placeholderData from '@/app/lib/placeholder-images.json';
@@ -25,7 +31,7 @@ export default function Home() {
 
   const menuQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'menu'), limit(6));
+    return query(collection(db, 'menu'), limit(10));
   }, [db]);
 
   const { data: trendingItems, loading } = useCollection<any>(menuQuery);
@@ -33,146 +39,253 @@ export default function Home() {
   const getImg = (id: string) => placeholderData.placeholderImages.find(img => img.id === id)?.imageUrl || '';
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
       
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative h-[90vh] flex items-center overflow-hidden">
+        {/* Cinematic Hero Section */}
+        <section className="relative h-screen flex items-center overflow-hidden">
+          {/* Animated Background Layers */}
           <div className="absolute inset-0 z-0">
             <Image 
               src={getImg('hero-bg')} 
               alt="Hero Food" 
               fill 
-              className="object-cover brightness-[0.5] scale-105"
+              className="object-cover scale-105"
               priority
-              data-ai-hint="restaurant food"
+              data-ai-hint="luxury restaurant"
             />
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
+            {/* Animated Glow Elements */}
+            <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+            <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse delay-1000" />
           </div>
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-3xl text-white">
-              <div className="inline-flex items-center gap-2 bg-primary/20 backdrop-blur-md px-4 py-2 rounded-full border border-primary/30 mb-8 animate-in slide-in-from-left duration-700">
-                <Zap className="w-4 h-4 text-primary" />
-                <span className="text-sm font-bold tracking-widest uppercase">30 MINS FAST DELIVERY</span>
+
+          <div className="container mx-auto px-6 relative z-20">
+            <div className="max-w-4xl">
+              <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-2xl px-6 py-2.5 rounded-full border border-white/20 mb-10 animate-in slide-in-from-bottom duration-700">
+                <div className="flex h-2 w-2 rounded-full bg-primary animate-ping" />
+                <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white/90">Experience Culinary Excellence</span>
               </div>
-              <h1 className="text-6xl md:text-8xl font-headline font-black mb-6 leading-[1] animate-in slide-in-from-left duration-1000">
+              
+              <h1 className="text-6xl md:text-[100px] font-headline font-black mb-8 leading-[0.9] text-white animate-in fade-in slide-in-from-bottom duration-1000">
                 Premium Taste, <br />
-                <span className="text-primary italic">Lightning</span> Speed.
+                <span className="text-primary italic text-glow">Lightning</span> Speed.
               </h1>
-              <p className="text-xl md:text-2xl text-white/80 mb-10 max-w-xl leading-relaxed animate-in slide-in-from-left duration-1000 delay-200 font-medium">
-                Delicious cafe vibes delivered right to your door. Fresh ingredients, chef-crafted recipes, and a frictionless experience.
+              
+              <p className="text-xl md:text-2xl text-white/70 mb-12 max-w-2xl leading-relaxed animate-in fade-in slide-in-from-bottom duration-1000 delay-200 font-medium">
+                Elevate your daily ritual with chef-crafted flavors delivered right to your sanctuary. Fresh ingredients, redefined.
               </p>
-              <div className="flex flex-wrap gap-5 animate-in fade-in duration-1000 delay-500">
+
+              <div className="flex flex-wrap gap-6 animate-in fade-in duration-1000 delay-500">
                 <Link href="/menu">
-                  <Button size="lg" className="rounded-full h-16 px-10 text-xl font-bold shadow-2xl shadow-primary/40 hover:scale-105 transition-transform">
-                    Order Now
-                    <ArrowRight className="ml-2 w-6 h-6" />
+                  <Button size="lg" className="rounded-full h-18 px-12 text-xl font-black shadow-2xl shadow-primary/40 hover:scale-105 transition-all group relative overflow-hidden">
+                    <span className="relative z-10">Order Now</span>
+                    <ArrowRight className="ml-2 w-6 h-6 relative z-10 transition-transform group-hover:translate-x-1" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Button>
                 </Link>
                 <Link href="/menu">
-                  <Button size="lg" variant="outline" className="rounded-full h-16 px-10 text-xl font-bold bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20">
+                  <Button size="lg" variant="outline" className="rounded-full h-18 px-12 text-xl font-black bg-white/5 backdrop-blur-md border-white/20 text-white hover:bg-white/10 hover:border-white/40 transition-all">
                     Explore Menu
                   </Button>
                 </Link>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Categories Bar */}
-        <section className="py-12 bg-background border-b">
-          <div className="container mx-auto px-4">
-            <div className="flex overflow-x-auto gap-6 pb-2 scrollbar-hide items-center justify-center">
-              {CATEGORIES.map((cat, idx) => (
-                <Link href={`/menu?category=${cat}`} key={idx} className="flex-shrink-0 group">
-                  <div className="px-6 py-2.5 rounded-full border-2 border-transparent hover:border-primary/30 hover:bg-primary/5 transition-all">
-                    <span className="text-sm font-black uppercase tracking-widest group-hover:text-primary">{cat}</span>
+              {/* Stats Bar */}
+              <div className="mt-20 flex gap-12 border-l border-white/20 pl-12 animate-in fade-in duration-1000 delay-700">
+                {[
+                  { label: "Delivery Time", val: "25m" },
+                  { label: "Happy Bites", val: "10k+" },
+                  { label: "Top Rated", val: "4.9/5" }
+                ].map((s, i) => (
+                  <div key={i}>
+                    <p className="text-3xl font-black text-white">{s.val}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40">{s.label}</p>
                   </div>
-                </Link>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Trending Section */}
-        <section className="py-24">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+        {/* Categories Bar - Floating Style */}
+        <section className="relative -mt-10 z-30">
+          <div className="container mx-auto px-6">
+            <div className="glass rounded-[40px] p-4 shadow-2xl shadow-black/10 border border-white/20">
+              <div className="flex overflow-x-auto gap-3 pb-2 md:pb-0 scrollbar-hide items-center md:justify-center">
+                {CATEGORIES.map((cat, idx) => (
+                  <Link href={`/menu?category=${cat}`} key={idx} className="flex-shrink-0 group">
+                    <div className="px-8 py-4 rounded-[28px] border border-transparent hover:bg-primary/10 hover:border-primary/20 transition-all text-center">
+                      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary">{cat}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Trending Section with Carousel */}
+        <section className="py-32 overflow-hidden">
+          <div className="container mx-auto px-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
               <div>
-                <h2 className="text-4xl md:text-5xl font-headline font-black mb-4">Trending <span className="text-primary">Dishes</span></h2>
-                <p className="text-muted-foreground text-lg max-w-xl">Our community's favorite picks this week. Handcrafted with love.</p>
+                <Badge variant="outline" className="mb-4 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase border-primary/30 text-primary">Week's Favorites</Badge>
+                <h2 className="text-5xl md:text-7xl font-headline font-black tracking-tight leading-[1]">Trending <span className="text-primary italic">Now</span></h2>
               </div>
               <Link href="/menu">
-                <Button variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-white transition-all font-bold px-8 h-12">
-                  View Full Menu
+                <Button variant="link" className="text-primary font-black text-lg p-0 h-auto gap-2 group">
+                  Full Menu <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
             </div>
+
             {loading ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-12 h-12 animate-spin text-primary" />
               </div>
             ) : trendingItems.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-                {trendingItems.map((item) => (
-                  <FoodCard key={item.id} item={item} />
-                ))}
-              </div>
+              <Carousel 
+                opts={{ align: "start", loop: true }}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-8">
+                  {trendingItems.map((item) => (
+                    <CarouselItem key={item.id} className="pl-8 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                      <div className="hover:scale-[1.02] transition-transform duration-500">
+                        <FoodCard item={item} />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <div className="flex justify-end gap-4 mt-12">
+                  <CarouselPrevious className="static translate-y-0 h-14 w-14 rounded-full border-2 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all" />
+                  <CarouselNext className="static translate-y-0 h-14 w-14 rounded-full border-2 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all" />
+                </div>
+              </Carousel>
             ) : (
-              <div className="text-center py-10 bg-muted/20 rounded-3xl">
-                <p className="text-muted-foreground font-medium">New dishes coming soon! Explore our full menu to see more.</p>
+              <div className="text-center py-20 bg-muted/20 rounded-[40px] border border-dashed border-muted">
+                <p className="text-muted-foreground font-bold">Chef is prepping the favorites. Check back soon!</p>
               </div>
             )}
           </div>
         </section>
 
-        {/* AI Savor Tool */}
-        <section className="py-24 bg-secondary/30">
-          <div className="container mx-auto px-4">
+        {/* Why Choose Us - Features Section */}
+        <section className="py-32 bg-secondary/30 relative overflow-hidden">
+          <div className="container mx-auto px-6">
+            <div className="grid lg:grid-cols-4 gap-8">
+              <div className="lg:col-span-1">
+                 <h2 className="text-4xl font-headline font-black mb-6">Why <span className="text-primary">Ezzy Bites?</span></h2>
+                 <p className="text-muted-foreground font-medium leading-relaxed">We've spent thousands of hours perfecting every bite and every delivery mile to ensure your experience is nothing short of legendary.</p>
+              </div>
+              <div className="lg:col-span-3 grid md:grid-cols-3 gap-8">
+                {[
+                  { icon: ChefHat, title: "Master Chefs", desc: "Crafted by professionals who breathe flavor." },
+                  { icon: Truck, title: "Hyper-Local", desc: "30-minute delivery guarantee across your campus." },
+                  { icon: Award, title: "Premium Grade", desc: "Only the freshest, highest quality ingredients used." }
+                ].map((f, i) => (
+                  <div key={i} className="bg-card p-10 rounded-[40px] shadow-xl shadow-black/5 hover:shadow-2xl hover:-translate-y-2 transition-all group">
+                    <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-primary group-hover:text-white transition-all">
+                      <f.icon className="w-8 h-8" />
+                    </div>
+                    <h4 className="text-2xl font-black mb-4">{f.title}</h4>
+                    <p className="text-muted-foreground font-medium text-sm leading-relaxed">{f.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* AI Savor Tool - Cinematic Style */}
+        <section className="py-32 bg-background">
+          <div className="container mx-auto px-6">
             <SavorTool />
           </div>
         </section>
 
-        {/* Info & Map Section */}
-        <section className="py-24 bg-card border-y">
-          <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <div className="space-y-8">
-                <h2 className="text-4xl font-headline font-black">Find Us at <span className="text-primary">Ezzy Bites</span></h2>
-                <div className="space-y-6">
-                  <div className="flex gap-4 items-start">
-                    <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
-                      <MapPin className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-lg">Address</h4>
-                      <p className="text-muted-foreground">Anurag University Road, Arundhati Colony Rd No. 2, Pocharam, Hyderabad, 500088</p>
-                      <a href="https://maps.app.goo.gl/FxiaeZmqrcevTR459?g_st=ac" target="_blank" className="text-primary font-bold text-sm hover:underline mt-2 inline-block">View on Google Maps</a>
-                    </div>
-                  </div>
-                  <div className="flex gap-4 items-start">
-                    <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
-                      <Clock className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-lg">Timings</h4>
-                      <p className="text-muted-foreground">Open Daily: 10:00 AM - 10:00 PM</p>
-                      <p className="text-xs text-green-600 font-bold mt-1 uppercase tracking-wider">Delivery Active Now</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4 items-start">
-                    <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
-                      <Phone className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-lg">Contact</h4>
-                      <p className="text-muted-foreground">+91 8639366800</p>
-                      <p className="text-muted-foreground">sunnyritheesh@gmail.com</p>
-                    </div>
-                  </div>
-                </div>
+        {/* Special Offer Banner */}
+        <section className="py-12">
+          <div className="container mx-auto px-6">
+            <div className="relative h-[300px] rounded-[50px] overflow-hidden group">
+              <Image 
+                src="https://picsum.photos/seed/food-offer/1600/400" 
+                alt="Offer" 
+                fill 
+                className="object-cover transition-transform duration-1000 group-hover:scale-110"
+                data-ai-hint="spicy food"
+              />
+              <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm flex flex-col items-center justify-center text-center p-8">
+                <h3 className="text-5xl md:text-7xl font-headline font-black text-white mb-6 animate-pulse">FLAT 20% OFF</h3>
+                <p className="text-xl text-white/90 font-bold mb-8 uppercase tracking-[0.4em]">On your first order above ₹299</p>
+                <Link href="/menu">
+                  <Button className="bg-white text-primary hover:bg-white/90 rounded-full h-14 px-10 font-black text-lg">Claim Now</Button>
+                </Link>
               </div>
-              <div className="rounded-[40px] overflow-hidden h-[450px] shadow-2xl border-8 border-white">
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="py-32">
+          <div className="container mx-auto px-6">
+            <div className="text-center mb-20">
+              <h2 className="text-5xl font-headline font-black mb-4">Loved by <span className="text-primary italic">Foodies</span></h2>
+              <p className="text-muted-foreground text-lg">Join thousands of students and locals who've found their flavor sanctuary.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-10">
+              {[
+                { name: "Rahul S.", role: "AU Student", text: "The Maggie here is just different. The spices are authentic and the delivery is always under 20 mins. Life saver during exams!" },
+                { name: "Ananya M.", role: "Local Guide", text: "Best Biryani in the Pocharam area. Period. The quality of rice and the tenderness of chicken is top notch." },
+                { name: "Vikram K.", role: "Techie", text: "Ezzy Bites is my go-to for late night cravings. The AI Savor tool actually suggested a Maggie I love!" }
+              ].map((t, i) => (
+                <div key={i} className="p-10 rounded-[40px] bg-secondary/30 relative">
+                   <Star className="w-8 h-8 text-primary absolute -top-4 left-10 fill-primary" />
+                   <p className="text-lg font-medium leading-relaxed italic mb-8">"{t.text}"</p>
+                   <div>
+                     <p className="font-black text-lg">{t.name}</p>
+                     <p className="text-xs font-black uppercase tracking-widest text-primary/60">{t.role}</p>
+                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Info & Map Section */}
+        <section className="py-32 bg-card border-y relative overflow-hidden">
+          <div className="container mx-auto px-6">
+            <div className="grid lg:grid-cols-2 gap-24 items-center">
+              <div className="space-y-12">
+                <div>
+                   <h2 className="text-6xl font-headline font-black mb-6">Find Your <span className="text-primary">Spot.</span></h2>
+                   <p className="text-muted-foreground text-xl">Located at the heart of the educational hub, ready to serve the brightest minds.</p>
+                </div>
+                <div className="space-y-8">
+                  {[
+                    { icon: MapPin, title: "Location", val: "Anurag University Road, Pocharam, Hyderabad" },
+                    { icon: Clock, title: "Timings", val: "Daily: 10:00 AM - 10:00 PM" },
+                    { icon: Phone, title: "Hotline", val: "+91 8639366800" }
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex gap-6 items-start">
+                      <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
+                        <item.icon className="w-7 h-7 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-xl mb-1">{item.title}</h4>
+                        <p className="text-muted-foreground font-medium">{item.val}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button variant="outline" className="h-16 px-10 rounded-full font-black uppercase tracking-widest text-xs gap-3 border-2" onClick={() => window.open('https://maps.app.goo.gl/FxiaeZmqrcevTR459', '_blank')}>
+                   Open in Maps <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="rounded-[60px] overflow-hidden h-[600px] shadow-[0_40px_100px_rgba(0,0,0,0.1)] border-8 border-white group relative">
                 <iframe 
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3806.827222661053!2d78.6475753!3d17.4199147!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb9f7833a69719%3A0xc660d2b51351119b!2sAnurag%20University!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin" 
                   width="100%" 
@@ -181,6 +294,7 @@ export default function Home() {
                   allowFullScreen 
                   loading="lazy" 
                   referrerPolicy="no-referrer-when-downgrade"
+                  className="grayscale hover:grayscale-0 transition-all duration-1000"
                 ></iframe>
               </div>
             </div>
@@ -188,103 +302,99 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-24 container mx-auto px-4 max-w-3xl">
-          <div className="text-center mb-16">
-            <HelpCircle className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h2 className="text-4xl font-headline font-black">Got <span className="text-primary">Questions?</span></h2>
+        <section className="py-32 container mx-auto px-6 max-w-4xl">
+          <div className="text-center mb-20">
+            <HelpCircle className="w-16 h-16 text-primary mx-auto mb-6" />
+            <h2 className="text-5xl font-headline font-black">Curious? <span className="text-primary italic">Answers here.</span></h2>
           </div>
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="item-1" className="border-none bg-secondary/30 rounded-2xl px-6 mb-4">
-              <AccordionTrigger className="font-bold text-lg hover:no-underline py-6">What is the minimum order for free delivery?</AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-6">
-                Orders above ₹149 are eligible for FREE delivery. For orders below ₹149, a nominal delivery fee of ₹40 applies.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-2" className="border-none bg-secondary/30 rounded-2xl px-6 mb-4">
-              <AccordionTrigger className="font-bold text-lg hover:no-underline py-6">How fast is the delivery?</AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-6">
-                We guarantee delivery within 20-30 minutes for locations within our 2km radius around Pocharam.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-3" className="border-none bg-secondary/30 rounded-2xl px-6 mb-4">
-              <AccordionTrigger className="font-bold text-lg hover:no-underline py-6">Do you support online payments?</AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-6">
-                Yes! We support UPI (PhonePe, Google Pay), Online Cards via Razorpay, and Cash on Delivery.
-              </AccordionContent>
-            </AccordionItem>
+          <Accordion type="single" collapsible className="w-full space-y-6">
+            {[
+              { q: "What is the delivery promise?", a: "We guarantee delivery within 20-30 minutes for locations within our 2km radius around Pocharam and Anurag University campus." },
+              { q: "Are there any student discounts?", a: "Absolutely! AU students get a special 10% discount on all orders above ₹199. Use code STUDENT10." },
+              { q: "Do you cater for campus events?", a: "Yes, we handle bulk orders and campus events. Contact our hotline for customized menus." }
+            ].map((faq, i) => (
+              <AccordionItem key={i} value={`item-${i}`} className="border-none bg-secondary/20 rounded-[32px] px-8">
+                <AccordionTrigger className="font-black text-xl hover:no-underline py-8">{faq.q}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-8 text-lg font-medium leading-relaxed">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
           </Accordion>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-background border-t pt-24 pb-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
-            <div className="space-y-8">
-              <Link href="/" className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                  <ShoppingBag className="w-6 h-6 text-primary-foreground" />
+      {/* Premium Footer */}
+      <footer className="bg-background border-t pt-32 pb-16">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-24">
+            <div className="space-y-10">
+              <Link href="/" className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/20">
+                  <ShoppingBag className="w-7 h-7 text-primary-foreground" />
                 </div>
-                <span className="text-3xl font-headline font-black tracking-tight">
+                <span className="text-4xl font-headline font-black tracking-tight">
                   Ezzy<span className="text-primary">Bites</span>
                 </span>
               </Link>
-              <p className="text-muted-foreground leading-relaxed font-medium">
-                Elevating the fast-food experience with premium ingredients and unparalleled service.
+              <p className="text-muted-foreground leading-loose text-lg font-medium">
+                Redefining the fast-food experience with premium ingredients and unparalleled campus service. Your sanctuary for flavor.
               </p>
               <div className="flex gap-4">
                 {[Instagram, Twitter, Facebook].map((Icon, i) => (
-                  <Button key={i} variant="outline" size="icon" className="rounded-2xl border-muted text-muted-foreground hover:text-primary hover:border-primary transition-all">
+                  <Button key={i} variant="outline" size="icon" className="w-12 h-12 rounded-2xl border-muted text-muted-foreground hover:text-primary hover:border-primary transition-all">
                     <Icon className="w-5 h-5" />
                   </Button>
                 ))}
               </div>
             </div>
             
-            <div className="space-y-8">
-              <h4 className="font-black text-xl uppercase tracking-widest">Navigation</h4>
-              <ul className="space-y-4 text-muted-foreground font-medium">
+            <div className="space-y-10">
+              <h4 className="font-black text-2xl uppercase tracking-widest">Explore</h4>
+              <ul className="space-y-5 text-muted-foreground font-bold">
                 <li><Link href="/menu" className="hover:text-primary transition-colors">Menu</Link></li>
                 <li><Link href="/orders/tracking" className="hover:text-primary transition-colors">Track Order</Link></li>
-                <li><Link href="/offers" className="hover:text-primary transition-colors">Offers</Link></li>
+                <li><Link href="/offers" className="hover:text-primary transition-colors">Exclusive Offers</Link></li>
                 <li><Link href="/favorites" className="hover:text-primary transition-colors">My Favorites</Link></li>
               </ul>
             </div>
 
-            <div className="space-y-8">
-              <h4 className="font-black text-xl uppercase tracking-widest">Support</h4>
-              <ul className="space-y-4 text-muted-foreground font-medium">
+            <div className="space-y-10">
+              <h4 className="font-black text-2xl uppercase tracking-widest">Support</h4>
+              <ul className="space-y-5 text-muted-foreground font-bold">
                 <li><Link href="/faq" className="hover:text-primary transition-colors">Help Center</Link></li>
                 <li><Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
                 <li><Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-                <li className="pt-4 border-t border-muted">
-                  <Link href="/admin/login" className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground/40 hover:text-primary transition-colors">
-                    <Lock className="w-3.5 h-3.5" />
-                    Admin Access
+                <li className="pt-6">
+                  <Link href="/admin/login" className="flex items-center gap-3 text-xs font-black uppercase tracking-[0.3em] text-muted-foreground/30 hover:text-primary transition-colors">
+                    <Lock className="w-4 h-4" />
+                    Admin Portal
                   </Link>
                 </li>
               </ul>
             </div>
 
-            <div className="space-y-8">
-              <h4 className="font-black text-xl uppercase tracking-widest">Connect</h4>
-              <div className="p-6 bg-secondary/30 rounded-3xl border border-primary/10">
-                <p className="text-sm font-bold mb-4">Join our newsletter for exclusive offers!</p>
-                <div className="flex gap-2">
-                  <input type="text" placeholder="Email" className="bg-background border rounded-xl px-4 py-2 text-sm w-full focus:ring-2 focus:ring-primary/20 outline-none" />
-                  <Button size="sm" className="rounded-xl px-4">Join</Button>
+            <div className="space-y-10">
+              <h4 className="font-black text-2xl uppercase tracking-widest">Vibe Check</h4>
+              <div className="p-10 bg-primary/5 rounded-[40px] border border-primary/10 relative overflow-hidden group">
+                <Sparkles className="absolute -right-4 -top-4 w-20 h-20 text-primary opacity-5 group-hover:scale-110 transition-transform" />
+                <p className="text-sm font-black mb-6 uppercase tracking-widest">Join the Newsletter</p>
+                <div className="flex flex-col gap-4">
+                  <input type="text" placeholder="Email" className="bg-background border rounded-2xl px-6 py-4 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+                  <Button className="rounded-2xl h-14 font-black uppercase tracking-widest">Subscribe</Button>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="border-t pt-12 flex flex-col md:flex-row items-center justify-between gap-6">
-            <p className="text-sm text-muted-foreground font-medium">
+          <div className="border-t pt-16 flex flex-col md:flex-row items-center justify-between gap-8">
+            <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest opacity-50">
               © {currentYear || 2025} Ezzy Bites Cafe. All rights reserved.
             </p>
-            <div className="flex items-center gap-8 grayscale opacity-50">
-              <div className="text-[10px] font-black uppercase tracking-[0.3em]">Razorpay Secure</div>
-              <div className="text-[10px] font-black uppercase tracking-[0.3em]">PCI DSS Compliant</div>
+            <div className="flex items-center gap-10 grayscale opacity-30">
+              <div className="text-[10px] font-black uppercase tracking-[0.4em]">Razorpay Secure</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.4em]">PCI DSS Compliant</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.4em]">ISO 27001 Certified</div>
             </div>
           </div>
         </div>
