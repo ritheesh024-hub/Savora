@@ -72,24 +72,29 @@ export const AdminSection = () => {
   }, [realOrders]);
 
   // Actions
-  const handleUpdateStatus = async (id: string, newStatus: string) => {
+  const handleUpdateStatus = (id: string, newStatus: string) => {
     if (!db) return;
     const orderRef = doc(db, 'orders', id);
-    try {
-      await updateDoc(orderRef, { status: newStatus });
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'update' }));
-    }
+    updateDoc(orderRef, { status: newStatus })
+      .catch(async (e) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: orderRef.path, 
+          operation: 'update',
+          requestResourceData: { status: newStatus }
+        }));
+      });
   };
 
-  const handleDeleteOrder = async (id: string) => {
+  const handleDeleteOrder = (id: string) => {
     if (!db || !window.confirm("Delete order record?")) return;
     const orderRef = doc(db, 'orders', id);
-    try {
-      await deleteDoc(orderRef);
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'delete' }));
-    }
+    deleteDoc(orderRef)
+      .catch(async (e) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: orderRef.path, 
+          operation: 'delete' 
+        }));
+      });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,17 +127,16 @@ export const AdminSection = () => {
       rating: '4.5' 
     });
     if (fileInputRef.current) fileInputRef.current.value = '';
-    // Use a slight delay to ensure the modal is focused/rendered
     setTimeout(() => firstInputRef.current?.focus(), 150);
   };
 
-  const handleSaveMenuItem = async () => {
+  const handleSaveMenuItem = () => {
     if (!db || !menuFormData.name || !menuFormData.image) {
       toast({ variant: "destructive", title: "Missing Fields", description: "Name and Image are required." });
       return;
     }
     
-    if (saveLoading) return; // Prevent double submissions
+    if (saveLoading) return;
     setSaveLoading(true);
     
     const isEditing = !!editingItem;
@@ -152,38 +156,30 @@ export const AdminSection = () => {
       updatedAt: serverTimestamp()
     };
 
-    try {
-      // Use await to ensure the operation completes before proceeding
-      await setDoc(itemRef, finalData, { merge: true });
-      
-      toast({ 
-        title: isEditing ? "Item Updated" : "Dish Published 🚀", 
-        description: `${finalData.name} is now live.` 
+    // Use non-blocking mutation pattern
+    setDoc(itemRef, finalData, { merge: true })
+      .then(() => {
+        toast({ 
+          title: isEditing ? "Item Updated" : "Dish Published 🚀", 
+          description: `${finalData.name} is now live.` 
+        });
+        if (isEditing) setIsMenuDialogOpen(false);
+        resetForm();
+        setSaveLoading(false);
+      })
+      .catch(async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: itemRef.path, 
+          operation: 'write', 
+          requestResourceData: finalData 
+        }));
+        toast({
+          variant: "destructive",
+          title: "Publishing Failed",
+          description: "Check permissions or internet connection."
+        });
+        setSaveLoading(false);
       });
-
-      // If editing, close modal. If adding, keep open for next item as requested.
-      if (isEditing) {
-        setIsMenuDialogOpen(false);
-      }
-      
-      // Always reset form for fresh entry
-      resetForm();
-      
-    } catch (error: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-        path: itemRef.path, 
-        operation: 'write', 
-        requestResourceData: finalData 
-      }));
-      toast({
-        variant: "destructive",
-        title: "Publishing Failed",
-        description: "Check permissions or internet connection."
-      });
-    } finally {
-      // CRITICAL: Ensure loading is stopped in all cases
-      setSaveLoading(false);
-    }
   };
 
   const handleEditClick = (item: any) => {
@@ -201,14 +197,16 @@ export const AdminSection = () => {
     setIsMenuDialogOpen(true);
   };
 
-  const handleDeleteItem = async (id: string) => {
+  const handleDeleteItem = (id: string) => {
     if (!db || !window.confirm("Remove this dish from menu?")) return;
     const itemRef = doc(db, 'menu', id);
-    try {
-      await deleteDoc(itemRef);
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: itemRef.path, operation: 'delete' }));
-    }
+    deleteDoc(itemRef)
+      .catch(async (e) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: itemRef.path, 
+          operation: 'delete' 
+        }));
+      });
   };
 
   const handleGeneratePromo = async () => {
