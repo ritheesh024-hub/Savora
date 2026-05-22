@@ -20,7 +20,6 @@ import {
   Loader2, 
   Trash2,
   UserCheck,
-  ShieldCheck,
   MapPin,
   Phone
 } from 'lucide-react';
@@ -61,10 +60,22 @@ export default function CheckoutPage() {
   const deliveryFee = subtotal >= 149 ? 0 : 40;
   const total = subtotal + deliveryFee;
 
-  const handleNext = () => setStep(step + 1);
+  const handleNext = () => {
+    if (step === 2) {
+      if (!formData.name || !formData.phone || !formData.address) {
+        toast({ variant: "destructive", title: "Details Required", description: "Please fill in all delivery info." });
+        return;
+      }
+      if (formData.phone.length < 10) {
+        toast({ variant: "destructive", title: "Invalid Phone", description: "Please enter a valid 10-digit number." });
+        return;
+      }
+    }
+    setStep(step + 1);
+  };
+
   const handleBack = () => setStep(step - 1);
 
-  // Auto-fill logic when phone number is entered (optional/frictionless)
   const checkReturningUser = async (phoneNumber: string) => {
     if (phoneNumber.length === 10 && db) {
       try {
@@ -89,16 +100,6 @@ export default function CheckoutPage() {
 
   const handleSubmit = async () => {
     if (!db) return;
-
-    if (!formData.name || !formData.phone || !formData.address) {
-      toast({ variant: "destructive", title: "Details Required", description: "Please fill in all delivery info." });
-      return;
-    }
-
-    if (formData.phone.length < 10) {
-      toast({ variant: "destructive", title: "Invalid Phone", description: "Please enter a valid 10-digit number." });
-      return;
-    }
 
     setLoading(true);
 
@@ -296,7 +297,7 @@ export default function CheckoutPage() {
             {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
                 <h2 className="text-2xl md:text-4xl font-headline font-black">Payment</h2>
-                <RadioGroup defaultValue={formData.paymentMethod} onValueChange={(v) => setFormData({...formData, paymentMethod: v})} className="space-y-3">
+                <RadioGroup value={formData.paymentMethod} onValueChange={(v) => setFormData({...formData, paymentMethod: v})} className="space-y-3">
                   <Label htmlFor="cod" className={cn("flex items-center gap-4 p-4 md:p-6 rounded-2xl border-2 cursor-pointer transition-all", formData.paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'bg-card border-transparent')}>
                     <RadioGroupItem value="cod" id="cod" className="sr-only" />
                     <Truck className={cn("w-6 h-6 md:w-8 md:h-8", formData.paymentMethod === 'cod' ? 'text-primary' : 'text-muted-foreground')} />
