@@ -2,29 +2,26 @@
 
 /**
  * @fileOverview Server-side actions for handling SMS OTP generation and verification.
- * This file handles the secure logic of creating codes and calling SMS providers.
+ * Supports Fast2SMS out of the box. 
+ * Sign up at https://www.fast2sms.com to get an API Key.
  */
 
 import { initializeFirebase } from '@/firebase';
 import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
-// In a real app, you'd store these in .env
-const SMS_API_KEY = process.env.SMS_PROVIDER_API_KEY || 'YOUR_API_KEY';
-const SMS_PROVIDER_URL = 'https://www.fast2sms.com/dev/bulkV2'; // Example for Fast2SMS
-
 /**
  * Sends a 4-digit OTP to the provided phone number.
+ * If FAST2SMS_API_KEY is missing, it logs to the console (Development Mode).
  */
 export async function sendSMSOTP(phoneNumber: string) {
   const { db } = initializeFirebase();
   
   // 1. Generate a random 4-digit OTP
   const otp = Math.floor(1000 + Math.random() * 9000).toString();
-  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes from now
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes validity
 
   try {
     // 2. Store the OTP in Firestore for verification
-    // We use a dedicated collection 'otp_codes' keyed by phone number
     const otpRef = doc(db, 'otp_codes', phoneNumber);
     await setDoc(otpRef, {
       otp,
@@ -32,29 +29,36 @@ export async function sendSMSOTP(phoneNumber: string) {
       createdAt: serverTimestamp(),
     });
 
-    // 3. Call the SMS Provider API
-    // This is a placeholder for your actual provider call (e.g., Fast2SMS, MSG91, Twilio)
-    console.log(`[SMS Provider] Sending OTP ${otp} to +91${phoneNumber}`);
-    
-    /* 
-    // Example implementation for Fast2SMS:
-    const response = await fetch(SMS_PROVIDER_URL, {
-      method: 'POST',
-      headers: {
-        'authorization': SMS_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        "variables_values": otp,
-        "route": "otp",
-        "numbers": phoneNumber,
-      })
-    });
-    const result = await response.json();
-    if (!result.return) throw new Error(result.message);
-    */
+    // 3. SMS Provider Logic
+    const API_KEY = process.env.FAST2SMS_API_KEY;
 
-    return { success: true, message: 'OTP sent successfully' };
+    if (!API_KEY || API_KEY === 'YOUR_API_KEY') {
+      // DEVELOPMENT MODE: Log to terminal
+      console.log('------------------------------------------');
+      console.log('🚀 DEVELOPMENT MODE: OTP GENERATED');
+      console.log(`📱 Phone: +91${phoneNumber}`);
+      console.log(`🔐 OTP Code: ${otp}`);
+      console.log('💡 To send real SMS, add FAST2SMS_API_KEY to your .env');
+      console.log('------------------------------------------');
+      
+      return { 
+        success: true, 
+        message: 'OTP generated! Check your server console/terminal to see the code.' 
+      };
+    }
+
+    // PRODUCTION MODE: Call Fast2SMS API
+    // Using their BulkV2 OTP Route
+    const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${API_KEY}&route=otp&variables_values=${otp}&numbers=${phoneNumber}`;
+    
+    const response = await fetch(url, { method: 'GET' });
+    const result = await response.json();
+
+    if (!result.return) {
+      throw new Error(result.message || 'SMS Provider rejected the request');
+    }
+
+    return { success: true, message: 'OTP sent successfully via SMS' };
   } catch (error: any) {
     console.error('Failed to send OTP:', error);
     return { success: false, message: error.message || 'Failed to send OTP' };
