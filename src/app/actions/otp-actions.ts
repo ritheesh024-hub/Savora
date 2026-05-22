@@ -1,9 +1,9 @@
+
 'use server';
 
 /**
  * @fileOverview Server-side actions for handling SMS OTP generation and verification.
- * Supports Fast2SMS out of the box. 
- * Sign up at https://www.fast2sms.com to get an API Key.
+ * Supports Twilio and Fast2SMS, or falls back to Console Logging for Development.
  */
 
 import { initializeFirebase } from '@/firebase';
@@ -11,7 +11,7 @@ import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from 'firebase/firest
 
 /**
  * Sends a 4-digit OTP to the provided phone number.
- * If FAST2SMS_API_KEY is missing, it logs to the console (Development Mode).
+ * Falls back to console logging if no API keys are found.
  */
 export async function sendSMSOTP(phoneNumber: string) {
   const { db } = initializeFirebase();
@@ -29,36 +29,57 @@ export async function sendSMSOTP(phoneNumber: string) {
       createdAt: serverTimestamp(),
     });
 
-    // 3. SMS Provider Logic
-    const API_KEY = process.env.FAST2SMS_API_KEY;
+    // 3. SMS Provider Selection
+    const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID;
+    const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+    const TWILIO_PHONE = process.env.TWILIO_PHONE_NUMBER;
+    const FAST2SMS_KEY = process.env.FAST2SMS_API_KEY;
 
-    if (!API_KEY || API_KEY === 'YOUR_API_KEY') {
-      // DEVELOPMENT MODE: Log to terminal
-      console.log('------------------------------------------');
-      console.log('🚀 DEVELOPMENT MODE: OTP GENERATED');
-      console.log(`📱 Phone: +91${phoneNumber}`);
-      console.log(`🔐 OTP Code: ${otp}`);
-      console.log('💡 To send real SMS, add FAST2SMS_API_KEY to your .env');
-      console.log('------------------------------------------');
+    // --- TWILIO INTEGRATION (Recommended for Free Trials) ---
+    if (TWILIO_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE) {
+      const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64');
+      const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${auth}`
+        },
+        body: new URLSearchParams({
+          To: `+91${phoneNumber}`,
+          From: TWILIO_PHONE,
+          Body: `Your Ezzy Bites verification code is: ${otp}`
+        })
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Twilio failed to send SMS');
       
-      return { 
-        success: true, 
-        message: 'OTP generated! Check your server console/terminal to see the code.' 
-      };
+      return { success: true, message: 'OTP sent successfully via Twilio' };
     }
 
-    // PRODUCTION MODE: Call Fast2SMS API
-    // Using their BulkV2 OTP Route
-    const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${API_KEY}&route=otp&variables_values=${otp}&numbers=${phoneNumber}`;
-    
-    const response = await fetch(url, { method: 'GET' });
-    const result = await response.json();
-
-    if (!result.return) {
-      throw new Error(result.message || 'SMS Provider rejected the request');
+    // --- FAST2SMS INTEGRATION ---
+    if (FAST2SMS_KEY && FAST2SMS_KEY !== 'YOUR_API_KEY') {
+      const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${FAST2SMS_KEY}&route=otp&variables_values=${otp}&numbers=${phoneNumber}`;
+      const response = await fetch(url, { method: 'GET' });
+      const result = await response.json();
+      if (!result.return) throw new Error(result.message || 'Fast2SMS failed to send SMS');
+      
+      return { success: true, message: 'OTP sent successfully via Fast2SMS' };
     }
 
-    return { success: true, message: 'OTP sent successfully via SMS' };
+    // --- DEVELOPMENT SIMULATOR (Fallback) ---
+    // If no keys are set, we log to the server console.
+    console.log('\n--- EZZY BITES OTP SIMULATOR ---');
+    console.log(`📱 TO: +91 ${phoneNumber}`);
+    console.log(`🔐 CODE: ${otp}`);
+    console.log(`💡 NOTE: Add TWILIO or FAST2SMS keys to .env for real SMS.`);
+    console.log('--------------------------------\n');
+
+    return { 
+      success: true, 
+      message: 'SIMULATOR MODE: Check your server terminal/logs for the 4-digit code.' 
+    };
+
   } catch (error: any) {
     console.error('Failed to send OTP:', error);
     return { success: false, message: error.message || 'Failed to send OTP' };
@@ -79,16 +100,16 @@ export async function verifySMSOTP(phoneNumber: string, enteredOtp: string) {
       return { success: false, message: 'OTP expired or not requested' };
     }
 
-    const { otp, expiresAt } = otpSnap.data();
-
+    const data = otpSnap.data();
+    
     // Check if expired
-    if (Date.now() > expiresAt) {
+    if (Date.now() > data.expiresAt) {
       await deleteDoc(otpRef);
       return { success: false, message: 'OTP has expired' };
     }
 
     // Check if matches
-    if (otp !== enteredOtp) {
+    if (data.otp !== enteredOtp) {
       return { success: false, message: 'Invalid OTP code' };
     }
 
