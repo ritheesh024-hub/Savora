@@ -1,77 +1,19 @@
 
 {
   "placeholderImages": [
-    {
-      "id": "hero-bg",
-      "description": "Premium restaurant atmosphere",
-      "imageUrl": "https://picsum.photos/seed/restaurant-ambience/1920/1080",
-      "imageHint": "restaurant interior"
-    },
-    {
-      "id": "cat-maggie",
-      "description": "Hot bowl of noodles",
-      "imageUrl": "https://picsum.photos/seed/spicy-noodles/200/200",
-      "imageHint": "maggie noodles"
-    },
-    {
-      "id": "cat-biryani",
-      "description": "Aromatic rice dish",
-      "imageUrl": "https://picsum.photos/seed/hyderabadi-biryani/200/200",
-      "imageHint": "chicken biryani"
-    },
-    {
-      "id": "cat-momos",
-      "description": "Steamed dumplings",
-      "imageUrl": "https://picsum.photos/seed/steamed-dumplings/200/200",
-      "imageHint": "momos dumplings"
-    },
-    {
-      "id": "cat-ice-creams",
-      "description": "Cold desserts",
-      "imageUrl": "https://picsum.photos/seed/dessert-icecream/200/200",
-      "imageHint": "ice cream"
-    },
-    {
-      "id": "food-maggie-1",
-      "description": "Classic Veg Maggie with vegetables",
-      "imageUrl": "https://picsum.photos/seed/veg-maggie/600/400",
-      "imageHint": "vegetable noodles"
-    },
-    {
-      "id": "food-maggie-2",
-      "description": "Egg Maggie Special with boiled eggs",
-      "imageUrl": "https://picsum.photos/seed/egg-noodles-dish/600/400",
-      "imageHint": "egg noodles"
-    },
-    {
-      "id": "food-biryani-1",
-      "description": "Authentic Chicken Biryani with saffron rice",
-      "imageUrl": "https://picsum.photos/seed/spicy-biryani/600/400",
-      "imageHint": "biryani plate"
-    },
-    {
-      "id": "food-momos-1",
-      "description": "Fresh Paneer Steam Momos",
-      "imageUrl": "https://picsum.photos/seed/paneer-momos/600/400",
-      "imageHint": "steamed momos"
-    },
-    {
-      "id": "food-icecream-1",
-      "description": "Rich Chocolate Sundae",
-      "imageUrl": "https://picsum.photos/seed/chocolate-sundae/600/400",
-      "imageHint": "chocolate sundae"
-    },
-    {
-      "id": "food-maggie-3",
-      "description": "Spicy Roasted Chicken Maggie",
-      "imageUrl": "https://picsum.photos/seed/chicken-maggie/600/400",
-      "imageHint": "chicken noodles"
-    },
-    {
-      "id": "qr-code",
-      "description": "Official Ezzy Bites UPI QR Code",
-      "imageUrl": "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=upi://pay?pa=8639366800@ybl%26pn=Ezzy%20Bites%26cu=INR",
-      "imageHint": "payment qr"
-    }
+    { "id": "hero-bg", "description": "Premium restaurant atmosphere", "imageUrl": "https://picsum.photos/seed/restaurant-ambience/1920/1080", "imageHint": "restaurant interior" },
+    { "id": "tea-masala", "description": "Masala Tea in clay cup", "imageUrl": "https://picsum.photos/seed/masala-tea/600/400", "imageHint": "masala tea" },
+    { "id": "tea-ginger", "description": "Ginger Tea", "imageUrl": "https://picsum.photos/seed/ginger-tea/600/400", "imageHint": "ginger tea" },
+    { "id": "tea-green", "description": "Green Tea", "imageUrl": "https://picsum.photos/seed/green-tea/600/400", "imageHint": "green tea" },
+    { "id": "tea-lemon", "description": "Lemon Tea", "imageUrl": "https://picsum.photos/seed/lemon-tea/600/400", "imageHint": "lemon tea" },
+    { "id": "tea-ice", "description": "Ice Tea", "imageUrl": "https://picsum.photos/seed/ice-tea/600/400", "imageHint": "ice tea" },
+    { "id": "coffee-classic", "description": "Classic Coffee", "imageUrl": "https://picsum.photos/seed/coffee-cup/600/400", "imageHint": "coffee cup" },
+    { "id": "coffee-filter", "description": "South Indian Filter Coffee", "imageUrl": "https://picsum.photos/seed/filter-coffee/600/400", "imageHint": "filter coffee" },
+    { "id": "coffee-cold", "description": "Cold Coffee", "imageUrl": "https://picsum.photos/seed/cold-coffee/600/400", "imageHint": "cold coffee" },
+    { "id": "coffee-cappuccino", "description": "Cappuccino", "imageUrl": "https://picsum.photos/seed/cappuccino-art/600/400", "imageHint": "cappuccino" },
+    { "id": "coffee-mocha", "description": "Mocha", "imageUrl": "https://picsum.photos/seed/mocha-coffee/600/400", "imageHint": "mocha coffee" },
+    { "id": "food-maggie-1", "description": "Classic Veg Maggie", "imageUrl": "https://picsum.photos/seed/veg-maggie/600/400", "imageHint": "vegetable noodles" },
+    { "id": "food-maggie-2", "description": "Egg Maggie", "imageUrl": "https://picsum.photos/seed/egg-noodles/600/400", "imageHint": "egg noodles" },
+    { "id": "food-biryani-1", "description": "Chicken Biryani", "imageUrl": "https://picsum.photos/seed/spicy-biryani/600/400", "imageHint": "biryani plate" }
   ]
 }

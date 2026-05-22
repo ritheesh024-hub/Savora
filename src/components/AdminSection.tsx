@@ -13,7 +13,7 @@ import {
   IndianRupee, Sparkles, Loader2, 
   Package, Clock, CheckCircle2,
   Megaphone, LayoutDashboard, Trash2, Plus, Edit2, Link as LinkIcon,
-  ChevronRight, MapPin, Phone, ShoppingBag, Database, Info
+  ChevronRight, MapPin, Phone, ShoppingBag, Database, Info, Coffee
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CATEGORIES, MENU_ITEMS } from '@/app/lib/menu-data';
@@ -51,7 +51,7 @@ export const AdminSection = () => {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [menuFormData, setMenuFormData] = useState({
-    name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5'
+    name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5', isBeverage: false
   });
 
   const sortedOrders = useMemo(() => {
@@ -80,7 +80,7 @@ export const AdminSection = () => {
 
   const resetForm = () => {
     setEditingItem(null);
-    setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5' });
+    setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5', isBeverage: false });
   };
 
   const handleSeedMenu = async () => {
@@ -89,15 +89,14 @@ export const AdminSection = () => {
     try {
       const batch = writeBatch(db);
       MENU_ITEMS.forEach((item) => {
-        const itemRef = doc(db, 'products', `PROD-${item.id}`);
+        const itemRef = doc(db, 'products', item.id);
         batch.set(itemRef, {
           ...item,
-          id: `PROD-${item.id}`,
           createdAt: serverTimestamp()
         }, { merge: true });
       });
       await batch.commit();
-      toast({ title: "Sample Menu Seeded!", description: "Initial products are now live." });
+      toast({ title: "Menu Seeded!", description: "Beverages and Snacks are now live." });
     } catch (error) {
       toast({ variant: "destructive", title: "Seeding Failed", description: "Could not seed sample data." });
     } finally {
@@ -124,6 +123,7 @@ export const AdminSection = () => {
       imageUrl: menuFormData.imageUrl.trim(),
       isVeg: menuFormData.isVeg,
       isAvailable: menuFormData.isAvailable,
+      isBeverage: menuFormData.isBeverage,
       rating: Number(menuFormData.rating) || 4.5,
       createdAt: editingItem?.createdAt || serverTimestamp()
     };
@@ -225,9 +225,19 @@ export const AdminSection = () => {
                              <div className="space-y-3">
                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Items Summary</p>
                                {order.items?.map((item: any, i: number) => (
-                                 <div key={i} className="flex justify-between items-center bg-secondary/30 p-3 md:p-4 rounded-[1.2rem] text-[10px] font-black">
-                                   <span className="truncate mr-2">{item.name} <span className="text-primary italic">x{item.quantity}</span></span>
-                                   <span className="text-primary shrink-0">₹{item.price * item.quantity}</span>
+                                 <div key={i} className="flex flex-col bg-secondary/30 p-4 rounded-[1.2rem] gap-1">
+                                   <div className="flex justify-between items-center text-[10px] font-black">
+                                     <span className="truncate mr-2">{item.name} <span className="text-primary italic">x{item.quantity}</span></span>
+                                     <span className="text-primary shrink-0">₹{item.price * item.quantity}</span>
+                                   </div>
+                                   {item.customization && (
+                                     <div className="text-[8px] font-bold text-muted-foreground/60 uppercase flex flex-wrap gap-2">
+                                       <span>{item.customization.size}</span>
+                                       <span>{item.customization.temp}</span>
+                                       <span>Sugar: {item.customization.sugar}</span>
+                                       {item.customization.addons.length > 0 && <span>Adds: {item.customization.addons.join(', ')}</span>}
+                                     </div>
+                                   )}
                                  </div>
                                ))}
                              </div>
@@ -276,7 +286,7 @@ export const AdminSection = () => {
               </Button>
               <Button onClick={handleSeedMenu} disabled={isSeeding} variant="outline" className="rounded-2xl h-14 md:h-16 px-8 md:px-12 font-black uppercase tracking-widest text-[10px] gap-3 w-full sm:w-auto transition-all border-2">
                 {isSeeding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Database className="w-5 h-5" />}
-                Seed Sample Menu
+                Seed Premium Menu
               </Button>
             </div>
 
@@ -302,7 +312,7 @@ export const AdminSection = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                     <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase tracking-widest ml-1 opacity-60">Price (₹)</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest ml-1 opacity-60">Base Price (₹)</Label>
                       <Input 
                         type="number" 
                         value={menuFormData.price} 
@@ -322,25 +332,40 @@ export const AdminSection = () => {
                     </div>
                   </div>
 
-                  {/* Dietary Switch */}
-                  <div className="p-4 md:p-6 rounded-2xl bg-secondary/30 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all", menuFormData.isVeg ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
-                        <Info className="w-5 h-5" />
+                  {/* Dietary & Beverage Switches */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 md:p-6 rounded-2xl bg-secondary/30 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all", menuFormData.isVeg ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
+                          <Info className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Dietary</Label>
+                          <p className="text-sm font-black">{menuFormData.isVeg ? 'Veg' : 'Non-Veg'}</p>
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Dietary Preference</Label>
-                        <p className="text-sm font-black">{menuFormData.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className={cn("text-[9px] font-black uppercase", !menuFormData.isVeg ? "text-red-500" : "text-muted-foreground")}>Non-Veg</span>
                       <Switch 
                         checked={menuFormData.isVeg} 
                         onCheckedChange={(checked) => setMenuFormData({...menuFormData, isVeg: checked})} 
                         className="data-[state=checked]:bg-green-500"
                       />
-                      <span className={cn("text-[9px] font-black uppercase", menuFormData.isVeg ? "text-green-500" : "text-muted-foreground")}>Veg</span>
+                    </div>
+                    
+                    <div className="p-4 md:p-6 rounded-2xl bg-secondary/30 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all", menuFormData.isBeverage ? "bg-amber-100 text-amber-600" : "bg-blue-100 text-blue-600")}>
+                          <Coffee className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Type</Label>
+                          <p className="text-sm font-black">{menuFormData.isBeverage ? 'Beverage' : 'Solid'}</p>
+                        </div>
+                      </div>
+                      <Switch 
+                        checked={menuFormData.isBeverage} 
+                        onCheckedChange={(checked) => setMenuFormData({...menuFormData, isBeverage: checked})} 
+                        className="data-[state=checked]:bg-amber-500"
+                      />
                     </div>
                   </div>
                   
@@ -404,12 +429,17 @@ export const AdminSection = () => {
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex-1 min-w-0 mr-4">
                         <h4 className="font-black text-lg truncate tracking-tight">{item.name}</h4>
-                        <p className={cn(
-                          "text-[9px] font-black uppercase tracking-widest mt-1",
-                          item.isVeg ? "text-green-600" : "text-red-600"
-                        )}>
-                          {item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
-                        </p>
+                        <div className="flex gap-2 mt-1">
+                          <p className={cn(
+                            "text-[8px] font-black uppercase tracking-widest",
+                            item.isVeg ? "text-green-600" : "text-red-600"
+                          )}>
+                            {item.isVeg ? 'Veg' : 'Non-Veg'}
+                          </p>
+                          {item.isBeverage && (
+                            <p className="text-[8px] font-black uppercase tracking-widest text-amber-600">Beverage</p>
+                          )}
+                        </div>
                       </div>
                       <p className="text-xl md:text-2xl font-black text-primary italic shrink-0">₹{item.price}</p>
                     </div>

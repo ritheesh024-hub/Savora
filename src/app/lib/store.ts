@@ -3,6 +3,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export interface BeverageOptions {
+  size: 'Small' | 'Medium' | 'Large';
+  sugar: 'None' | 'Less' | 'Regular' | 'Extra';
+  temp: 'Hot' | 'Cold';
+  addons: string[];
+}
+
 export interface FoodItem {
   id: string;
   name: string;
@@ -13,18 +20,23 @@ export interface FoodItem {
   isVeg: boolean;
   rating: number;
   isAvailable: boolean;
+  isBeverage?: boolean;
+  isBestSeller?: boolean;
+  isPopular?: boolean;
   createdAt?: any;
 }
 
-interface CartItem extends FoodItem {
+export interface CartItem extends FoodItem {
   quantity: number;
+  customization?: BeverageOptions;
+  cartId: string; // Unique ID for cart matching (id + stringified options)
 }
 
 interface AppStore {
   cart: CartItem[];
-  addToCart: (item: FoodItem) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, delta: number) => void;
+  addToCart: (item: FoodItem, customization?: BeverageOptions) => void;
+  removeFromCart: (cartId: string) => void;
+  updateQuantity: (cartId: string, delta: number) => void;
   clearCart: () => void;
   getTotal: () => number;
 }
@@ -33,28 +45,44 @@ export const useStore = create<AppStore>()(
   persist(
     (set, get) => ({
       cart: [],
-      addToCart: (item) => set((state) => {
-        const existing = state.cart.find((i) => i.id === item.id);
+      addToCart: (item, customization) => set((state) => {
+        const cartId = customization 
+          ? `${item.id}-${customization.size}-${customization.temp}-${customization.sugar}-${customization.addons.sort().join(',')}`
+          : item.id;
+
+        const existing = state.cart.find((i) => i.cartId === cartId);
+        
         if (existing) {
           return {
             cart: state.cart.map((i) => 
-              i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+              i.cartId === cartId ? { ...i, quantity: i.quantity + 1 } : i
             )
           };
         }
-        return { cart: [...state.cart, { ...item, quantity: 1 }] };
+
+        // Price modifier for sizes
+        let finalPrice = item.price;
+        if (customization) {
+          if (customization.size === 'Medium') finalPrice += 20;
+          if (customization.size === 'Large') finalPrice += 40;
+          finalPrice += customization.addons.length * 15; // 15 per addon
+        }
+
+        return { 
+          cart: [...state.cart, { ...item, price: finalPrice, quantity: 1, customization, cartId }] 
+        };
       }),
-      removeFromCart: (id) => set((state) => ({
-        cart: state.cart.filter((i) => i.id !== id)
+      removeFromCart: (cartId) => set((state) => ({
+        cart: state.cart.filter((i) => i.cartId !== cartId)
       })),
-      updateQuantity: (id, delta) => set((state) => ({
+      updateQuantity: (cartId, delta) => set((state) => ({
         cart: state.cart.map((i) => 
-          i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i
+          i.cartId === cartId ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i
         ).filter(i => i.quantity > 0)
       })),
       clearCart: () => set({ cart: [] }),
       getTotal: () => get().cart.reduce((acc, item) => acc + item.price * item.quantity, 0),
     }),
-    { name: 'ezzy-bites-storage' }
+    { name: 'ezzy-bites-beverage-storage' }
   )
 );
