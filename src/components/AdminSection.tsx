@@ -43,7 +43,7 @@ export const AdminSection = () => {
     if (!db) return null;
     return query(collection(db, 'products'));
   }, [db]);
-  const { data: dbMenu, loading: menuLoading } = useCollection<any>(dbMenu);
+  const { data: dbMenu, loading: menuLoading } = useCollection<any>(menuQuery);
 
   const orderGroups = useMemo(() => {
     const groups = {
@@ -329,7 +329,7 @@ export const AdminSection = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="marketing">
+          <TabsContent value="marketing" className="space-y-10">
              <Card className="rounded-[4rem] border-none shadow-3xl bg-white p-12 md:p-24 overflow-hidden relative">
                 <div className="max-w-4xl relative z-10">
                   <h3 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-12 flex items-center gap-6">
