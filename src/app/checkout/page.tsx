@@ -95,7 +95,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async () => {
     if (!db) {
-      toast({ variant: "destructive", title: "System Offline", description: "Database is not available. Please try again later." });
+      toast({ variant: "destructive", title: "System Offline" });
       return;
     }
 
@@ -112,20 +112,22 @@ export default function CheckoutPage() {
         id: item.id,
         name: item.name,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        customization: item.customization || null
       })),
       subtotal: Number(subtotal),
       deliveryFee: Number(deliveryFee),
       total: Number(total),
       status: 'Pending',
       paymentMethod: formData.paymentMethod,
-      userId: formData.phone,
+      orderType: 'Online',
       createdAt: serverTimestamp()
     };
 
     const orderRef = doc(db, 'orders', currentOrderId);
     setDoc(orderRef, orderData)
       .then(() => {
+        // Update User Profile
         const userRef = doc(db, 'users', formData.phone);
         setDoc(userRef, {
           phone: formData.phone,
@@ -193,30 +195,26 @@ export default function CheckoutPage() {
 
         <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-6 md:gap-10">
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
-            {!db && (
-              <Card className="bg-destructive/10 border-destructive text-destructive p-4 rounded-2xl flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 shrink-0" />
-                <p className="text-sm font-bold">Connecting to servers... Features may be limited.</p>
-              </Card>
-            )}
-
             {step === 1 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
                 <h2 className="text-2xl md:text-4xl font-headline font-black">Review Order</h2>
                 <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl overflow-hidden bg-card">
                   <div className="divide-y">
                     {cart.map((item) => (
-                      <div key={item.id} className="p-4 md:p-6 flex gap-4 md:gap-6 items-center">
+                      <div key={item.cartId} className="p-4 md:p-6 flex gap-4 md:gap-6 items-center">
                         <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl md:rounded-2xl overflow-hidden bg-secondary shrink-0">
                           <Image src={item.imageUrl} alt={item.name} fill className="object-cover" unoptimized />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-sm md:text-lg truncate">{item.name}</h4>
-                          <Badge variant="secondary" className="mt-1 text-[10px]">Qty: {item.quantity}</Badge>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            <Badge variant="secondary" className="text-[9px]">Qty: {item.quantity}</Badge>
+                            {item.customization && <Badge variant="outline" className="text-[9px] border-primary/20 text-primary">{item.customization.size}</Badge>}
+                          </div>
                         </div>
                         <div className="text-right">
                           <p className="font-black text-base md:text-xl text-primary">₹{item.price * item.quantity}</p>
-                          <button onClick={() => removeFromCart(item.id)} className="text-muted-foreground hover:text-destructive mt-2 transition-colors">
+                          <button onClick={() => removeFromCart(item.cartId)} className="text-muted-foreground hover:text-destructive mt-2 transition-colors">
                             <Trash2 className="w-4 h-4 ml-auto" />
                           </button>
                         </div>

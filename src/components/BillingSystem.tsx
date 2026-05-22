@@ -7,17 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
 import { 
-  Calculator, Receipt, History, BarChart3, 
+  Calculator, Receipt, History, 
   Search, Plus, Minus, Trash2, Printer, 
-  ShoppingBag, CheckCircle2, Truck, Utensils, 
-  Package, MapPin, Smartphone, User,
-  Clock, CreditCard
+  ShoppingBag, Utensils, 
+  Package, Smartphone, User,
+  Clock, X
 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -37,7 +36,6 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
   const [customerInfo, setCustomerInfo] = useState({ 
     name: '', 
     phone: '', 
-    address: '', 
     notes: '' 
   });
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,10 +86,6 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
       toast({ variant: "destructive", title: "Mobile Required", description: "Customer mobile number is essential." });
       return;
     }
-    if (orderType === 'Delivery' && !customerInfo.address) {
-      toast({ variant: "destructive", title: "Address Required", description: "Please enter a delivery address." });
-      return;
-    }
 
     const billId = `EB-${Date.now().toString().slice(-6)}`;
     const billData = {
@@ -99,9 +93,8 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
       customerName: customerInfo.name || 'Guest Customer',
       customerPhone: customerInfo.phone,
       orderType: orderType,
-      address: orderType === 'Delivery' ? customerInfo.address : '',
       instructions: customerInfo.notes,
-      items: activeBill,
+      items: activeBill.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
       subtotal,
       discount,
       total,
@@ -121,7 +114,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
         toast({ title: "Bill Generated Successfully! 🧾" });
         setViewingInvoice(billData);
         setActiveBill([]);
-        setCustomerInfo({ name: '', phone: '', address: '', notes: '' });
+        setCustomerInfo({ name: '', phone: '', notes: '' });
         setDiscount(0);
       } catch (e) {
         toast({ variant: "destructive", title: "Generation Failed" });
@@ -143,9 +136,8 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
 
         <TabsContent value="pos">
           {/* Order Type Selection */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-4 mb-6">
             {[
-              { id: 'Delivery', icon: Truck, label: 'Delivery' },
               { id: 'Dine-In', icon: Utensils, label: 'Dine-In' },
               { id: 'Take Away', icon: Package, label: 'Take Away' }
             ].map(type => (
@@ -153,14 +145,14 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                 key={type.id}
                 onClick={() => setOrderType(type.id)}
                 className={cn(
-                  "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2",
+                  "flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all gap-3",
                   orderType === type.id 
                     ? "border-primary bg-primary/5 text-primary shadow-lg shadow-primary/10" 
                     : "border-muted bg-white text-muted-foreground hover:border-primary/20"
                 )}
               >
                 <type.icon className={cn("w-6 h-6", orderType === type.id ? "text-primary" : "text-muted-foreground")} />
-                <span className="text-[10px] font-black uppercase tracking-widest">{type.label}</span>
+                <span className="text-xs font-black uppercase tracking-widest">{type.label}</span>
               </button>
             ))}
           </div>
@@ -185,28 +177,30 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                     {filteredProducts.map(p => {
                       const cartItem = activeBill.find(i => i.id === p.id);
                       return (
-                        <div key={p.id} className="bg-secondary/20 rounded-[1.5rem] p-3 transition-all hover:shadow-md border-2 border-transparent hover:border-primary/10">
-                          <div className="aspect-square rounded-xl overflow-hidden mb-2 relative bg-white">
+                        <div key={p.id} className="bg-secondary/20 rounded-[1.5rem] p-3 transition-all hover:shadow-md border-2 border-transparent hover:border-primary/10 flex flex-col h-full">
+                          <div className="aspect-square rounded-xl overflow-hidden mb-3 relative bg-white">
                             <Image src={p.imageUrl} alt={p.name} fill className="object-cover" unoptimized />
                           </div>
-                          <h4 className="font-bold text-[11px] truncate">{p.name}</h4>
-                          <p className="text-primary font-black text-xs mt-0.5">₹{p.price}</p>
+                          <h4 className="font-bold text-[11px] truncate leading-tight mb-1">{p.name}</h4>
+                          <p className="text-primary font-black text-xs">₹{p.price}</p>
                           
-                          {cartItem ? (
-                            <div className="flex items-center justify-between w-full bg-primary text-white rounded-lg h-8 px-1 mt-2">
-                              <button onClick={() => updateQuantity(p.id, -1)} className="p-1"><Minus className="w-3 h-3" /></button>
-                              <span className="font-black text-xs">{cartItem.quantity}</span>
-                              <button onClick={() => updateQuantity(p.id, 1)} className="p-1"><Plus className="w-3 h-3" /></button>
-                            </div>
-                          ) : (
-                            <Button 
-                              onClick={() => addToBill(p)} 
-                              variant="outline" 
-                              className="w-full h-8 mt-2 rounded-lg border-primary/30 text-primary font-black uppercase text-[9px] hover:bg-primary hover:text-white"
-                            >
-                              Add
-                            </Button>
-                          )}
+                          <div className="mt-auto pt-3">
+                            {cartItem ? (
+                              <div className="flex items-center justify-between w-full bg-primary text-white rounded-xl h-10 px-2">
+                                <button onClick={() => updateQuantity(p.id, -1)} className="p-1 hover:bg-white/20 rounded-lg"><Minus className="w-3.5 h-3.5" /></button>
+                                <span className="font-black text-xs">{cartItem.quantity}</span>
+                                <button onClick={() => updateQuantity(p.id, 1)} className="p-1 hover:bg-white/20 rounded-lg"><Plus className="w-3.5 h-3.5" /></button>
+                              </div>
+                            ) : (
+                              <Button 
+                                onClick={() => addToBill(p)} 
+                                variant="outline" 
+                                className="w-full h-10 rounded-xl border-primary/30 text-primary font-black uppercase text-[9px] hover:bg-primary hover:text-white transition-all"
+                              >
+                                <Plus className="w-3 h-3 mr-1" /> Add
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -217,123 +211,116 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
 
             {/* Bill Cart Section */}
             <div className="space-y-6">
-              <Card className="rounded-[2rem] border-none shadow-2xl bg-white sticky top-24">
+              <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white sticky top-24">
                 <CardHeader className="p-6 border-b flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-lg font-black font-headline">Current Tray</CardTitle>
-                    <Badge variant="outline" className="text-[8px] font-black uppercase bg-primary/5 text-primary border-none">
+                    <Badge variant="outline" className="text-[9px] font-black uppercase bg-primary/5 text-primary border-none py-1">
                       {orderType}
                     </Badge>
                   </div>
                   {activeBill.length > 0 && (
-                    <button onClick={() => setActiveBill([])} className="text-destructive p-2 hover:bg-destructive/5 rounded-full transition-colors">
-                      <Trash2 className="w-4 h-4" />
+                    <button onClick={() => setActiveBill([])} className="text-destructive p-2.5 hover:bg-destructive/5 rounded-full transition-colors">
+                      <Trash2 className="w-4.5 h-4.5" />
                     </button>
                   )}
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
-                  {/* Conditional Customer Info */}
+                  {/* Customer Info */}
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-[8px] font-black uppercase opacity-40">Mobile</Label>
+                        <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Mobile</Label>
                         <Input 
                           value={customerInfo.phone} 
                           onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
-                          placeholder="Phone" 
-                          className="h-10 rounded-xl bg-secondary/30 border-none font-black text-xs" 
+                          placeholder="00000 00000" 
+                          className="h-11 rounded-xl bg-secondary/30 border-none font-black text-xs" 
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[8px] font-black uppercase opacity-40">Name</Label>
+                        <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Name</Label>
                         <Input 
                           value={customerInfo.name} 
                           onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} 
                           placeholder="Guest" 
-                          className="h-10 rounded-xl bg-secondary/30 border-none font-bold text-xs" 
+                          className="h-11 rounded-xl bg-secondary/30 border-none font-bold text-xs" 
                         />
                       </div>
                     </div>
 
-                    {orderType === 'Delivery' && (
-                      <div className="space-y-1 animate-in slide-in-from-top duration-300">
-                        <Label className="text-[8px] font-black uppercase opacity-40">Delivery Address</Label>
-                        <Textarea 
-                          value={customerInfo.address} 
-                          onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})} 
-                          placeholder="Complete building/room details" 
-                          className="rounded-xl bg-secondary/30 border-none font-medium text-xs min-h-[60px]" 
-                        />
-                      </div>
-                    )}
-
                     <div className="space-y-1">
-                      <Label className="text-[8px] font-black uppercase opacity-40">Notes (Optional)</Label>
+                      <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Order Notes</Label>
                       <Input 
                         value={customerInfo.notes} 
                         onChange={e => setCustomerInfo({...customerInfo, notes: e.target.value})} 
                         placeholder="e.g. Extra spicy" 
-                        className="h-10 rounded-xl bg-secondary/30 border-none font-medium text-xs" 
+                        className="h-11 rounded-xl bg-secondary/30 border-none font-medium text-xs" 
                       />
                     </div>
                   </div>
 
                   {/* Cart Items List */}
-                  <div className="max-h-[300px] overflow-y-auto space-y-3 scrollbar-hide">
+                  <div className="max-h-[350px] overflow-y-auto space-y-3 pr-1 scrollbar-hide">
                     {activeBill.length === 0 ? (
-                      <div className="text-center py-10 opacity-20">
-                        <ShoppingBag className="w-10 h-10 mx-auto mb-2" />
-                        <p className="text-[9px] font-black uppercase tracking-widest">No items selected</p>
+                      <div className="text-center py-16 opacity-30">
+                        <ShoppingBag className="w-12 h-12 mx-auto mb-3" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em]">No items selected</p>
                       </div>
                     ) : (
                       activeBill.map(item => (
-                        <div key={item.id} className="flex items-center justify-between bg-secondary/10 p-3 rounded-xl">
-                          <div className="flex-1">
-                            <h5 className="font-bold text-xs">{item.name}</h5>
-                            <p className="text-[9px] font-black text-primary/70">₹{item.price}</p>
+                        <div key={item.id} className="flex items-center justify-between bg-secondary/10 p-3.5 rounded-2xl">
+                          <div className="flex-1 min-w-0 mr-3">
+                            <h5 className="font-bold text-xs truncate">{item.name}</h5>
+                            <p className="text-[9px] font-black text-primary/80">₹{item.price}</p>
                           </div>
-                          <div className="flex items-center gap-2 bg-white rounded-lg p-1">
-                            <button onClick={() => updateQuantity(item.id, -1)} className="p-1 hover:bg-secondary rounded"><Minus className="w-2.5 h-2.5" /></button>
-                            <span className="text-[10px] font-black w-4 text-center">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.id, 1)} className="p-1 hover:bg-secondary rounded"><Plus className="w-2.5 h-2.5" /></button>
+                          <div className="flex items-center gap-2 bg-white rounded-xl p-1.5 shadow-sm">
+                            <button onClick={() => updateQuantity(item.id, -1)} className="p-1 hover:bg-secondary rounded-lg transition-colors"><Minus className="w-3 h-3" /></button>
+                            <span className="text-[11px] font-black w-5 text-center">{item.quantity}</span>
+                            <button onClick={() => updateQuantity(item.id, 1)} className="p-1 hover:bg-secondary rounded-lg transition-colors"><Plus className="w-3 h-3" /></button>
                           </div>
-                          <button onClick={() => removeFromBill(item.id)} className="ml-2 text-destructive/40 hover:text-destructive transition-colors">
-                            <X className="w-3.5 h-3.5" />
+                          <button onClick={() => removeFromBill(item.id)} className="ml-3 text-destructive/40 hover:text-destructive transition-colors">
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       ))
                     )}
                   </div>
 
-                  <div className="space-y-2 pt-4 border-t border-dashed">
-                    <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
+                  {/* Pricing Breakdown */}
+                  <div className="space-y-3 pt-6 border-t border-dashed">
+                    <div className="flex justify-between text-xs font-bold text-muted-foreground">
                       <span>Subtotal</span>
                       <span className="text-foreground">₹{subtotal}</span>
                     </div>
-                    <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground">
+                    <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
                       <span>Discount (₹)</span>
                       <Input 
                         type="number" 
                         value={discount} 
                         onChange={e => setDiscount(Number(e.target.value))} 
-                        className="h-7 w-16 text-right bg-transparent border-none p-0 font-black text-foreground focus-visible:ring-0"
+                        className="h-8 w-20 text-right bg-transparent border-none p-0 font-black text-foreground focus-visible:ring-0 text-sm"
                       />
                     </div>
-                    <div className="pt-4 border-t flex justify-between items-end">
-                      <span className="text-[10px] font-black uppercase opacity-40">Grand Total</span>
-                      <span className="text-2xl font-black font-headline text-primary italic">₹{total}</span>
+                    <div className="pt-6 border-t flex justify-between items-end">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase opacity-40">Grand Total</span>
+                        <span className="text-[9px] font-black text-green-600 uppercase tracking-widest mt-0.5">Zero Tax</span>
+                      </div>
+                      <span className="text-3xl font-black font-headline text-primary italic">₹{total}</span>
                     </div>
                   </div>
 
-                  <div className="space-y-4 pt-4">
-                    <div className="grid grid-cols-3 gap-2">
-                      {['Cash', 'UPI', 'Card'].map(m => (
+                  {/* Actions */}
+                  <div className="space-y-4 pt-6">
+                    <div className="grid grid-cols-2 gap-3">
+                      {['Cash', 'UPI'].map(m => (
                         <button 
                           key={m}
                           onClick={() => setPaymentMethod(m)}
                           className={cn(
-                            "h-10 rounded-xl border-2 text-[9px] font-black uppercase transition-all",
-                            paymentMethod === m ? "border-primary bg-primary text-white" : "border-muted text-muted-foreground"
+                            "h-12 rounded-xl border-2 text-[10px] font-black uppercase transition-all",
+                            paymentMethod === m ? "border-primary bg-primary text-white shadow-lg shadow-primary/20" : "border-muted text-muted-foreground hover:border-primary/20"
                           )}
                         >
                           {m}
@@ -342,7 +329,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                     </div>
                     <Button 
                       onClick={generateBill} 
-                      className="w-full h-14 rounded-2xl text-base font-black shadow-xl shadow-primary/20 bg-primary text-white"
+                      className="w-full h-16 rounded-2xl text-base font-black shadow-2xl shadow-primary/30 bg-primary text-white hover:scale-[1.02] transition-all"
                     >
                       Generate Bill
                     </Button>
@@ -368,23 +355,23 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                   <tr className="text-[10px] font-black uppercase text-muted-foreground">
                     <th className="px-6 py-4">ID</th>
                     <th className="px-6 py-4">Customer</th>
-                    <th className="px-6 py-4">Channel</th>
+                    <th className="px-6 py-4">Type</th>
                     <th className="px-6 py-4">Total</th>
                     <th className="px-6 py-4">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {orders.filter(o => o.isStoreBill).map(inv => (
-                    <tr key={inv.orderId} className="hover:bg-secondary/10">
+                    <tr key={inv.orderId} className="hover:bg-secondary/10 transition-colors">
                       <td className="px-6 py-5 font-black text-primary">#{inv.orderId}</td>
                       <td className="px-6 py-5">
                         <p className="font-bold text-xs">{inv.customerName}</p>
                         <p className="text-[10px] text-muted-foreground">{inv.customerPhone}</p>
                       </td>
                       <td className="px-6 py-5">
-                        <Badge variant="outline" className="text-[8px] uppercase font-black bg-secondary border-none">{inv.orderType}</Badge>
+                        <Badge variant="outline" className="text-[9px] uppercase font-black bg-secondary border-none">{inv.orderType}</Badge>
                       </td>
-                      <td className="px-6 py-5 font-black text-sm">₹{inv.total}</td>
+                      <td className="px-6 py-5 font-black text-sm text-primary">₹{inv.total}</td>
                       <td className="px-6 py-5">
                         <Button variant="ghost" size="sm" onClick={() => setViewingInvoice(inv)} className="font-black text-[10px] uppercase gap-2">
                           <Printer className="w-3.5 h-3.5" /> View
@@ -399,95 +386,92 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
         </TabsContent>
       </Tabs>
 
-      {/* Modern Invoice Modal */}
+      {/* Invoice Modal */}
       <Dialog open={!!viewingInvoice} onOpenChange={() => setViewingInvoice(null)}>
         <DialogContent className="max-w-md p-0 rounded-[2.5rem] overflow-hidden border-none shadow-3xl bg-white mx-4">
-          <div id="print-pos-bill" className="p-8 space-y-6 text-black">
-            <div className="text-center space-y-2 border-b-2 border-dashed pb-6">
-              <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-lg rotate-6">
-                <ShoppingBag className="w-6 h-6" />
+          <div id="print-pos-bill" className="p-10 space-y-8 text-black bg-white">
+            <div className="text-center space-y-3 border-b-2 border-dashed pb-8">
+              <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg rotate-6">
+                <ShoppingBag className="w-7 h-7" />
               </div>
-              <h2 className="text-xl font-black font-headline">EZZY BITES CAFE</h2>
-              <p className="text-[10px] font-black uppercase opacity-40">Freshly Made • Premium Taste</p>
-              <Badge className="bg-primary/10 text-primary border-none text-[8px] uppercase font-black px-4 py-1 mt-2">
+              <h2 className="text-2xl font-black font-headline tracking-tight uppercase">EZZY BITES</h2>
+              <p className="text-[10px] font-black uppercase opacity-40 tracking-widest">Premium Fast Food Cafe</p>
+              <Badge className="bg-primary/10 text-primary border-none text-[9px] uppercase font-black px-5 py-1.5 mt-3 rounded-full">
                 {viewingInvoice?.orderType} Receipt
               </Badge>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-[10px] font-bold opacity-70">
-              <div className="space-y-1">
-                <p className="uppercase text-[8px] opacity-50">Customer</p>
-                <p>{viewingInvoice?.customerName}</p>
-                <p>+91 {viewingInvoice?.customerPhone}</p>
-                {viewingInvoice?.address && (
-                   <div className="mt-2 pt-2 border-t border-dashed">
-                      <p className="uppercase text-[8px] opacity-50">Delivery Address</p>
-                      <p className="leading-relaxed">{viewingInvoice.address}</p>
-                   </div>
-                )}
+            <div className="grid grid-cols-2 gap-6 text-[11px] font-bold opacity-80">
+              <div className="space-y-1.5">
+                <p className="uppercase text-[9px] opacity-40 tracking-widest">Customer Info</p>
+                <p className="text-lg font-black">{viewingInvoice?.customerName}</p>
+                <p className="text-primary">+91 {viewingInvoice?.customerPhone}</p>
               </div>
-              <div className="text-right space-y-1">
-                <p className="uppercase text-[8px] opacity-50">Transaction</p>
-                <p className="font-black text-primary">#{viewingInvoice?.orderId}</p>
-                <p>{viewingInvoice?.createdAt ? new Date(viewingInvoice.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Now'}</p>
+              <div className="text-right space-y-1.5">
+                <p className="uppercase text-[9px] opacity-40 tracking-widest">Order Details</p>
+                <p className="font-black text-primary text-lg">#{viewingInvoice?.orderId}</p>
+                <p className="opacity-60">{viewingInvoice?.createdAt ? new Date(viewingInvoice.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Just Now'}</p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-4 text-[9px] font-black uppercase opacity-40 border-b pb-2">
-                <span className="col-span-2">Item</span>
+              <div className="grid grid-cols-4 text-[10px] font-black uppercase opacity-40 border-b pb-3 tracking-widest">
+                <span className="col-span-2">Dish Item</span>
                 <span className="text-center">Qty</span>
                 <span className="text-right">Total</span>
               </div>
-              <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 scrollbar-hide">
+              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
                 {viewingInvoice?.items.map((item: any, i: number) => (
-                  <div key={i} className="grid grid-cols-4 text-[11px] font-bold">
+                  <div key={i} className="grid grid-cols-4 text-xs font-black">
                     <span className="col-span-2 truncate">{item.name}</span>
-                    <span className="text-center opacity-50">x{item.quantity}</span>
+                    <span className="text-center opacity-60">x{item.quantity}</span>
                     <span className="text-right">₹{item.price * item.quantity}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="space-y-2 pt-6 border-t-2 border-dashed">
-              <div className="flex justify-between text-[10px] font-bold opacity-60">
+            <div className="space-y-3 pt-8 border-t-2 border-dashed">
+              <div className="flex justify-between text-[11px] font-bold opacity-60">
                 <span>Subtotal</span>
                 <span>₹{viewingInvoice?.subtotal}</span>
               </div>
               {viewingInvoice?.discount > 0 && (
-                <div className="flex justify-between text-[10px] font-bold text-green-600">
-                  <span>Discount</span>
+                <div className="flex justify-between text-[11px] font-black text-green-600 uppercase">
+                  <span>Savings</span>
                   <span>-₹{viewingInvoice.discount}</span>
                 </div>
               )}
-              <div className="flex justify-between text-xl font-black border-t-2 border-black pt-4 mt-2">
-                <span>PAYABLE</span>
+              <div className="flex justify-between text-3xl font-black border-t-2 border-black pt-6 mt-4">
+                <span className="font-headline tracking-tight">TOTAL</span>
                 <span className="text-primary italic">₹{viewingInvoice?.total}</span>
               </div>
             </div>
 
-            <div className="text-center pt-6 space-y-4">
-               <div className="inline-block p-2 bg-secondary/30 rounded-2xl border-2 border-white">
+            <div className="text-center pt-8 space-y-6">
+               <div className="inline-block p-3 bg-secondary/30 rounded-3xl border-2 border-white shadow-inner">
                   <Image 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`upi://pay?pa=8639366800@ybl&pn=Ezzy%20Bites&am=${viewingInvoice?.total}&cu=INR`)}`} 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=8639366800@ybl&pn=Ezzy%20Bites&am=${viewingInvoice?.total}&cu=INR`)}`} 
                     alt="Payment QR" 
-                    width={100} 
-                    height={100} 
+                    width={120} 
+                    height={120} 
                     className="mx-auto mix-blend-multiply" 
                     unoptimized
                   />
-                  <p className="text-[8px] font-black uppercase mt-2 opacity-40">Scan to Pay</p>
+                  <p className="text-[9px] font-black uppercase mt-3 opacity-50 tracking-widest">Scan to Pay via UPI</p>
                </div>
-               <p className="text-[9px] font-black uppercase italic opacity-30">Thank You • Visit Again</p>
+               <div className="space-y-1">
+                 <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">Visit Again • Stay Ezzy</p>
+                 <p className="text-[8px] opacity-20">Terms & Conditions Apply</p>
+               </div>
             </div>
           </div>
           
-          <div className="p-6 bg-secondary/20 flex gap-4 border-t no-print">
-            <Button variant="outline" className="flex-1 h-12 rounded-xl font-black text-[10px] uppercase gap-2" onClick={() => window.print()}>
-              <Printer className="w-4 h-4" /> Print Receipt
+          <div className="p-8 bg-secondary/20 flex gap-4 border-t no-print">
+            <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase gap-2 tracking-widest border-muted-foreground/20" onClick={() => window.print()}>
+              <Printer className="w-4.5 h-4.5" /> Print Receipt
             </Button>
-            <Button className="flex-1 h-12 rounded-xl font-black text-[10px] uppercase bg-primary" onClick={() => setViewingInvoice(null)}>
+            <Button className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase bg-primary tracking-widest shadow-xl shadow-primary/20" onClick={() => setViewingInvoice(null)}>
               Done
             </Button>
           </div>
@@ -503,9 +487,11 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
             left: 0;
             top: 0;
             width: 100%;
-            padding: 20px;
+            height: 100%;
+            padding: 40px;
             background: white;
             box-shadow: none !important;
+            z-index: 9999;
           }
           .no-print { display: none !important; }
         }
@@ -513,9 +499,3 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
     </div>
   );
 };
-
-const X = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-  </svg>
-);
