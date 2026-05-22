@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -174,7 +175,7 @@ export const AdminSection = () => {
               ) : (
                 <div className="grid gap-6 md:gap-8">
                   {sortedOrders.map((order: any) => (
-                    <Card key={order.id} className="rounded-[2rem] md:rounded-[3rem] border-none shadow-xl bg-white/90 backdrop-blur overflow-hidden group transition-all">
+                    <Card key={order.id} className="rounded-[2rem] md:rounded-[3rem] border-none shadow-xl bg-white/90 backdrop-blur overflow-hidden group transition-all" id={`order-${order.orderId}`}>
                       <CardContent className="p-0">
                         <div className="grid grid-cols-1 md:grid-cols-4">
                           <div className="p-6 md:p-10 border-b md:border-b-0 md:border-r bg-muted/5">
@@ -221,12 +222,16 @@ export const AdminSection = () => {
                               </Badge>
                             </div>
                             
-                            <div className="w-full grid grid-cols-2 md:grid-cols-2 gap-2 md:gap-3">
-                               <Button size="sm" variant="outline" className="rounded-xl h-10 md:h-11 font-black text-[8px] md:text-[9px] uppercase border-muted-foreground/20" onClick={() => handleUpdateStatus(order.id, 'Preparing')}>Prep</Button>
-                               <Button size="sm" variant="outline" className="rounded-xl h-10 md:h-11 font-black text-[8px] md:text-[9px] uppercase border-muted-foreground/20" onClick={() => handleUpdateStatus(order.id, 'Out for Delivery')}>Ride</Button>
-                               <Button size="sm" variant="default" className="rounded-xl h-10 md:h-11 font-black text-[8px] md:text-[9px] uppercase col-span-2 shadow-lg shadow-primary/20 bg-primary" onClick={() => handleUpdateStatus(order.id, 'Delivered')}>Complete</Button>
-                               <div className="flex gap-2 col-span-2">
-                                 <Button variant="ghost" className="flex-1 rounded-xl h-10 text-destructive font-black text-[8px] md:text-[9px] uppercase hover:bg-red-50" onClick={() => handleUpdateStatus(order.id, 'Cancelled')}>Cancel</Button>
+                            <div className="w-full flex flex-col gap-3">
+                               {order.status !== 'Delivered' && order.status !== 'Cancelled' && (
+                                 <div className="w-full grid grid-cols-2 gap-2 md:gap-3">
+                                   <Button size="sm" variant="outline" className="rounded-xl h-10 md:h-11 font-black text-[8px] md:text-[9px] uppercase border-muted-foreground/20" onClick={() => handleUpdateStatus(order.id, 'Preparing')}>Prep</Button>
+                                   <Button size="sm" variant="outline" className="rounded-xl h-10 md:h-11 font-black text-[8px] md:text-[9px] uppercase border-muted-foreground/20" onClick={() => handleUpdateStatus(order.id, 'Out for Delivery')}>Ride</Button>
+                                   <Button size="sm" variant="default" className="rounded-xl h-10 md:h-11 font-black text-[8px] md:text-[9px] uppercase col-span-2 shadow-lg shadow-primary/20 bg-primary" onClick={() => handleUpdateStatus(order.id, 'Delivered')}>Complete</Button>
+                                   <Button variant="ghost" className="col-span-2 rounded-xl h-10 text-destructive font-black text-[8px] md:text-[9px] uppercase hover:bg-red-50" onClick={() => handleUpdateStatus(order.id, 'Cancelled')}>Cancel Order</Button>
+                                 </div>
+                               )}
+                               <div className="w-full flex justify-end">
                                  <Button size="icon" variant="ghost" className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-muted" onClick={() => handleDeleteOrder(order.id)}><Trash2 className="w-4 h-4" /></Button>
                                </div>
                             </div>
