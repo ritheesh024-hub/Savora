@@ -67,7 +67,7 @@ export const AdminSection = () => {
       playSound('ping');
     }, 5000);
 
-    // Initial ping
+    // Initial ring attempt
     playSound('ping');
 
     return () => clearInterval(ringInterval);

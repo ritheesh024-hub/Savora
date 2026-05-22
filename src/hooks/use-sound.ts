@@ -4,9 +4,9 @@ import { useCallback, useRef } from 'react';
 import { useStore } from '@/app/lib/store';
 
 const SOUNDS = {
-  // New order ring: Modern digital telephone ring (more prominent)
-  ping: 'https://assets.mixkit.co/active_storage/sfx/1358/1358-preview.mp3', 
-  // Status updated: Clean high-pitched tick
+  // New order trill: A unique, professional digital alert for high-end hospitality
+  ping: 'https://assets.mixkit.co/active_storage/sfx/1351/1351-preview.mp3', 
+  // Status updated: Clean high-pitched digital tick
   success: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', 
   // Menu/Inventory updated: Light interface pop
   pop: 'https://assets.mixkit.co/active_storage/sfx/1111/1111-preview.mp3', 
@@ -31,7 +31,7 @@ export function useSound() {
       }
 
       const audio = audioRefs.current[type];
-      audio.volume = 0.5; // Slightly higher for the ring sound
+      audio.volume = 0.6; // Optimized volume for professional environments
       
       // Reset to start in case it's already playing
       audio.currentTime = 0;
@@ -40,8 +40,8 @@ export function useSound() {
       
       if (playPromise !== undefined) {
         playPromise.catch((error) => {
-          // Auto-play prevented. User interaction needed.
-          console.warn(`Sound playback for "${type}" was blocked. Click anywhere on the dashboard to enable audio.`, error);
+          // Auto-play prevented. User interaction (click) needed.
+          console.warn(`Audio playback for "${type}" was blocked by browser. Interaction required.`, error);
         });
       }
     } catch (e) {
