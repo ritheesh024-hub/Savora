@@ -13,7 +13,9 @@ import {
   IndianRupee, Sparkles, Loader2, 
   Package, Clock, CheckCircle2,
   Megaphone, LayoutDashboard, Trash2, Plus, Edit2, Link as LinkIcon,
-  ChevronRight, MapPin, Phone, ShoppingBag, Database, Info, Coffee
+  ChevronRight, MapPin, Phone, ShoppingBag, Database, Info, Coffee,
+  Receipt, Calculator, History, BarChart3, Printer, Download, Search,
+  Store, User, CreditCard
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CATEGORIES, MENU_ITEMS } from '@/app/lib/menu-data';
@@ -24,6 +26,7 @@ import { collection, query, limit, doc, updateDoc, deleteDoc, setDoc, serverTime
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { DashboardAnalysis } from './DashboardAnalysis';
+import { BillingSystem } from './BillingSystem';
 import { cn } from '@/lib/utils';
 
 export const AdminSection = () => {
@@ -170,6 +173,9 @@ export const AdminSection = () => {
           <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
             <TabsList className="bg-white/80 backdrop-blur-md p-1 rounded-[1.5rem] md:rounded-[2rem] border min-w-max md:w-full flex shadow-lg">
               <TabsTrigger value="overview" className="px-6 py-3 md:py-4 font-black uppercase tracking-widest text-[9px] md:text-[10px] rounded-[1.2rem] md:rounded-[1.5rem] data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Analysis</TabsTrigger>
+              <TabsTrigger value="billing" className="px-6 py-3 md:py-4 font-black uppercase tracking-widest text-[9px] md:text-[10px] gap-2 flex items-center justify-center rounded-[1.2rem] md:rounded-[1.5rem] data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+                <Receipt className="w-3.5 h-3.5" /> Billing
+              </TabsTrigger>
               <TabsTrigger value="orders" className="px-6 py-3 md:py-4 font-black uppercase tracking-widest text-[9px] md:text-[10px] rounded-[1.2rem] md:rounded-[1.5rem] data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Orders ({realOrders?.length || 0})</TabsTrigger>
               <TabsTrigger value="inventory" className="px-6 py-3 md:py-4 font-black uppercase tracking-widest text-[9px] md:text-[10px] rounded-[1.2rem] md:rounded-[1.5rem] data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Inventory</TabsTrigger>
               <TabsTrigger value="marketing" className="px-6 py-3 md:py-4 font-black uppercase tracking-widest text-[9px] md:text-[10px] gap-2 flex items-center justify-center rounded-[1.2rem] md:rounded-[1.5rem] data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
@@ -187,6 +193,10 @@ export const AdminSection = () => {
              ) : (
                <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />
              )}
+          </TabsContent>
+
+          <TabsContent value="billing">
+            <BillingSystem products={dbMenu || []} orders={realOrders || []} />
           </TabsContent>
 
           <TabsContent value="orders">
