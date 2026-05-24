@@ -1,4 +1,3 @@
-
 "use client"
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -19,6 +18,7 @@ export interface FoodItem {
   imageUrl: string;
   isVeg: boolean;
   rating: number;
+  reviewCount?: number;
   isAvailable: boolean;
   isBeverage?: boolean;
   isBestSeller?: boolean;
@@ -29,13 +29,14 @@ export interface FoodItem {
 export interface CartItem extends FoodItem {
   quantity: number;
   customization?: BeverageOptions;
-  cartId: string; // Unique ID for cart matching (id + stringified options)
+  cartId: string;
 }
 
 interface AppStore {
   cart: CartItem[];
   isAdminMuted: boolean;
   menuViewMode: 'small' | 'big';
+  isDarkMode: boolean;
   addToCart: (item: FoodItem, customization?: BeverageOptions) => void;
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, delta: number) => void;
@@ -43,6 +44,7 @@ interface AppStore {
   getTotal: () => number;
   toggleAdminMute: () => void;
   setMenuViewMode: (mode: 'small' | 'big') => void;
+  toggleDarkMode: () => void;
 }
 
 export const useStore = create<AppStore>()(
@@ -50,7 +52,8 @@ export const useStore = create<AppStore>()(
     (set, get) => ({
       cart: [],
       isAdminMuted: false,
-      menuViewMode: 'big', // Default to detailed view
+      menuViewMode: 'big',
+      isDarkMode: false,
       addToCart: (item, customization) => set((state) => {
         const cartId = customization 
           ? `${item.id}-${customization.size}-${customization.temp}-${customization.sugar}-${customization.addons.sort().join(',')}`
@@ -89,6 +92,15 @@ export const useStore = create<AppStore>()(
       getTotal: () => get().cart.reduce((acc, item) => acc + item.price * item.quantity, 0),
       toggleAdminMute: () => set((state) => ({ isAdminMuted: !state.isAdminMuted })),
       setMenuViewMode: (mode) => set({ menuViewMode: mode }),
+      toggleDarkMode: () => {
+        const current = get().isDarkMode;
+        set({ isDarkMode: !current });
+        if (!current) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      },
     }),
     { name: 'ezzy-bites-operational-storage' }
   )

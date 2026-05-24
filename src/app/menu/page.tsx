@@ -1,13 +1,20 @@
-
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { FoodCard } from '@/components/FoodCard';
 import { CATEGORIES } from '@/app/lib/menu-data';
-import { Search, Loader2, PackageX, AlertCircle, Filter, LayoutGrid, Square, Grid3X3, StretchHorizontal } from 'lucide-react';
+import { Search, Loader2, PackageX, AlertCircle, Filter, Grid3X3, StretchHorizontal, ArrowUpDown, Leaf, Flame } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { FoodItem, useStore } from '@/app/lib/store';
@@ -16,6 +23,9 @@ import { cn } from '@/lib/utils';
 export default function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [priceSort, setPriceSort] = useState<'none' | 'asc' | 'desc'>('none');
+  const [dietFilter, setDietFilter] = useState<'all' | 'veg' | 'non-veg'>('all');
+  
   const db = useFirestore();
   const { menuViewMode, setMenuViewMode } = useStore();
 
@@ -28,12 +38,20 @@ export default function MenuPage() {
 
   const filteredItems = useMemo(() => {
     if (!menuItems) return [];
-    return menuItems.filter(item => {
+    let items = menuItems.filter(item => {
       const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
+      const matchesDiet = dietFilter === 'all' || 
+                        (dietFilter === 'veg' && item.isVeg) || 
+                        (dietFilter === 'non-veg' && !item.isVeg);
+      return matchesCategory && matchesSearch && matchesDiet;
     });
-  }, [menuItems, selectedCategory, searchQuery]);
+
+    if (priceSort === 'asc') items.sort((a, b) => a.price - b.price);
+    if (priceSort === 'desc') items.sort((a, b) => b.price - a.price);
+    
+    return items;
+  }, [menuItems, selectedCategory, searchQuery, priceSort, dietFilter]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -49,13 +67,12 @@ export default function MenuPage() {
             </p>
           </div>
           
-          {/* VIEW MODE TOGGLE */}
           <div className="flex bg-secondary/50 p-1.5 rounded-2xl border items-center shadow-sm w-fit self-start md:self-auto">
             <button 
               onClick={() => setMenuViewMode('small')}
               className={cn(
                 "p-3 rounded-xl transition-all flex items-center gap-2",
-                menuViewMode === 'small' ? "bg-white text-primary shadow-lg" : "text-muted-foreground hover:text-foreground"
+                menuViewMode === 'small' ? "bg-white dark:bg-zinc-800 text-primary shadow-lg" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Grid3X3 className="w-4 h-4" />
@@ -65,7 +82,7 @@ export default function MenuPage() {
               onClick={() => setMenuViewMode('big')}
               className={cn(
                 "p-3 rounded-xl transition-all flex items-center gap-2",
-                menuViewMode === 'big' ? "bg-white text-primary shadow-lg" : "text-muted-foreground hover:text-foreground"
+                menuViewMode === 'big' ? "bg-white dark:bg-zinc-800 text-primary shadow-lg" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <StretchHorizontal className="w-4 h-4" />
@@ -74,7 +91,6 @@ export default function MenuPage() {
           </div>
         </div>
 
-        {/* SEARCH & FILTER BAR */}
         <div className="sticky top-20 z-40 mb-16 space-y-6">
           <div className="glass p-3 md:p-5 rounded-[2.5rem] shadow-2xl flex flex-col lg:flex-row gap-4 items-center border border-white/20">
             <div className="relative flex-1 w-full">
@@ -86,21 +102,50 @@ export default function MenuPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex overflow-x-auto gap-3 pb-2 w-full lg:w-auto scrollbar-hide">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={cn(
-                    "rounded-full px-8 h-14 font-black uppercase text-[10px] tracking-widest transition-all shrink-0 border",
-                    selectedCategory === cat 
-                      ? "bg-primary text-white shadow-xl shadow-primary/20 border-primary" 
-                      : "bg-white/50 border-muted hover:border-primary/40 hover:text-primary backdrop-blur"
-                  )}
-                >
-                  {cat}
-                </button>
-              ))}
+            
+            <div className="flex items-center gap-3 w-full lg:w-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-14 rounded-full px-6 gap-2 font-black uppercase text-[10px] tracking-widest">
+                    <Filter className="w-4 h-4" /> Filter & Sort
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 rounded-2xl p-2" align="end">
+                  <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-40">Dietary Preferences</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => setDietFilter('all')} className="rounded-xl gap-2 font-bold text-sm">All Items</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDietFilter('veg')} className="rounded-xl gap-2 font-bold text-sm text-green-600">
+                    <Leaf className="w-4 h-4" /> Veg Only
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDietFilter('non-veg')} className="rounded-xl gap-2 font-bold text-sm text-red-600">
+                    <Flame className="w-4 h-4" /> Non-Veg
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-40">Sort by Price</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => setPriceSort('asc')} className="rounded-xl gap-2 font-bold text-sm">
+                    <ArrowUpDown className="w-4 h-4" /> Low to High
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setPriceSort('desc')} className="rounded-xl gap-2 font-bold text-sm">
+                    <ArrowUpDown className="w-4 h-4" /> High to Low
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="flex overflow-x-auto gap-3 pb-2 w-full lg:w-auto scrollbar-hide">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={cn(
+                      "rounded-full px-8 h-14 font-black uppercase text-[10px] tracking-widest transition-all shrink-0 border",
+                      selectedCategory === cat 
+                        ? "bg-primary text-white shadow-xl shadow-primary/20 border-primary" 
+                        : "bg-white/50 dark:bg-zinc-800/50 border-muted hover:border-primary/40 hover:text-primary backdrop-blur"
+                    )}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -140,7 +185,7 @@ export default function MenuPage() {
               <h3 className="text-4xl font-headline font-black">No matches found</h3>
               <p className="text-muted-foreground font-medium text-lg">Try a different category or clear your search.</p>
             </div>
-            <Button variant="outline" onClick={() => { setSearchQuery(''); setSelectedCategory('All'); }} className="rounded-full h-14 px-10 font-black uppercase text-[10px] tracking-widest">
+            <Button variant="outline" onClick={() => { setSearchQuery(''); setSelectedCategory('All'); setDietFilter('all'); }} className="rounded-full h-14 px-10 font-black uppercase text-[10px] tracking-widest">
               Show All Dishes
             </Button>
           </div>

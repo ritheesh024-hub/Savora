@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -7,6 +6,7 @@ import { useStore } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CartDrawer } from './CartDrawer';
+import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
 
 export const Navbar = () => {
@@ -70,6 +70,8 @@ export const Navbar = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
+            
             <Link href="/orders">
               <Button variant="ghost" size="icon" className={cn(
                 "rounded-full transition-colors",
@@ -98,6 +100,8 @@ export const Navbar = () => {
 
           {/* Mobile Actions */}
           <div className="md:hidden flex items-center gap-1">
+            <ThemeToggle />
+            
             <CartDrawer>
               <Button variant="ghost" size="icon" className={cn(
                 "relative rounded-full w-10 h-10",
