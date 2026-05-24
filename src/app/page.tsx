@@ -9,7 +9,7 @@ import {
   ShoppingBag, ArrowRight, Star, 
   Loader2, ChefHat, Truck, Award, 
   HelpCircle, Instagram, Twitter, Facebook,
-  Zap, TicketPercent
+  Zap, TicketPercent, GraduationCap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
