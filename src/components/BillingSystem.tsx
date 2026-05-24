@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -13,13 +12,16 @@ import {
   Calculator, Receipt, History, 
   Search, Plus, Minus, Trash2, Printer, 
   ShoppingBag, Utensils, 
-  Package
+  Package,
+  Loader2
 } from 'lucide-react';
-import { useFirestore } from '@/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, setDoc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface BillingSystemProps {
   products: any[];
@@ -28,6 +30,7 @@ interface BillingSystemProps {
 
 export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
   const db = useFirestore();
+  const { user } = useUser();
   const [activeBill, setActiveBill] = useState<any[]>([]);
   const [orderType, setOrderType] = useState('Dine-In');
   const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', notes: '' });
@@ -35,6 +38,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [viewingInvoice, setViewingInvoice] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -69,7 +73,9 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
       toast({ variant: "destructive", title: "Mobile Required" });
       return;
     }
+    if (!db || !user) return;
 
+    setLoading(true);
     const billId = `EB-${Date.now().toString().slice(-6)}`;
     const billData = {
       orderId: billId,
@@ -84,25 +90,40 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
       paymentMethod,
       status: 'Delivered',
       isStoreBill: true,
-      createdAt: new Date()
+      processedBy: user.uid,
+      createdAt: serverTimestamp()
     };
 
-    if (db) {
-      const billRef = doc(db, 'orders', billId);
-      setDoc(billRef, { ...billData, createdAt: serverTimestamp() }).then(() => {
+    const billRef = doc(db, 'orders', billId);
+    setDoc(billRef, billData)
+      .then(() => {
+        // Increment stats for the staff member who processed the bill
+        const staffRef = doc(db, 'admins', user.uid);
+        updateDoc(staffRef, {
+          'stats.billsGenerated': increment(1),
+          'stats.ordersHandled': increment(1)
+        }).catch(err => console.warn("Failed to update staff stats", err));
+
         toast({ title: "Invoice Generated" });
-        setViewingInvoice(billData);
+        setViewingInvoice({ ...billData, createdAt: new Date() });
         setActiveBill([]);
         setCustomerInfo({ name: '', phone: '', notes: '' });
         setDiscount(0);
-      });
-    }
+      })
+      .catch(async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: billRef.path,
+          operation: 'create',
+          requestResourceData: billData,
+        }));
+      })
+      .finally(() => setLoading(false));
   };
 
   return (
     <div className="space-y-6">
       <Tabs defaultValue="pos" className="w-full">
-        <TabsList className="bg-white p-1 rounded-2xl border mb-6 flex w-fit shadow-sm">
+        <TabsList className="bg-white dark:bg-zinc-900 p-1 rounded-2xl border mb-6 flex w-fit shadow-sm">
           <TabsTrigger value="pos" className="px-8 py-3 rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest"><Calculator className="w-4 h-4" /> POS Counter</TabsTrigger>
           <TabsTrigger value="history" className="px-8 py-3 rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest"><History className="w-4 h-4" /> Bill History</TabsTrigger>
         </TabsList>
@@ -110,7 +131,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
         <TabsContent value="pos">
           <div className="grid grid-cols-2 gap-4 mb-6">
             {[ { id: 'Dine-In', icon: Utensils }, { id: 'Take Away', icon: Package } ].map(type => (
-              <button key={type.id} onClick={() => setOrderType(type.id)} className={cn("flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all gap-3", orderType === type.id ? "border-primary bg-primary/5 text-primary shadow-lg" : "border-muted bg-white text-muted-foreground hover:border-primary/20")}>
+              <button key={type.id} onClick={() => setOrderType(type.id)} className={cn("flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all gap-3", orderType === type.id ? "border-primary bg-primary/5 text-primary shadow-lg" : "border-muted bg-white dark:bg-zinc-900 text-muted-foreground hover:border-primary/20")}>
                 <type.icon className="w-6 h-6" />
                 <span className="text-xs font-black uppercase">{type.id}</span>
               </button>
@@ -119,7 +140,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
 
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <Card className="rounded-[2rem] border-none shadow-xl bg-white overflow-hidden">
+              <Card className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden">
                 <CardHeader className="p-6 border-b">
                   <div className="relative w-full">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -131,7 +152,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                     {filteredProducts.map(p => {
                       const cartItem = activeBill.find(i => i.id === p.id);
                       return (
-                        <div key={p.id} className="bg-secondary/20 rounded-[1.5rem] p-3 transition-all hover:shadow-md flex flex-col h-full group">
+                        <div key={p.id} className="bg-secondary/20 dark:bg-zinc-800 rounded-[1.5rem] p-3 transition-all hover:shadow-md flex flex-col h-full group">
                           <div className="aspect-square rounded-xl overflow-hidden mb-3 relative bg-white">
                             <Image src={p.imageUrl} alt={p.name} fill className="object-cover group-hover:scale-110 transition-all" unoptimized />
                           </div>
@@ -159,7 +180,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
             </div>
 
             <div className="space-y-6">
-              <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white sticky top-24">
+              <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-zinc-900 sticky top-24">
                 <CardHeader className="p-6 border-b flex items-center justify-between">
                   <CardTitle className="text-lg font-black font-headline">Bill Summary</CardTitle>
                   <Badge variant="outline" className="text-[9px] font-black uppercase">{orderType}</Badge>
@@ -168,11 +189,11 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label className="text-[9px] font-black uppercase opacity-40">Mobile</Label>
-                      <Input value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} placeholder="Mobile" className="h-10 rounded-xl bg-secondary/30 border-none text-xs" />
+                      <Input value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} placeholder="Mobile" className="h-10 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none text-xs" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[9px] font-black uppercase opacity-40">Name</Label>
-                      <Input value={customerInfo.name} onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} placeholder="Guest" className="h-10 rounded-xl bg-secondary/30 border-none text-xs" />
+                      <Input value={customerInfo.name} onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} placeholder="Guest" className="h-10 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none text-xs" />
                     </div>
                   </div>
 
@@ -184,15 +205,15 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                       </div>
                     ) : (
                       activeBill.map(item => (
-                        <div key={item.id} className="flex items-center justify-between bg-secondary/10 p-3 rounded-xl">
+                        <div key={item.id} className="flex items-center justify-between bg-secondary/10 dark:bg-zinc-800 p-3 rounded-xl">
                           <div className="flex-1 truncate mr-2">
                             <h5 className="font-bold text-[10px] truncate">{item.name}</h5>
                             <p className="text-[9px] font-black text-primary">₹{item.price * item.quantity}</p>
                           </div>
-                          <div className="flex items-center gap-2 bg-white rounded-lg p-1">
-                            <button onClick={() => updateQuantity(item, -1)} className="p-1 hover:bg-secondary/20 rounded transition-colors"><Minus className="w-3 h-3" /></button>
-                            <span className="text-[10px] font-black w-4 text-center">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item, 1)} className="p-1 hover:bg-secondary/20 rounded transition-colors"><Plus className="w-3 h-3" /></button>
+                          <div className="flex items-center gap-2 bg-white dark:bg-zinc-700 rounded-lg p-1">
+                            <button onClick={() => updateQuantity(item, -1)} className="p-1 hover:bg-secondary/20 rounded transition-colors dark:text-white"><Minus className="w-3 h-3" /></button>
+                            <span className="text-[10px] font-black w-4 text-center dark:text-white">{item.quantity}</span>
+                            <button onClick={() => updateQuantity(item, 1)} className="p-1 hover:bg-secondary/20 rounded transition-colors dark:text-white"><Plus className="w-3 h-3" /></button>
                           </div>
                           <button onClick={() => removeFromBill(item.id)} className="ml-2 text-destructive/40 hover:text-destructive transition-colors"><Trash2 className="w-4 h-4" /></button>
                         </div>
@@ -205,7 +226,9 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                       <span>Grand Total</span>
                       <span className="text-2xl text-primary italic">₹{total}</span>
                     </div>
-                    <Button onClick={generateBill} className="w-full h-14 rounded-2xl text-base font-black bg-primary">Generate Bill</Button>
+                    <Button onClick={generateBill} disabled={loading} className="w-full h-14 rounded-2xl text-base font-black bg-primary">
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Generate Bill'}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -214,7 +237,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
         </TabsContent>
 
         <TabsContent value="history">
-          <Card className="rounded-[2rem] border-none shadow-xl bg-white p-8">
+          <Card className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-muted/10 border-b">
@@ -247,15 +270,15 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
       </Tabs>
 
       <Dialog open={!!viewingInvoice} onOpenChange={() => setViewingInvoice(null)}>
-        <DialogContent className="max-w-md p-0 rounded-[2.5rem] overflow-hidden border-none shadow-3xl bg-white">
+        <DialogContent className="max-w-md p-0 rounded-[2.5rem] overflow-hidden border-none shadow-3xl bg-white text-black">
           <DialogHeader className="sr-only">
              <DialogTitle>Invoice Preview for #{viewingInvoice?.orderId}</DialogTitle>
           </DialogHeader>
-          <div id="print-area" className="p-10 text-black">
-            <div className="text-center mb-8 pb-8 border-b-2 border-dashed">
+          <div id="print-area" className="p-10">
+            <div className="text-center mb-8 pb-8 border-b-2 border-dashed border-zinc-200">
               <h2 className="text-2xl font-black font-headline tracking-tighter uppercase">EZZY BITES</h2>
               <p className="text-[9px] font-black uppercase opacity-40">Invoice # {viewingInvoice?.orderId}</p>
-              <Badge className="bg-primary/10 text-primary mt-3 uppercase font-black text-[8px] px-4 py-1">{viewingInvoice?.orderType}</Badge>
+              <Badge className="bg-primary/10 text-primary mt-3 uppercase font-black text-[8px] px-4 py-1 border-none">{viewingInvoice?.orderType}</Badge>
             </div>
             <div className="grid grid-cols-2 gap-6 text-[11px] font-bold mb-8">
               <div>
@@ -269,7 +292,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
               </div>
             </div>
             <div className="space-y-4 mb-8">
-              <div className="grid grid-cols-4 text-[9px] font-black uppercase opacity-40 border-b pb-2">
+              <div className="grid grid-cols-4 text-[9px] font-black uppercase opacity-40 border-b pb-2 border-zinc-100">
                 <span className="col-span-2">Item</span>
                 <span className="text-center">Qty</span>
                 <span className="text-right">Price</span>
@@ -282,7 +305,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                 </div>
               ))}
             </div>
-            <div className="pt-6 border-t-2 border-dashed flex justify-between items-end">
+            <div className="pt-6 border-t-2 border-dashed border-zinc-200 flex justify-between items-end">
               <span className="text-sm font-black uppercase tracking-widest">Total Amount</span>
               <span className="text-3xl font-black text-primary italic">₹{viewingInvoice?.total}</span>
             </div>
@@ -291,8 +314,8 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
             </div>
           </div>
           <div className="p-6 bg-secondary/20 flex gap-4">
-            <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase" onClick={() => window.print()}><Printer className="w-4 h-4 mr-2" /> Print</Button>
-            <Button className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase bg-primary" onClick={() => setViewingInvoice(null)}>Close</Button>
+            <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase border-zinc-300" onClick={() => window.print()}><Printer className="w-4 h-4 mr-2" /> Print</Button>
+            <Button className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase bg-primary text-white" onClick={() => setViewingInvoice(null)}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -300,7 +323,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
         @media print {
           body * { visibility: hidden; }
           #print-area, #print-area * { visibility: visible; }
-          #print-area { position: fixed; left: 0; top: 0; width: 100%; }
+          #print-area { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 1000; }
         }
       `}</style>
     </div>

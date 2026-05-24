@@ -80,7 +80,6 @@ export const StaffManagement = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '',
     phone: '',
     role: 'cashier' as StaffRole,
     photoUrl: ''
@@ -150,7 +149,6 @@ export const StaffManagement = () => {
       .then(() => {
         toast({ title: "Profile Updated", description: "Record synchronized." });
         setIsEditDialogOpen(false);
-        // We clear selected staff only after the dialog state is handled to prevent animation crashes
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -210,7 +208,7 @@ export const StaffManagement = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', password: '', phone: '', role: 'cashier', photoUrl: '' });
+    setFormData({ name: '', email: '', phone: '', role: 'cashier', photoUrl: '' });
   };
 
   const openEdit = (staff: any) => {
@@ -218,12 +216,10 @@ export const StaffManagement = () => {
     setFormData({
       name: staff.name || '',
       email: staff.email || '',
-      password: '',
       phone: staff.phone || '',
       role: staff.role || 'cashier',
       photoUrl: staff.photoUrl || ''
     });
-    // Slight delay to ensure the dropdown closes properly before dialog opens
     setTimeout(() => setIsEditDialogOpen(true), 50);
   };
 
@@ -271,7 +267,7 @@ export const StaffManagement = () => {
           <h2 className="text-4xl font-black font-headline uppercase tracking-tighter">Team <span className="text-primary italic">Ops</span></h2>
           <p className="text-muted-foreground text-sm font-medium">Manage permissions, monitor activity, and grow your crew.</p>
         </div>
-        <Button onClick={() => { resetForm(); setIsAddDialogOpen(true); }} className="h-14 px-8 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-2 bg-primary shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+        <Button onClick={() => { resetForm(); setIsAddDialogOpen(true); }} className="h-14 px-8 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-2 bg-primary text-white shadow-xl shadow-primary/20 hover:scale-105 transition-all">
           <UserPlus className="w-5 h-5" /> Add New Staff
         </Button>
       </div>
@@ -279,11 +275,11 @@ export const StaffManagement = () => {
       <div className="flex flex-col lg:flex-row gap-4 items-center bg-white dark:bg-zinc-900 p-4 rounded-[2rem] border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search staff members..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-12 pl-12 rounded-xl border-none bg-secondary/30 font-bold" />
+          <Input placeholder="Search staff members..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-12 pl-12 rounded-xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" />
         </div>
         <div className="flex gap-2 w-full lg:w-auto">
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="h-12 w-full lg:w-40 rounded-xl bg-secondary/30 border-none font-black uppercase text-[9px] tracking-widest">
+            <SelectTrigger className="h-12 w-full lg:w-40 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-black uppercase text-[9px] tracking-widest">
               <SelectValue placeholder="Roles" />
             </SelectTrigger>
             <SelectContent className="rounded-2xl">
@@ -294,7 +290,7 @@ export const StaffManagement = () => {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-12 w-full lg:w-40 rounded-xl bg-secondary/30 border-none font-black uppercase text-[9px] tracking-widest">
+            <SelectTrigger className="h-12 w-full lg:w-40 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-black uppercase text-[9px] tracking-widest">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent className="rounded-2xl">
@@ -316,7 +312,7 @@ export const StaffManagement = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-secondary/10 border-b">
+                <thead className="bg-secondary/10 dark:bg-zinc-800 border-b">
                   <tr className="text-[10px] font-black uppercase text-muted-foreground text-left">
                     <th className="px-8 py-6">Member</th>
                     <th className="px-8 py-6">Role</th>
@@ -403,18 +399,18 @@ export const StaffManagement = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Staff Name</Label>
-                <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+                <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Work Email</Label>
-                <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+                <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Assigned Role</Label>
                 <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
-                  <SelectTrigger className="h-14 rounded-xl bg-secondary/20 border-muted font-bold"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-14 rounded-xl bg-secondary/20 dark:bg-zinc-800 border-muted font-bold"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-2xl">
                     <SelectItem value="admin">Administrator</SelectItem>
                     <SelectItem value="cashier">Billing Cashier</SelectItem>
@@ -424,10 +420,10 @@ export const StaffManagement = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Mobile</Label>
-                <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+                <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
               </div>
             </div>
-            <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary mt-4" onClick={handleAddStaff} disabled={submitting}>
+            <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary text-white mt-4" onClick={handleAddStaff} disabled={submitting}>
               {submitting ? <Loader2 className="animate-spin" /> : 'Register Staff Member'}
             </Button>
           </div>
@@ -447,22 +443,22 @@ export const StaffManagement = () => {
             <div className="space-y-6 mt-8">
                <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Photo URL</Label>
-                  <Input value={formData.photoUrl} onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+                  <Input value={formData.photoUrl} onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
                </div>
                <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Name</Label>
-                  <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+                  <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Mobile</Label>
-                  <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+                  <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Update Role</Label>
                 <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
-                  <SelectTrigger className="h-14 rounded-xl bg-secondary/20 border-muted font-bold"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-14 rounded-xl bg-secondary/20 dark:bg-zinc-800 border-muted font-bold"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-2xl">
                     <SelectItem value="admin">Administrator</SelectItem>
                     <SelectItem value="cashier">Billing Cashier</SelectItem>
@@ -470,7 +466,7 @@ export const StaffManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary mt-4" onClick={handleUpdateStaff} disabled={submitting}>
+              <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary text-white mt-4" onClick={handleUpdateStaff} disabled={submitting}>
                 {submitting ? <Loader2 className="animate-spin" /> : 'Save Profile Changes'}
               </Button>
             </div>
@@ -509,27 +505,36 @@ export const StaffManagement = () => {
                   </div>
                 </div>
                 <div className="grid md:grid-cols-3 gap-6">
-                  <div className="bg-secondary/30 dark:bg-zinc-800 p-6 rounded-3xl space-y-1">
+                  <div className={cn(
+                    "p-6 rounded-3xl space-y-1 transition-all",
+                    selectedStaff.role === 'cashier' ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-100" : "bg-secondary/30 dark:bg-zinc-800"
+                  )}>
                     <p className="text-[9px] font-black uppercase opacity-40">Orders Handled</p>
-                    <p className="text-2xl font-black italic">{selectedStaff.stats?.ordersHandled || 0}</p>
+                    <p className={cn("text-2xl font-black italic", selectedStaff.role === 'cashier' && "text-blue-600")}>{selectedStaff.stats?.ordersHandled || 0}</p>
                   </div>
-                  <div className="bg-secondary/30 dark:bg-zinc-800 p-6 rounded-3xl space-y-1">
+                  <div className={cn(
+                    "p-6 rounded-3xl space-y-1 transition-all",
+                    selectedStaff.role === 'cashier' ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-100" : "bg-secondary/30 dark:bg-zinc-800"
+                  )}>
                     <p className="text-[9px] font-black uppercase opacity-40">Bills Generated</p>
-                    <p className="text-2xl font-black italic">{selectedStaff.stats?.billsGenerated || 0}</p>
+                    <p className={cn("text-2xl font-black italic", selectedStaff.role === 'cashier' && "text-blue-600")}>{selectedStaff.stats?.billsGenerated || 0}</p>
                   </div>
-                  <div className="bg-secondary/30 dark:bg-zinc-800 p-6 rounded-3xl space-y-1">
+                  <div className={cn(
+                    "p-6 rounded-3xl space-y-1 transition-all",
+                    selectedStaff.role === 'kitchen' ? "bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-100" : "bg-secondary/30 dark:bg-zinc-800"
+                  )}>
                     <p className="text-[9px] font-black uppercase opacity-40">Kitchen Updates</p>
-                    <p className="text-2xl font-black italic">{selectedStaff.stats?.kitchenUpdates || 0}</p>
+                    <p className={cn("text-2xl font-black italic", selectedStaff.role === 'kitchen' && "text-orange-600")}>{selectedStaff.stats?.kitchenUpdates || 0}</p>
                   </div>
                 </div>
                 <div className="space-y-4 pt-4 border-t border-dashed">
                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                       <span className="opacity-40">Registered Email</span>
-                      <span>{selectedStaff.email}</span>
+                      <span className="font-bold">{selectedStaff.email}</span>
                    </div>
                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                       <span className="opacity-40">Joining Date</span>
-                      <span>{selectedStaff.createdAt?.toDate ? selectedStaff.createdAt.toDate().toLocaleDateString() : 'Active Member'}</span>
+                      <span className="font-bold">{selectedStaff.createdAt?.toDate ? selectedStaff.createdAt.toDate().toLocaleDateString() : 'Active Member'}</span>
                    </div>
                 </div>
               </div>

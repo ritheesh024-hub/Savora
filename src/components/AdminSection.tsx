@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, limit, doc, updateDoc, deleteDoc, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { useFirestore, useCollection, useUser } from '@/firebase';
+import { collection, query, limit, doc, updateDoc, deleteDoc, setDoc, serverTimestamp, orderBy, increment } from 'firebase/firestore';
 import { DashboardAnalysis } from './DashboardAnalysis';
 import { BillingSystem } from './BillingSystem';
 import { StoreSettings } from './StoreSettings';
@@ -38,6 +38,7 @@ interface AdminSectionProps {
 
 export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) => {
   const db = useFirestore();
+  const { user } = useUser();
   const { playSound, isAdminMuted, toggleAdminMute } = useSound();
   
   const ordersQuery = useMemo(() => {
@@ -80,6 +81,15 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     const orderRef = doc(db, 'orders', id);
     updateDoc(orderRef, { status: newStatus })
       .then(() => {
+        // Increment stats for the staff member who performed the update
+        if (user) {
+          const staffRef = doc(db, 'admins', user.uid);
+          updateDoc(staffRef, {
+            'stats.kitchenUpdates': increment(1),
+            'stats.ordersHandled': increment(1)
+          }).catch(err => console.warn("Failed to update staff stats", err));
+        }
+
         playSound('success');
         toast({ title: `Order ${newStatus}` });
         if (selectedOrderForView?.id === id) {
@@ -373,10 +383,10 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
               <DialogFooter className="p-6 bg-secondary/30 dark:bg-zinc-800 flex gap-3">
                 {selectedOrderForView.status === 'Pending' && (
-                  <Button className="flex-1 rounded-xl h-14 bg-primary font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Preparing')}>Accept</Button>
+                  <Button className="flex-1 rounded-xl h-14 bg-primary text-white font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Preparing')}>Accept</Button>
                 )}
                 {selectedOrderForView.status === 'Preparing' && (
-                  <Button className="flex-1 rounded-xl h-14 bg-orange-500 font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Delivered')}>Complete</Button>
+                  <Button className="flex-1 rounded-xl h-14 bg-orange-500 text-white font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Delivered')}>Complete</Button>
                 )}
                 <Button variant="outline" className="flex-1 rounded-xl h-14 font-black uppercase text-[10px]" onClick={() => setSelectedOrderForView(null)}>Close</Button>
               </DialogFooter>
@@ -405,7 +415,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               <Label className="text-[10px] font-black uppercase opacity-40">Image URL</Label>
               <Input value={menuFormData.imageUrl} onChange={e => setMenuFormData({...menuFormData, imageUrl: e.target.value})} className="h-12 rounded-xl" />
             </div>
-            <Button className="w-full h-14 rounded-xl font-black uppercase bg-primary mt-4" onClick={handleSaveMenuItem} disabled={saveLoading}>
+            <Button className="w-full h-14 rounded-xl font-black uppercase bg-primary text-white mt-4" onClick={handleSaveMenuItem} disabled={saveLoading}>
               {saveLoading ? <Loader2 className="animate-spin" /> : 'Save Product'}
             </Button>
           </div>
