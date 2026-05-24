@@ -171,7 +171,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
   const availableTabs = useMemo(() => {
     if (activeView === 'kitchen') return ['kitchen'];
-    if (activeView === 'cashier') return ['billing', 'orders'];
+    if (activeView === 'cashier') return ['overview', 'billing', 'orders'];
     return ['overview', 'billing', 'orders', 'inventory', 'staff', 'settings'];
   }, [activeView]);
 

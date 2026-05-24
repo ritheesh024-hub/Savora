@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -42,8 +43,9 @@ import {
   Cell
 } from 'recharts';
 import { cn } from '@/lib/utils';
-import { isWithinInterval, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { isWithinInterval, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
 
 interface DashboardAnalysisProps {
   orders: any[];
@@ -119,6 +121,39 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
     };
   }, [filteredOrders]);
 
+  const handleDownloadReport = () => {
+    const reportDate = format(dateRange.start, 'yyyy-MM-dd');
+    const headers = ["Metric", "Value"];
+    const rows = [
+      ["Report Date", reportDate],
+      ["Period", filterType.toUpperCase()],
+      ["Total Revenue", `INR ${metrics.revenue}`],
+      ["Total Orders", metrics.total],
+      ["Items Sold", metrics.itemsSold],
+      ["Kitchen Load (Active)", metrics.pending],
+      ["", ""],
+      ["--- ITEMIZED BREAKDOWN ---", ""],
+      ["Item Name", "Quantity Sold", "Revenue Generated (INR)"]
+    ];
+
+    metrics.itemStats.forEach(item => {
+      rows.push([item.name, item.quantity, item.revenue]);
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + rows.map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `EzzyBites_Report_${reportDate}_${filterType}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({ title: "Report Generated", description: "The operational data has been exported to CSV." });
+  };
+
   const chartData = useMemo(() => {
     return [
       { name: '08:00', sales: Math.round(metrics.revenue * 0.1), orders: Math.floor(metrics.total * 0.1) },
@@ -188,7 +223,10 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <Button className="w-full lg:w-auto h-10 px-8 rounded-full font-black text-[9px] uppercase bg-primary gap-2 shadow-lg shadow-primary/20">
+        <Button 
+          onClick={handleDownloadReport}
+          className="w-full lg:w-auto h-10 px-8 rounded-full font-black text-[9px] uppercase bg-primary gap-2 shadow-lg shadow-primary/20"
+        >
           <Download className="w-4 h-4" /> Download Report
         </Button>
       </div>
