@@ -29,11 +29,30 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isFirstSetup, setIsFirstSetup] = useState(false);
   
   const auth = useAuth();
   const db = useFirestore();
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
+
+  useEffect(() => {
+    async function checkSystemState() {
+      if (!db) return;
+      try {
+        const adminsColl = collection(db, 'admins');
+        const allAdminsSnap = await getDocs(query(adminsColl, limit(1)));
+        if (allAdminsSnap.empty) {
+          setIsFirstSetup(true);
+          // If first setup, default to Registration
+          setIsLogin(false);
+        }
+      } catch (e) {
+        console.error("System check failed", e);
+      }
+    }
+    checkSystemState();
+  }, [db]);
 
   useEffect(() => {
     async function checkExistingAuth() {
@@ -104,7 +123,6 @@ export default function AdminLoginPage() {
       const emailQuerySnap = await getDocs(q);
 
       if (!emailQuerySnap.empty) {
-        // Migrate temporary record (e.g. staff-123) to the actual UID
         const oldDoc = emailQuerySnap.docs[0];
         const oldData = oldDoc.data();
         
@@ -115,7 +133,6 @@ export default function AdminLoginPage() {
           onlineStatus: 'online'
         });
 
-        // Delete old temporary document if ID was different
         if (oldDoc.id !== uid) {
           await deleteDoc(oldDoc.ref);
         }
@@ -132,6 +149,7 @@ export default function AdminLoginPage() {
       if (allAdminsSnap.empty) {
         // PROVISION FIRST ADMIN
         await setDoc(adminRef, { 
+          id: uid,
           email: email.toLowerCase(), 
           name: email.split('@')[0],
           role: 'admin',
@@ -141,36 +159,45 @@ export default function AdminLoginPage() {
           lastLoginAt: serverTimestamp(),
           stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
         });
-        toast({ title: "First Admin Created", description: "You have full control of the platform." });
+        toast({ title: "Welcome, Admin", description: "First administrative profile created." });
         router.push('/admin/dashboard');
       } else {
-        // Not authorized and not the first user
         if (isLogin) {
           await auth.signOut();
           throw new Error("This account is not authorized as a staff member.");
         } else {
-          // For registration, we can default to a role if we want to allow self-signup, 
-          // but usually we want Admin to add them. Let's allow registration but require Admin approval (status: disabled)
+          // New registration for non-first user
           await setDoc(adminRef, { 
+            id: uid,
             email: email.toLowerCase(), 
             name: email.split('@')[0],
             role: selectedRole || 'cashier',
-            status: 'disabled', // Requires admin to enable
+            status: 'disabled', 
             onlineStatus: 'offline',
             createdAt: serverTimestamp(),
             lastLoginAt: serverTimestamp(),
             stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
           });
           await auth.signOut();
-          throw new Error("Registration submitted. Please wait for an Admin to enable your account.");
+          throw new Error("Registration submitted. Please ask an Admin to enable your account.");
         }
       }
     } catch (error: any) {
       console.error('Auth error:', error);
+      let errorMessage = error.message || "Failed to authenticate.";
+      
+      if (error.code === 'auth/invalid-credential') {
+        errorMessage = "Incorrect email or password. If you haven't registered yet, please click 'Register' below.";
+      } else if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already registered. Try signing in instead.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password is too weak. Minimum 6 characters required.";
+      }
+
       toast({
         variant: "destructive",
-        title: "Access Denied",
-        description: error.message || "Failed to authenticate.",
+        title: "Access Error",
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -187,6 +214,16 @@ export default function AdminLoginPage() {
           <h1 className="text-4xl font-black font-headline tracking-tighter">Ezzy<span className="text-primary italic">Ops</span></h1>
           <p className="text-muted-foreground text-xs font-black uppercase tracking-[0.3em]">Operational Gateways</p>
         </div>
+
+        {isFirstSetup && (
+          <Alert className="max-w-xl mb-8 bg-primary/10 border-primary/20 rounded-2xl">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <AlertTitle className="text-primary font-black uppercase text-[10px] tracking-widest">Initial System Setup</AlertTitle>
+            <AlertDescription className="text-xs font-medium">
+              No staff members detected. The first user to register will be granted <strong>Executive Admin</strong> privileges.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
           <RoleCard 
@@ -221,7 +258,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
-      <Card className="w-full max-w-md rounded-[2.5rem] border shadow-2xl bg-card animate-in zoom-in duration-500 overflow-hidden">
+      <Card className="w-full max-w-md rounded-[2.5rem] border shadow-2xl bg-card animate-in zoom-in duration-500 overflow-hidden relative">
         <div className={cn("h-2 w-full", 
           selectedRole === 'admin' ? "bg-primary" : 
           selectedRole === 'cashier' ? "bg-blue-600" : "bg-orange-500"
@@ -247,10 +284,10 @@ export default function AdminLoginPage() {
             </div>
           </div>
           <CardTitle className="text-2xl font-black font-headline uppercase tracking-tighter">
-            {selectedRole} Access
+            {selectedRole} {isLogin ? 'Sign In' : 'Registration'}
           </CardTitle>
           <CardDescription className="font-bold text-[10px] uppercase tracking-widest opacity-60">
-            Ezzy Bites Operational Console
+            {isFirstSetup ? 'Provisioning First Admin Account' : 'Ezzy Bites Operational Console'}
           </CardDescription>
         </CardHeader>
 
@@ -280,6 +317,7 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  min={6}
                 />
               </div>
             </div>
@@ -299,7 +337,7 @@ export default function AdminLoginPage() {
                 <Loader2 className="w-6 h-6 animate-spin" />
               ) : (
                 <div className="flex items-center gap-3">
-                  <span>{isLogin ? 'Sign In' : 'Register'}</span>
+                  <span>{isLogin ? 'Sign In' : 'Register Now'}</span>
                   <ArrowRight className="w-5 h-5" />
                 </div>
               )}
@@ -310,7 +348,7 @@ export default function AdminLoginPage() {
               onClick={() => setIsLogin(!isLogin)}
               className="text-[10px] text-muted-foreground font-black uppercase tracking-widest hover:text-primary transition-colors"
             >
-              {isLogin ? "Join the staff? Register" : "Existing account? Login"}
+              {isLogin ? "New to staff? Register Account" : "Existing account? Sign In"}
             </button>
           </CardFooter>
         </form>
