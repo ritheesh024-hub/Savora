@@ -10,13 +10,12 @@ import { Label } from '@/components/ui/label';
 import { 
   IndianRupee, Zap, Loader2, 
   Package, Clock, ChefHat, 
-  LayoutDashboard, Trash2, Plus, Edit2, 
+  Trash2, Plus, Edit2, 
   Database, Receipt, ShoppingBag, 
   Volume2, VolumeX, BellRing,
   MapPin, User, Settings, CheckCircle2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CATEGORIES } from '@/app/lib/menu-data';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, limit, doc, updateDoc, deleteDoc, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
@@ -115,7 +114,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     }
   }
 
-  // Determine available tabs based on ACTIVE VIEW
   const availableTabs = useMemo(() => {
     if (activeView === 'kitchen') return ['kitchen'];
     if (activeView === 'cashier') return ['billing', 'orders'];
@@ -287,10 +285,11 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         </Tabs>
       </div>
 
-      {/* Shared Order Detail Dialog */}
       <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
         <DialogContent className="max-w-2xl rounded-[2rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-900">
-          <DialogTitle className="sr-only">Order Details</DialogTitle>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Order Details for #{selectedOrderForView?.orderId}</DialogTitle>
+          </DialogHeader>
           {selectedOrderForView && (
             <>
               <div className="p-8 bg-primary text-white">
@@ -343,10 +342,11 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         </DialogContent>
       </Dialog>
 
-      {/* Menu Item Management Dialog */}
       <Dialog open={isMenuDialogOpen} onOpenChange={setIsMenuDialogOpen}>
         <DialogContent className="max-w-xl rounded-[2.5rem] p-8 border-none bg-white dark:bg-zinc-900">
-          <DialogTitle className="text-2xl font-black font-headline">{editingItem ? 'Edit Product' : 'Add Product'}</DialogTitle>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black font-headline">{editingItem ? 'Edit Product' : 'Add Product'}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4 mt-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

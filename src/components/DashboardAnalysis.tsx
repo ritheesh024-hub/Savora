@@ -56,7 +56,6 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
   }, []);
 
   const dateRange = useMemo(() => {
-    if (!isMounted) return { start: new Date(), end: new Date() };
     const now = new Date();
     switch (filterType) {
       case 'today': return { start: startOfDay(now), end: endOfDay(now) };
@@ -65,15 +64,16 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
       case 'lastMonth': { const d = subMonths(now, 1); return { start: startOfMonth(d), end: endOfMonth(d) }; }
       default: return { start: startOfDay(now), end: endOfDay(now) };
     }
-  }, [filterType, isMounted]);
+  }, [filterType]);
 
   const filteredOrders = useMemo(() => {
-    if (!orders || !isMounted) return [];
+    if (!orders) return [];
     return orders.filter(o => {
       if (!o.createdAt?.toDate) return false;
-      return isWithinInterval(o.createdAt.toDate(), { start: dateRange.start, end: dateRange.end });
+      const orderDate = o.createdAt.toDate();
+      return isWithinInterval(orderDate, { start: dateRange.start, end: dateRange.end });
     });
-  }, [orders, dateRange, isMounted]);
+  }, [orders, dateRange]);
 
   const metrics = useMemo(() => {
     const completed = filteredOrders.filter(o => o.status === 'Delivered');
@@ -86,14 +86,18 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
 
   const chartData = useMemo(() => {
     return [
-      { name: '08:00', sales: metrics.revenue * 0.1, orders: Math.floor(metrics.total * 0.1) },
-      { name: '12:00', sales: metrics.revenue * 0.3, orders: Math.floor(metrics.total * 0.3) },
-      { name: '16:00', sales: metrics.revenue * 0.25, orders: Math.floor(metrics.total * 0.25) },
-      { name: '20:00', sales: metrics.revenue * 0.35, orders: Math.floor(metrics.total * 0.35) },
+      { name: '08:00', sales: Math.round(metrics.revenue * 0.1), orders: Math.floor(metrics.total * 0.1) },
+      { name: '12:00', sales: Math.round(metrics.revenue * 0.3), orders: Math.floor(metrics.total * 0.3) },
+      { name: '16:00', sales: Math.round(metrics.revenue * 0.25), orders: Math.floor(metrics.total * 0.25) },
+      { name: '20:00', sales: Math.round(metrics.revenue * 0.35), orders: Math.floor(metrics.total * 0.35) },
     ];
   }, [metrics]);
 
-  if (!isMounted) return null;
+  if (!isMounted) return (
+    <div className="h-[400px] flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -206,7 +210,6 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
         </Card>
       </div>
 
-      {/* Metric Detail Modals */}
       <Dialog open={!!activeMetricView} onOpenChange={() => setActiveMetricView(null)}>
         <DialogContent className="max-w-3xl rounded-[2.5rem] bg-white border-none shadow-3xl p-10">
           <DialogHeader>

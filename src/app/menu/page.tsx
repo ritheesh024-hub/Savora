@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -40,7 +41,8 @@ export default function MenuPage() {
     if (!menuItems) return [];
     let items = menuItems.filter(item => {
       const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           item.description?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesDiet = dietFilter === 'all' || 
                         (dietFilter === 'veg' && item.isVeg) || 
                         (dietFilter === 'non-veg' && !item.isVeg);
