@@ -438,7 +438,9 @@ export const StaffManagement = () => {
         if(!open) setSelectedStaff(null);
       }}>
         <DialogContent className="max-w-xl rounded-[2.5rem] p-10 border-none bg-white dark:bg-zinc-900 shadow-3xl">
-          <DialogHeader><DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">Edit <span className="text-primary italic">Profile</span></DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">Edit <span className="text-primary italic">Profile</span></DialogTitle>
+          </DialogHeader>
           <div className="space-y-6 mt-8">
              <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Photo URL</Label>
@@ -478,6 +480,9 @@ export const StaffManagement = () => {
         if(!open) setSelectedStaff(null);
       }}>
         <DialogContent className="max-w-2xl rounded-[3rem] p-0 overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-3xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Staff Profile: {selectedStaff?.name || 'Details'}</DialogTitle>
+          </DialogHeader>
           {selectedStaff && (
             <div className="flex flex-col">
               <div className="relative h-48 bg-primary overflow-hidden">
