@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,6 +29,8 @@ import { StaffManagement } from './StaffManagement';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { StaffRole } from '@/app/admin/dashboard/page';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface AdminSectionProps {
   assignedRole: StaffRole;
@@ -76,13 +79,21 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const handleUpdateStatus = (id: string, newStatus: string) => {
     if (!db) return;
     const orderRef = doc(db, 'orders', id);
-    updateDoc(orderRef, { status: newStatus }).then(() => {
-      playSound('success');
-      toast({ title: `Order ${newStatus}` });
-      if (selectedOrderForView?.id === id) {
-        setSelectedOrderForView(prev => prev ? { ...prev, status: newStatus } : null);
-      }
-    });
+    updateDoc(orderRef, { status: newStatus })
+      .then(() => {
+        playSound('success');
+        toast({ title: `Order ${newStatus}` });
+        if (selectedOrderForView?.id === id) {
+          setSelectedOrderForView(prev => prev ? { ...prev, status: newStatus } : null);
+        }
+      })
+      .catch(async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: orderRef.path,
+          operation: 'update',
+          requestResourceData: { status: newStatus }
+        }));
+      });
   };
 
   const handleSaveMenuItem = () => {
@@ -97,10 +108,31 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       rating: Number(menuFormData.rating),
       createdAt: editingItem?.createdAt || serverTimestamp()
     };
-    setDoc(itemRef, finalData, { merge: true }).then(() => {
-      setSaveLoading(false);
-      playSound('pop');
-      setIsMenuDialogOpen(false);
+    
+    setDoc(itemRef, finalData, { merge: true })
+      .then(() => {
+        setSaveLoading(false);
+        playSound('pop');
+        setIsMenuDialogOpen(false);
+      })
+      .catch(async (error) => {
+        setSaveLoading(false);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: itemRef.path,
+          operation: editingItem ? 'update' : 'create',
+          requestResourceData: finalData
+        }));
+      });
+  };
+
+  const handleDeleteItem = (id: string) => {
+    if (!db) return;
+    const itemRef = doc(db, 'products', id);
+    deleteDoc(itemRef).catch(async (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: itemRef.path,
+        operation: 'delete'
+      }));
     });
   };
 
@@ -275,7 +307,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                       <Button variant="ghost" className="flex-1 rounded-lg h-9 font-black text-[9px] uppercase bg-secondary/30" onClick={() => { setEditingItem(item); setMenuFormData({ ...item, price: item.price.toString() }); setIsMenuDialogOpen(true); }}>
                         <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit
                       </Button>
-                      <Button variant="ghost" className="h-9 w-9 text-destructive" onClick={() => deleteDoc(doc(db!, 'products', item.id))}>
+                      <Button variant="ghost" className="h-9 w-9 text-destructive" onClick={() => handleDeleteItem(item.id)}>
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>

@@ -117,6 +117,14 @@
     "/products/{productId}": {
       "schema": "#/backend/entities/FoodItem",
       "description": "Collection of dynamic menu items (products)"
+    },
+    "/settings/{settingId}": {
+      "schema": { "type": "object", "properties": { "isOpen": { "type": "boolean" } } },
+      "description": "Store operational settings"
+    },
+    "/otp_codes/{phone}": {
+      "schema": { "type": "object", "properties": { "otp": { "type": "string" } } },
+      "description": "Temporary OTP codes for verification"
     }
   }
 }

@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,10 +6,12 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Clock, Store, Truck, ShieldAlert, Save, Loader2 } from 'lucide-react';
+import { Clock, Store, Truck, Save, Loader2 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export const StoreSettings = () => {
   const db = useFirestore();
@@ -38,17 +41,24 @@ export const StoreSettings = () => {
   const handleSave = async () => {
     if (!db) return;
     setSaving(true);
-    try {
-      await setDoc(doc(db, 'settings', 'store_config'), {
-        ...settings,
-        updatedAt: serverTimestamp()
-      });
-      toast({ title: "Settings Saved", description: "Operational status updated live." });
-    } catch (e) {
-      toast({ variant: "destructive", title: "Save Failed" });
-    } finally {
-      setSaving(false);
-    }
+    const settingsRef = doc(db, 'settings', 'store_config');
+    const updateData = {
+      ...settings,
+      updatedAt: serverTimestamp()
+    };
+
+    setDoc(settingsRef, updateData, { merge: true })
+      .then(() => {
+        toast({ title: "Settings Saved", description: "Operational status updated live." });
+      })
+      .catch(async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: settingsRef.path,
+          operation: 'write',
+          requestResourceData: updateData
+        }));
+      })
+      .finally(() => setSaving(false));
   };
 
   if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /></div>;
@@ -68,20 +78,14 @@ export const StoreSettings = () => {
                 <p className="font-black text-sm uppercase">Accepting Orders</p>
                 <p className="text-[10px] font-medium opacity-60">Turn off to temporarily stop new orders</p>
               </div>
-              <Switch 
-                checked={settings.isOpen} 
-                onCheckedChange={(v) => setSettings({...settings, isOpen: v})} 
-              />
+              <Switch checked={settings.isOpen} onCheckedChange={(v) => setSettings({...settings, isOpen: v})} />
             </div>
             <div className="flex items-center justify-between p-6 bg-secondary/30 dark:bg-zinc-800 rounded-3xl">
               <div className="space-y-1">
                 <p className="font-black text-sm uppercase">Delivery Service</p>
-                <p className="text-[10px] font-medium opacity-60">Enable/Disable 3rd party or in-house delivery</p>
+                <p className="text-[10px] font-medium opacity-60">Enable/Disable delivery service</p>
               </div>
-              <Switch 
-                checked={settings.deliveryActive} 
-                onCheckedChange={(v) => setSettings({...settings, deliveryActive: v})} 
-              />
+              <Switch checked={settings.deliveryActive} onCheckedChange={(v) => setSettings({...settings, deliveryActive: v})} />
             </div>
           </CardContent>
         </Card>
@@ -96,42 +100,23 @@ export const StoreSettings = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Opening Time</Label>
-                <Input 
-                  type="time" 
-                  value={settings.openTime} 
-                  onChange={e => setSettings({...settings, openTime: e.target.value})}
-                  className="h-12 rounded-xl bg-secondary/30 border-none font-bold"
-                />
+                <Input type="time" value={settings.openTime} onChange={e => setSettings({...settings, openTime: e.target.value})} className="h-12 rounded-xl bg-secondary/30 border-none font-bold" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Closing Time</Label>
-                <Input 
-                  type="time" 
-                  value={settings.closeTime} 
-                  onChange={e => setSettings({...settings, closeTime: e.target.value})}
-                  className="h-12 rounded-xl bg-secondary/30 border-none font-bold"
-                />
+                <Input type="time" value={settings.closeTime} onChange={e => setSettings({...settings, closeTime: e.target.value})} className="h-12 rounded-xl bg-secondary/30 border-none font-bold" />
               </div>
             </div>
             <div className="space-y-2">
               <Label className="text-[9px] font-black uppercase tracking-widest opacity-40">Min. Order Value (₹)</Label>
-              <Input 
-                type="number" 
-                value={settings.minOrderValue} 
-                onChange={e => setSettings({...settings, minOrderValue: Number(e.target.value)})}
-                className="h-12 rounded-xl bg-secondary/30 border-none font-bold"
-              />
+              <Input type="number" value={settings.minOrderValue} onChange={e => setSettings({...settings, minOrderValue: Number(e.target.value)})} className="h-12 rounded-xl bg-secondary/30 border-none font-bold" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="flex justify-end pt-4">
-        <Button 
-          onClick={handleSave} 
-          disabled={saving}
-          className="rounded-2xl h-16 px-12 font-black uppercase tracking-widest text-[11px] gap-3 bg-primary shadow-xl shadow-primary/20"
-        >
+        <Button onClick={handleSave} disabled={saving} className="rounded-2xl h-16 px-12 font-black uppercase tracking-widest text-[11px] gap-3 bg-primary shadow-xl shadow-primary/20">
           {saving ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
           Update Operational Status
         </Button>

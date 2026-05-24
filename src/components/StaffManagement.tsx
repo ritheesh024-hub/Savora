@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -54,12 +55,13 @@ import { toast } from '@/hooks/use-toast';
 import { StaffRole } from '@/app/admin/dashboard/page';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export const StaffManagement = () => {
   const db = useFirestore();
   const auth = getAuth();
   
-  // Real-time fetching of staff members
   const staffQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'admins'), orderBy('createdAt', 'desc'));
@@ -67,7 +69,6 @@ export const StaffManagement = () => {
   
   const { data: staffList, loading } = useCollection<any>(staffQuery);
 
-  // Modal States
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
@@ -90,7 +91,6 @@ export const StaffManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [submitting, setSubmitting] = useState(false);
 
-  // Logic Handlers
   const handleAddStaff = async () => {
     if (!db) return;
     if (!formData.email || !formData.name) {
@@ -99,103 +99,101 @@ export const StaffManagement = () => {
     }
 
     setSubmitting(true);
-    try {
-      // Use email as key or a unique string prefix to avoid UID collisions
-      const newStaffId = `staff-${Date.now()}`;
-      const staffRef = doc(db, 'admins', newStaffId);
-      
-      await setDoc(staffRef, {
-        id: newStaffId,
-        name: formData.name,
-        email: formData.email.toLowerCase(),
-        phone: formData.phone || '',
-        role: formData.role,
-        status: 'active',
-        onlineStatus: 'offline',
-        photoUrl: formData.photoUrl || `https://picsum.photos/seed/${newStaffId}/200`,
-        createdAt: serverTimestamp(),
-        lastLoginAt: null,
-        stats: {
-          ordersHandled: 0,
-          billsGenerated: 0,
-          kitchenUpdates: 0
-        }
-      });
+    const newStaffId = `staff-${Date.now()}`;
+    const staffRef = doc(db, 'admins', newStaffId);
+    const staffData = {
+      id: newStaffId,
+      name: formData.name,
+      email: formData.email.toLowerCase(),
+      phone: formData.phone || '',
+      role: formData.role,
+      status: 'active',
+      onlineStatus: 'offline',
+      photoUrl: formData.photoUrl || `https://picsum.photos/seed/${newStaffId}/200`,
+      createdAt: serverTimestamp(),
+      lastLoginAt: null,
+      stats: {
+        ordersHandled: 0,
+        billsGenerated: 0,
+        kitchenUpdates: 0
+      }
+    };
 
-      toast({ title: "Staff Member Added", description: `${formData.name} has been added to the directory. They can now sign up using this email.` });
-      setIsAddDialogOpen(false);
-      resetForm();
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Save Failed", description: error.message });
-    } finally {
-      setSubmitting(false);
-    }
+    setDoc(staffRef, staffData)
+      .then(() => {
+        toast({ title: "Staff Member Added", description: `${formData.name} has been added.` });
+        setIsAddDialogOpen(false);
+        resetForm();
+      })
+      .catch(async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: staffRef.path,
+          operation: 'create',
+          requestResourceData: staffData
+        }));
+      })
+      .finally(() => setSubmitting(false));
   };
 
   const handleUpdateStaff = async () => {
     if (!selectedStaff || !db) return;
     setSubmitting(true);
-    try {
-      const staffRef = doc(db, 'admins', selectedStaff.id);
-      await updateDoc(staffRef, {
-        name: formData.name,
-        phone: formData.phone,
-        role: formData.role,
-        photoUrl: formData.photoUrl
-      });
-      toast({ title: "Profile Updated", description: "The staff record has been synchronized." });
-      setIsEditDialogOpen(false);
-      setSelectedStaff(null);
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Update Failed", description: error.message });
-    } finally {
-      setSubmitting(false);
-    }
+    const staffRef = doc(db, 'admins', selectedStaff.id);
+    const updateData = {
+      name: formData.name,
+      phone: formData.phone,
+      role: formData.role,
+      photoUrl: formData.photoUrl
+    };
+
+    updateDoc(staffRef, updateData)
+      .then(() => {
+        toast({ title: "Profile Updated", description: "Record synchronized." });
+        setIsEditDialogOpen(false);
+        setSelectedStaff(null);
+      })
+      .catch(async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: staffRef.path,
+          operation: 'update',
+          requestResourceData: updateData
+        }));
+      })
+      .finally(() => setSubmitting(false));
   };
 
   const handleAlertConfirm = async () => {
     if (!alertAction || !db) return;
     const { type, staffId } = alertAction;
+    const staffRef = doc(db, 'admins', staffId);
     
-    try {
-      const staffRef = doc(db, 'admins', staffId);
-      if (type === 'delete') {
-        await deleteDoc(staffRef);
-        toast({ title: "Staff Deleted", description: "Member removed from directory." });
-      } else if (type === 'disable') {
-        await updateDoc(staffRef, { status: 'disabled', onlineStatus: 'offline' });
-        toast({ title: "Access Revoked", description: "Account has been disabled." });
-      } else if (type === 'enable') {
-        await updateDoc(staffRef, { status: 'active' });
-        toast({ title: "Access Restored", description: "Account has been re-enabled." });
-      }
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Action Failed", description: e.message });
-    } finally {
-      setIsAlertDialogOpen(false);
-      setAlertAction(null);
-    }
-  };
-
-  const handleResetPassword = async (email: string) => {
-    if (!auth) return;
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast({ title: "Reset Email Sent", description: "Instructions sent to " + email });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Reset Failed", description: e.message });
+    if (type === 'delete') {
+      deleteDoc(staffRef)
+        .then(() => toast({ title: "Staff Deleted" }))
+        .catch(async (error) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: staffRef.path,
+            operation: 'delete'
+          }));
+        })
+        .finally(() => setIsAlertDialogOpen(false));
+    } else {
+      const status = type === 'disable' ? 'disabled' : 'active';
+      updateDoc(staffRef, { status })
+        .then(() => toast({ title: `Access ${status}` }))
+        .catch(async (error) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: staffRef.path,
+            operation: 'update',
+            requestResourceData: { status }
+          }));
+        })
+        .finally(() => setIsAlertDialogOpen(false));
     }
   };
 
   const resetForm = () => {
-    setFormData({
-      name: '',
-      email: '',
-      password: '',
-      phone: '',
-      role: 'cashier',
-      photoUrl: ''
-    });
+    setFormData({ name: '', email: '', password: '', phone: '', role: 'cashier', photoUrl: '' });
   };
 
   const openEdit = (staff: any) => {
@@ -241,8 +239,7 @@ export const StaffManagement = () => {
   const filteredStaff = useMemo(() => {
     if (!staffList) return [];
     return staffList.filter(s => {
-      const matchesSearch = s.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           s.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = s.name?.toLowerCase().includes(searchQuery.toLowerCase()) || s.email?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesRole = roleFilter === 'all' || s.role === roleFilter;
       const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
       return matchesSearch && matchesRole && matchesStatus;
@@ -264,12 +261,7 @@ export const StaffManagement = () => {
       <div className="flex flex-col lg:flex-row gap-4 items-center bg-white dark:bg-zinc-900 p-4 rounded-[2rem] border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search staff members..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-12 pl-12 rounded-xl border-none bg-secondary/30 font-bold"
-          />
+          <Input placeholder="Search staff members..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-12 pl-12 rounded-xl border-none bg-secondary/30 font-bold" />
         </div>
         <div className="flex gap-2 w-full lg:w-auto">
           <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -336,9 +328,7 @@ export const StaffManagement = () => {
                           {staff.role}
                         </Badge>
                       </td>
-                      <td className="px-8 py-6">
-                        {getOnlineStatus(staff.onlineStatus)}
-                      </td>
+                      <td className="px-8 py-6">{getOnlineStatus(staff.onlineStatus)}</td>
                       <td className="px-8 py-6">
                         {staff.status === 'active' ? (
                           <Badge className="bg-green-100 text-green-700 border-none px-2 font-black text-[8px] uppercase">Active</Badge>
@@ -371,17 +361,6 @@ export const StaffManagement = () => {
                   ))}
                 </tbody>
               </table>
-              {filteredStaff.length === 0 && (
-                <div className="p-40 text-center space-y-6">
-                  <div className="w-24 h-24 bg-secondary/50 rounded-full flex items-center justify-center mx-auto">
-                    <Users className="w-12 h-12 text-muted-foreground opacity-30" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-2xl font-black font-headline uppercase">No matches found</h3>
-                    <p className="text-muted-foreground font-medium">Try broadening your search or filters.</p>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </CardContent>
@@ -392,29 +371,23 @@ export const StaffManagement = () => {
         <DialogContent className="max-w-xl rounded-[2.5rem] p-10 border-none bg-white dark:bg-zinc-900 shadow-3xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">Add <span className="text-primary italic">Recruit</span></DialogTitle>
-            <DialogDescription className="text-muted-foreground font-medium">Create a new operational profile for your staff member.</DialogDescription>
           </DialogHeader>
           <div className="space-y-6 mt-8">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Staff Full Name</Label>
-                <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" placeholder="e.g. Rahul Sharma" />
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Staff Name</Label>
+                <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Work Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-14 pl-12 rounded-xl border-muted bg-secondary/20 font-bold" placeholder="name@ezzybites.com" />
-                </div>
+                <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Assigned Role</Label>
                 <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
-                  <SelectTrigger className="h-14 rounded-xl bg-secondary/20 border-muted font-bold">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="h-14 rounded-xl bg-secondary/20 border-muted font-bold"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-2xl">
                     <SelectItem value="admin">Administrator</SelectItem>
                     <SelectItem value="cashier">Billing Cashier</SelectItem>
@@ -423,15 +396,12 @@ export const StaffManagement = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Contact Mobile</Label>
-                <div className="relative">
-                  <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 pl-12 rounded-xl border-muted bg-secondary/20 font-bold" placeholder="10 Digit Number" />
-                </div>
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Mobile</Label>
+                <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
               </div>
             </div>
-            <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary mt-4 shadow-xl shadow-primary/20" onClick={handleAddStaff} disabled={submitting}>
-              {submitting ? <Loader2 className="animate-spin w-6 h-6" /> : 'Register Staff Member'}
+            <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary mt-4" onClick={handleAddStaff} disabled={submitting}>
+              {submitting ? <Loader2 className="animate-spin" /> : 'Register Staff Member'}
             </Button>
           </div>
         </DialogContent>
@@ -440,26 +410,15 @@ export const StaffManagement = () => {
       {/* Edit Staff Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-xl rounded-[2.5rem] p-10 border-none bg-white dark:bg-zinc-900 shadow-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">Edit <span className="text-primary italic">Profile</span></DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">Edit <span className="text-primary italic">Profile</span></DialogTitle></DialogHeader>
           <div className="space-y-6 mt-8">
-             <div className="flex justify-center mb-6">
-               <div className="relative">
-                 <Avatar className="h-28 w-24 rounded-3xl shadow-xl ring-4 ring-primary/10">
-                   <AvatarImage src={formData.photoUrl} />
-                   <AvatarFallback className="bg-primary/10 text-primary font-black text-2xl">{formData.name?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                 </Avatar>
-                 <Button size="icon" className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 shadow-lg"><Camera className="w-4 h-4" /></Button>
-               </div>
-             </div>
              <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Photo URL</Label>
-                <Input value={formData.photoUrl} onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" placeholder="https://..." />
+                <Input value={formData.photoUrl} onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
              </div>
              <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Display Name</Label>
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Name</Label>
                 <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
               </div>
               <div className="space-y-2">
@@ -467,21 +426,8 @@ export const StaffManagement = () => {
                 <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Operational Role</Label>
-              <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
-                <SelectTrigger className="h-14 rounded-xl bg-secondary/20 border-muted font-bold">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl">
-                  <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="cashier">Billing Cashier</SelectItem>
-                  <SelectItem value="kitchen">Kitchen Chef</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary mt-4 shadow-xl shadow-primary/20" onClick={handleUpdateStaff} disabled={submitting}>
-              {submitting ? <Loader2 className="animate-spin w-6 h-6" /> : 'Save Profile Changes'}
+            <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary mt-4" onClick={handleUpdateStaff} disabled={submitting}>
+              {submitting ? <Loader2 className="animate-spin" /> : 'Save Profile Changes'}
             </Button>
           </div>
         </DialogContent>
@@ -501,7 +447,6 @@ export const StaffManagement = () => {
                   </Avatar>
                 </div>
               </div>
-              
               <div className="pt-16 px-10 pb-10 space-y-8">
                 <div className="flex justify-between items-start">
                   <div>
@@ -511,65 +456,19 @@ export const StaffManagement = () => {
                       {getOnlineStatus(selectedStaff.onlineStatus)}
                     </div>
                   </div>
-                  <Badge variant={selectedStaff.status === 'active' ? 'outline' : 'destructive'} className="rounded-full px-4 py-1.5 font-black uppercase text-[10px]">
-                    {selectedStaff.status}
-                  </Badge>
                 </div>
-
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="bg-secondary/30 dark:bg-zinc-800 p-6 rounded-3xl space-y-1">
-                    <div className="w-8 h-8 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 mb-2">
-                      <Activity className="w-4 h-4" />
-                    </div>
                     <p className="text-[9px] font-black uppercase opacity-40">Orders Handled</p>
                     <p className="text-2xl font-black italic">{selectedStaff.stats?.ordersHandled || 0}</p>
                   </div>
                   <div className="bg-secondary/30 dark:bg-zinc-800 p-6 rounded-3xl space-y-1">
-                    <div className="w-8 h-8 bg-green-500/10 rounded-xl flex items-center justify-center text-green-500 mb-2">
-                      <Receipt className="w-4 h-4" />
-                    </div>
                     <p className="text-[9px] font-black uppercase opacity-40">Bills Generated</p>
                     <p className="text-2xl font-black italic">{selectedStaff.stats?.billsGenerated || 0}</p>
                   </div>
                   <div className="bg-secondary/30 dark:bg-zinc-800 p-6 rounded-3xl space-y-1">
-                    <div className="w-8 h-8 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500 mb-2">
-                      <ChefHat className="w-4 h-4" />
-                    </div>
                     <p className="text-[9px] font-black uppercase opacity-40">Kitchen Updates</p>
                     <p className="text-2xl font-black italic">{selectedStaff.stats?.kitchenUpdates || 0}</p>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-8 pt-4">
-                  <div className="space-y-4">
-                    <h5 className="text-[10px] font-black uppercase tracking-widest opacity-40 flex items-center gap-2">
-                      <Smartphone className="w-3.5 h-3.5" /> Contact Details
-                    </h5>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold opacity-60">Email</span>
-                        <span className="font-black">{selectedStaff.email}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold opacity-60">Phone</span>
-                        <span className="font-black">{selectedStaff.phone || 'N/A'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <h5 className="text-[10px] font-black uppercase tracking-widest opacity-40 flex items-center gap-2">
-                      <Activity className="w-3.5 h-3.5" /> Security Logs
-                    </h5>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold opacity-60">Joined</span>
-                        <span className="font-black">{selectedStaff.createdAt?.toDate ? selectedStaff.createdAt.toDate().toLocaleDateString() : 'Syncing...'}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold opacity-60">Last Active</span>
-                        <span className="font-black">{selectedStaff.lastLoginAt?.toDate ? selectedStaff.lastLoginAt.toDate().toLocaleTimeString() : 'Never'}</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -578,28 +477,21 @@ export const StaffManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Confirmation Dialog */}
       <AlertDialog open={isAlertDialogOpen} onOpenChange={setIsAlertDialogOpen}>
         <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-3xl bg-white dark:bg-zinc-900">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tighter flex items-center gap-3">
-              <AlertCircle className="w-8 h-8 text-destructive" />
-              Security Check
+              <AlertCircle className="w-8 h-8 text-destructive" /> Security Check
             </AlertDialogTitle>
             <AlertDialogDescription className="font-medium text-base mt-4 leading-relaxed">
-              {alertAction?.type === 'delete' && "Are you sure? This will permanently remove the staff member and their access credentials from the system."}
-              {alertAction?.type === 'disable' && "This will block the staff member from logging in until you manually re-enable their account."}
-              {alertAction?.type === 'enable' && "This will restore system access for this staff member immediately."}
+              {alertAction?.type === 'delete' && "Are you sure? This will permanently remove the staff member."}
+              {alertAction?.type === 'disable' && "This will block the staff member from logging in."}
+              {alertAction?.type === 'enable' && "This will restore system access for this staff member."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
             <AlertDialogCancel className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleAlertConfirm} className={cn(
-              "h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest",
-              alertAction?.type === 'delete' ? "bg-destructive text-white" : "bg-primary text-white"
-            )}>
-              Confirm Action
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleAlertConfirm} className={cn("h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest", alertAction?.type === 'delete' ? "bg-destructive text-white" : "bg-primary text-white")}>Confirm Action</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
