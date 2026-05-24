@@ -3,44 +3,74 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore } from '@/firebase';
 import { AdminSection } from '@/components/AdminSection';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, LogOut, Loader2 } from 'lucide-react';
+import { ShoppingBag, LogOut, Loader2, ShieldCheck, UserCog, ChefHat, Receipt } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { doc, getDoc } from 'firebase/firestore';
+import { Badge } from '@/components/ui/badge';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
 
-const ADMIN_EMAIL = 'sunnyritheesh@gmail.com';
+export type StaffRole = 'admin' | 'cashier' | 'kitchen';
 
 export default function AdminDashboardPage() {
   const { user, loading: userLoading } = useUser();
   const auth = useAuth();
+  const db = useFirestore();
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  
+  const [assignedRole, setAssignedRole] = useState<StaffRole | null>(null);
+  const [activeView, setActiveView] = useState<StaffRole | null>(null);
+  const [checkingRole, setCheckingRole] = useState(true);
 
   useEffect(() => {
-    if (!userLoading) {
-      if (!user) {
-        router.push('/admin/login');
-      } else if (user.email !== ADMIN_EMAIL) {
-        // Force logout if logged in with wrong account
-        if (auth) {
-          auth.signOut().then(() => {
-            toast({
-              variant: "destructive",
-              title: "Access Restricted",
-              description: `Only ${ADMIN_EMAIL} is authorized to access the operational console.`,
-            });
-            router.push('/admin/login');
-          });
-        } else {
+    async function checkRole() {
+      if (!userLoading) {
+        if (!user) {
           router.push('/admin/login');
+          return;
         }
-      } else {
-        setIsAuthorized(true);
+
+        if (db) {
+          try {
+            const adminRef = doc(db, 'admins', user.uid);
+            const adminSnap = await getDoc(adminRef);
+
+            if (adminSnap.exists()) {
+              const data = adminSnap.data();
+              const role = (data.role as StaffRole) || 'cashier';
+              setAssignedRole(role);
+              setActiveView(role);
+              setCheckingRole(false);
+            } else {
+              // Not an authorized staff member
+              toast({
+                variant: "destructive",
+                title: "Access Denied",
+                description: "You are not registered as an authorized staff member.",
+              });
+              await auth?.signOut();
+              router.push('/admin/login');
+            }
+          } catch (e) {
+            console.error("Error checking role:", e);
+            setCheckingRole(false);
+          }
+        }
       }
     }
-  }, [user, userLoading, router, auth]);
+
+    checkRole();
+  }, [user, userLoading, db, router, auth]);
 
   const handleLogout = async () => {
     if (auth) {
@@ -50,49 +80,87 @@ export default function AdminDashboardPage() {
     }
   };
 
-  if (userLoading || !isAuthorized) {
+  const switchView = (role: StaffRole) => {
+    if (assignedRole !== 'admin') {
+      toast({ variant: "destructive", title: "Restricted", description: "Only Admins can switch views." });
+      return;
+    }
+    setActiveView(role);
+    toast({ title: `Switched to ${role.toUpperCase()} View` });
+  };
+
+  if (userLoading || checkingRole || !activeView) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
         <div className="w-20 h-20 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-8">
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
         </div>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Establishing Secure Connection...</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Establishing Secure Session...</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b bg-white sticky top-0 z-[60]">
+      <nav className="border-b bg-white dark:bg-zinc-900 sticky top-0 z-[60]">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-all shadow-lg shadow-primary/20">
-              <ShoppingBag className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-headline font-black tracking-tight">
-              Ezzy<span className="text-primary">Bites</span> <span className="text-muted-foreground font-black text-[9px] ml-2 tracking-[0.2em] uppercase opacity-50">Admin</span>
-            </span>
-          </Link>
           <div className="flex items-center gap-6">
-            <div className="hidden lg:flex flex-col items-end mr-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 leading-none mb-1">Session Authorized</span>
-              <span className="text-xs font-bold text-foreground">{user?.email}</span>
-            </div>
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-all shadow-lg shadow-primary/20">
+                <ShoppingBag className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-headline font-black tracking-tight leading-none">
+                  Ezzy<span className="text-primary italic">Ops</span>
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40">Operational Console</span>
+              </div>
+            </Link>
+
+            <Badge variant="outline" className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border-primary/20 bg-primary/5 text-primary font-black uppercase text-[9px] tracking-widest">
+              <ShieldCheck className="w-3 h-3" />
+              {assignedRole}
+            </Badge>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {assignedRole === 'admin' && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="rounded-xl h-12 px-6 gap-2 font-black uppercase text-[10px] tracking-widest border-2">
+                    <UserCog className="w-4 h-4" />
+                    Switch View
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
+                  <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-2 py-1.5">Administrative Overrides</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => switchView('admin')} className="rounded-xl gap-3 py-3 font-bold">
+                    <ShieldCheck className="w-4 h-4 text-primary" /> Admin View
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => switchView('cashier')} className="rounded-xl gap-3 py-3 font-bold">
+                    <Receipt className="w-4 h-4 text-blue-500" /> Cashier View
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => switchView('kitchen')} className="rounded-xl gap-3 py-3 font-bold">
+                    <ChefHat className="w-4 h-4 text-orange-500" /> Kitchen View
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-xl h-12 px-6 gap-2 font-black uppercase text-[10px] tracking-widest hover:bg-destructive hover:text-white hover:border-destructive transition-all border-2" 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-xl h-12 w-12 hover:bg-destructive/10 hover:text-destructive transition-all" 
               onClick={handleLogout}
             >
-              <LogOut className="w-4 h-4" />
-              Sign Out
+              <LogOut className="w-5 h-5" />
             </Button>
           </div>
         </div>
       </nav>
 
       <main className="animate-in fade-in slide-in-from-bottom-2 duration-700">
-        <AdminSection />
+        <AdminSection assignedRole={assignedRole as StaffRole} activeView={activeView as StaffRole} />
       </main>
     </div>
   );

@@ -1,38 +1,42 @@
+
 "use client"
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { 
-  IndianRupee, Sparkles, Loader2, 
-  Package, Clock, CheckCircle2,
-  Megaphone, LayoutDashboard, Trash2, Plus, Edit2, 
-  Database, Coffee, Receipt, ShoppingBag, Zap,
-  Ban, ChefHat, Volume2, VolumeX, BellRing,
-  MapPin, User, FileText, Settings, Users
+  IndianRupee, Zap, Loader2, 
+  Package, Clock, ChefHat, 
+  LayoutDashboard, Trash2, Plus, Edit2, 
+  Database, Receipt, ShoppingBag, 
+  Volume2, VolumeX, BellRing,
+  MapPin, User, Settings, CheckCircle2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { CATEGORIES } from '@/app/lib/menu-data';
-import { dailySpecialGenerator } from '@/ai/flows/daily-special-generator';
 import { toast } from '@/hooks/use-toast';
-import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, query, limit, doc, updateDoc, deleteDoc, setDoc, serverTimestamp, orderBy, getDoc } from 'firebase/firestore';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, limit, doc, updateDoc, deleteDoc, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { DashboardAnalysis } from './DashboardAnalysis';
 import { BillingSystem } from './BillingSystem';
 import { StoreSettings } from './StoreSettings';
 import { NewOrderPopups } from './NewOrderPopups';
+import { KitchenSystem } from './KitchenSystem';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
+import { StaffRole } from '@/app/admin/dashboard/page';
 
-export const AdminSection = () => {
+interface AdminSectionProps {
+  assignedRole: StaffRole;
+  activeView: StaffRole;
+}
+
+export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) => {
   const db = useFirestore();
-  const { user } = useUser();
   const { playSound, isAdminMuted, toggleAdminMute } = useSound();
-  const [adminRole, setAdminRole] = useState<'admin' | 'cashier' | 'kitchen'>('admin');
   
   const ordersQuery = useMemo(() => {
     if (!db) return null;
@@ -45,14 +49,6 @@ export const AdminSection = () => {
     return query(collection(db, 'products'));
   }, [db]);
   const { data: dbMenu } = useCollection<any>(menuQuery);
-
-  useEffect(() => {
-    if (user && db) {
-      getDoc(doc(db, 'admins', user.uid)).then(snap => {
-        if (snap.exists()) setAdminRole(snap.data().role || 'admin');
-      });
-    }
-  }, [user, db]);
 
   const [selectedOrderForView, setSelectedOrderForView] = useState<any>(null);
 
@@ -69,17 +65,6 @@ export const AdminSection = () => {
     });
     return groups;
   }, [realOrders]);
-
-  useEffect(() => {
-    if (isAdminMuted || orderGroups.pending.length === 0) return;
-    const ringInterval = setInterval(() => playSound('ping'), 8000);
-    playSound('ping');
-    return () => clearInterval(ringInterval);
-  }, [orderGroups.pending.length, isAdminMuted, playSound]);
-
-  const [promoLoading, setPromoLoading] = useState(false);
-  const [promoResult, setPromoResult] = useState<any>(null);
-  const [selectedPromoDish, setSelectedPromoDish] = useState<any>(null);
 
   const [isMenuDialogOpen, setIsMenuDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -121,29 +106,21 @@ export const AdminSection = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'Delivered': return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-none px-3 font-black text-[9px] uppercase">Delivered</Badge>;
-      case 'Cancelled': return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-none px-3 font-black text-[9px] uppercase">Denied</Badge>;
-      case 'Pending': return <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-none px-3 font-black text-[9px] uppercase">New</Badge>;
-      case 'Preparing': return <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-none px-3 font-black text-[9px] uppercase">Cooking</Badge>;
-      case 'Out for Delivery': return <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-none px-3 font-black text-[9px] uppercase">Transit</Badge>;
+      case 'Delivered': return <Badge className="bg-green-100 text-green-700 border-none px-3 font-black text-[9px] uppercase">Delivered</Badge>;
+      case 'Cancelled': return <Badge className="bg-red-100 text-red-700 border-none px-3 font-black text-[9px] uppercase">Denied</Badge>;
+      case 'Pending': return <Badge className="bg-blue-100 text-blue-700 border-none px-3 font-black text-[9px] uppercase">New</Badge>;
+      case 'Preparing': return <Badge className="bg-orange-100 text-orange-700 border-none px-3 font-black text-[9px] uppercase">Cooking</Badge>;
+      case 'Out for Delivery': return <Badge className="bg-purple-100 text-purple-700 border-none px-3 font-black text-[9px] uppercase">Transit</Badge>;
       default: return <Badge variant="outline" className="px-3 font-black text-[9px] uppercase">{status}</Badge>;
     }
   }
 
-  const getTypeBadge = (order: any) => {
-    if (order.isStoreBill) {
-      const type = order.orderType || 'Counter';
-      return (
-        <Badge variant="outline" className={cn(
-          "px-2 font-black text-[8px] uppercase border-dashed",
-          type === 'Dine-In' ? "text-blue-500 border-blue-200" : "text-amber-500 border-amber-200"
-        )}>
-          {type}
-        </Badge>
-      );
-    }
-    return <Badge variant="outline" className="px-2 font-black text-[8px] uppercase border-primary/20 text-primary">Online</Badge>;
-  }
+  // Determine available tabs based on ACTIVE VIEW
+  const availableTabs = useMemo(() => {
+    if (activeView === 'kitchen') return ['kitchen'];
+    if (activeView === 'cashier') return ['billing', 'orders'];
+    return ['overview', 'billing', 'orders', 'inventory', 'settings'];
+  }, [activeView]);
 
   return (
     <section className="bg-secondary/5 dark:bg-zinc-950 min-h-screen pb-20">
@@ -153,63 +130,56 @@ export const AdminSection = () => {
         onUpdateStatus={handleUpdateStatus}
       />
       
-      <div className="bg-white dark:bg-zinc-900 border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg">
-              <LayoutDashboard className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black font-headline tracking-tight">Ezzy<span className="text-primary italic">Ops</span></h1>
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Role: {adminRole}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className={cn("rounded-xl h-10 gap-2 font-black uppercase text-[10px] tracking-widest transition-all", !isAdminMuted && "bg-primary text-white border-none")}
-              onClick={toggleAdminMute}
-            >
-              {isAdminMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              {isAdminMuted ? "Muted" : "Audio Active"}
-            </Button>
-            <Badge className="bg-green-100 text-green-700 border-none uppercase font-black text-[9px] px-3 py-1">System Live</Badge>
-          </div>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4 pt-8">
-        <Tabs defaultValue={adminRole === 'kitchen' ? 'orders' : 'overview'} className="space-y-8">
+        <Tabs defaultValue={availableTabs[0]} className="space-y-8">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
             <TabsList className="bg-white dark:bg-zinc-900 p-1 rounded-full border w-full lg:w-fit flex shadow-sm">
-              {adminRole === 'admin' && (
-                <TabsTrigger value="overview" className="flex-1 lg:flex-none px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 relative">
+              {availableTabs.includes('overview') && (
+                <TabsTrigger value="overview" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
                   <Zap className="w-3.5 h-3.5" /> Analysis
                 </TabsTrigger>
               )}
-              {(adminRole === 'admin' || adminRole === 'cashier') && (
-                <TabsTrigger value="billing" className="flex-1 lg:flex-none px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
+              {availableTabs.includes('billing') && (
+                <TabsTrigger value="billing" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
                   <Receipt className="w-3.5 h-3.5" /> Billing
                 </TabsTrigger>
               )}
-              <TabsTrigger value="orders" className="flex-1 lg:flex-none px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 relative">
-                <ShoppingBag className="w-3.5 h-3.5" /> Live Orders
-                {orderGroups.pending.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse border-2 border-white dark:border-zinc-900" />
-                )}
-              </TabsTrigger>
-              {adminRole === 'admin' && (
-                <>
-                  <TabsTrigger value="inventory" className="flex-1 lg:flex-none px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
-                    <Database className="w-3.5 h-3.5" /> Inventory
-                  </TabsTrigger>
-                  <TabsTrigger value="settings" className="flex-1 lg:flex-none px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
-                    <Settings className="w-3.5 h-3.5" /> Store Settings
-                  </TabsTrigger>
-                </>
+              {availableTabs.includes('kitchen') && (
+                <TabsTrigger value="kitchen" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
+                  <ChefHat className="w-3.5 h-3.5" /> Kitchen
+                </TabsTrigger>
+              )}
+              {availableTabs.includes('orders') && (
+                <TabsTrigger value="orders" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 relative">
+                  <ShoppingBag className="w-3.5 h-3.5" /> Orders
+                  {orderGroups.pending.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse border-2 border-white dark:border-zinc-900" />
+                  )}
+                </TabsTrigger>
+              )}
+              {availableTabs.includes('inventory') && (
+                <TabsTrigger value="inventory" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
+                  <Database className="w-3.5 h-3.5" /> Inventory
+                </TabsTrigger>
+              )}
+              {availableTabs.includes('settings') && (
+                <TabsTrigger value="settings" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
+                  <Settings className="w-3.5 h-3.5" /> Settings
+                </TabsTrigger>
               )}
             </TabsList>
+
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={cn("rounded-xl h-10 gap-2 font-black uppercase text-[10px] tracking-widest", !isAdminMuted && "bg-primary text-white border-none")}
+                onClick={toggleAdminMute}
+              >
+                {isAdminMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                {isAdminMuted ? "Muted" : "Audio Active"}
+              </Button>
+            </div>
           </div>
 
           <TabsContent value="overview">
@@ -220,11 +190,15 @@ export const AdminSection = () => {
             <BillingSystem products={dbMenu || []} orders={realOrders || []} />
           </TabsContent>
 
+          <TabsContent value="kitchen">
+            <KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} />
+          </TabsContent>
+
           <TabsContent value="orders">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {[
-                { id: 'pending', label: 'Incoming Orders', icon: BellRing, color: 'text-primary' },
-                { id: 'preparing', label: 'In the Kitchen', icon: ChefHat, color: 'text-orange-500' },
+                { id: 'pending', label: 'Incoming', icon: BellRing, color: 'text-primary' },
+                { id: 'preparing', label: 'In Kitchen', icon: ChefHat, color: 'text-orange-500' },
                 { id: 'completed', label: 'Archive', icon: Package, color: 'text-muted-foreground' }
               ].map((group) => (
                 <div key={group.id} className="space-y-4">
@@ -236,46 +210,36 @@ export const AdminSection = () => {
                     <Badge variant="secondary" className="rounded-full px-2 font-black text-[9px]">{orderGroups[group.id as keyof typeof orderGroups].length}</Badge>
                   </div>
                   <div className="space-y-3">
-                    {orderGroups[group.id as keyof typeof orderGroups].length === 0 ? (
-                      <div className="bg-secondary/20 dark:bg-zinc-800 rounded-[1.5rem] p-8 text-center border-2 border-dashed border-muted/40">
-                        <Package className="w-8 h-8 mx-auto mb-2 opacity-10" />
-                        <p className="text-[9px] font-black uppercase opacity-30">No active orders</p>
-                      </div>
-                    ) : (
-                      orderGroups[group.id as keyof typeof orderGroups].map((order) => (
-                        <Card 
-                          key={order.id} 
-                          className="rounded-[1.2rem] border-none shadow-sm bg-white dark:bg-zinc-900 overflow-hidden group hover:shadow-lg transition-all cursor-pointer"
-                          onClick={() => setSelectedOrderForView(order)}
-                        >
-                          <div className={cn(
-                            "h-1.5 w-full", 
-                            order.status === 'Pending' ? "bg-primary" : 
-                            order.status === 'Preparing' ? "bg-orange-500" : 
-                            order.status === 'Cancelled' ? "bg-red-500" : "bg-green-500"
-                          )} />
-                          <div className="p-4 space-y-2">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-[9px] font-black uppercase text-primary">#{order.orderId}</span>
-                                  {getTypeBadge(order)}
-                                </div>
-                                <h4 className="text-xs font-black truncate">{order.customerName}</h4>
-                              </div>
-                              <p className="text-sm font-black text-primary italic">₹{order.total}</p>
+                    {orderGroups[group.id as keyof typeof orderGroups].map((order) => (
+                      <Card 
+                        key={order.id} 
+                        className="rounded-[1.2rem] border-none shadow-sm bg-white dark:bg-zinc-900 overflow-hidden group hover:shadow-lg transition-all cursor-pointer"
+                        onClick={() => setSelectedOrderForView(order)}
+                      >
+                        <div className={cn(
+                          "h-1.5 w-full", 
+                          order.status === 'Pending' ? "bg-primary" : 
+                          order.status === 'Preparing' ? "bg-orange-500" : 
+                          order.status === 'Cancelled' ? "bg-red-500" : "bg-green-500"
+                        )} />
+                        <div className="p-4 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-[9px] font-black uppercase text-primary">#{order.orderId}</p>
+                              <h4 className="text-xs font-black truncate">{order.customerName}</h4>
                             </div>
-                            <div className="flex justify-between items-center pt-2 border-t border-dashed">
-                              {getStatusBadge(order.status)}
-                              <span className="text-[8px] font-bold text-muted-foreground opacity-50 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
-                              </span>
-                            </div>
+                            <p className="text-sm font-black text-primary">₹{order.total}</p>
                           </div>
-                        </Card>
-                      ))
-                    )}
+                          <div className="flex justify-between items-center pt-2 border-t border-dashed">
+                            {getStatusBadge(order.status)}
+                            <span className="text-[8px] font-bold text-muted-foreground opacity-50 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -284,34 +248,30 @@ export const AdminSection = () => {
 
           <TabsContent value="inventory" className="space-y-8">
             <div className="flex justify-between items-center">
-              <div className="space-y-1">
-                <h2 className="text-2xl font-black font-headline uppercase tracking-tighter">Kitchen Inventory</h2>
-                <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Manage your dynamic menu items</p>
-              </div>
+              <h2 className="text-2xl font-black font-headline uppercase tracking-tighter">Inventory</h2>
               <Button onClick={() => { setEditingItem(null); setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5', isBeverage: false }); setIsMenuDialogOpen(true); }} className="rounded-xl h-12 px-6 font-black uppercase tracking-widest text-[10px] gap-2 bg-primary">
                 <Plus className="w-5 h-5" /> Add New
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {dbMenu?.map((item: any) => (
-                <Card key={item.id} className="rounded-[2rem] border-none shadow-xl overflow-hidden bg-white dark:bg-zinc-900 hover:scale-[1.02] transition-all">
-                  <div className="h-40 relative bg-secondary dark:bg-zinc-800">
+                <Card key={item.id} className="rounded-[2rem] border-none shadow-xl overflow-hidden bg-white dark:bg-zinc-900">
+                  <div className="h-40 relative">
                     <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                    <Badge className="absolute top-3 left-3 bg-white/90 dark:bg-zinc-800/90 backdrop-blur text-foreground border-none text-[8px] uppercase font-black px-2 py-0.5 rounded-full">{item.category}</Badge>
                   </div>
                   <CardContent className="p-5 space-y-3">
                     <h4 className="font-black text-sm truncate">{item.name}</h4>
                     <div className="flex justify-between items-center">
                       <p className="text-xl font-black text-primary italic">₹{item.price}</p>
-                      <Badge variant="outline" className={cn("text-[8px] uppercase font-black px-2 py-0.5 rounded-full", item.isAvailable ? "bg-green-50 text-green-600 border-green-200" : "bg-red-50 text-red-600 border-red-200")}>
-                        {item.isAvailable ? "In Stock" : "Unavailable"}
+                      <Badge variant="outline" className={cn("text-[8px] uppercase font-black px-2 py-0.5", item.isAvailable ? "text-green-600 border-green-200" : "text-red-600 border-red-200")}>
+                        {item.isAvailable ? "Active" : "OOS"}
                       </Badge>
                     </div>
-                    <div className="flex gap-2 pt-1">
-                      <Button variant="ghost" className="flex-1 rounded-lg h-9 font-black text-[9px] uppercase bg-secondary/30 dark:bg-zinc-800" onClick={() => { setEditingItem(item); setMenuFormData({ ...item, price: item.price.toString() }); setIsMenuDialogOpen(true); }}>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" className="flex-1 rounded-lg h-9 font-black text-[9px] uppercase bg-secondary/30" onClick={() => { setEditingItem(item); setMenuFormData({ ...item, price: item.price.toString() }); setIsMenuDialogOpen(true); }}>
                         <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit
                       </Button>
-                      <Button variant="ghost" className="h-9 w-9 text-destructive rounded-lg bg-destructive/5 hover:bg-destructive/10" onClick={() => deleteDoc(doc(db!, 'products', item.id))}>
+                      <Button variant="ghost" className="h-9 w-9 text-destructive" onClick={() => deleteDoc(doc(db!, 'products', item.id))}>
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
@@ -327,131 +287,83 @@ export const AdminSection = () => {
         </Tabs>
       </div>
 
+      {/* Shared Order Detail Dialog */}
       <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
         <DialogContent className="max-w-2xl rounded-[2rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-900">
-          <DialogTitle className="sr-only">Order Details for #{selectedOrderForView?.orderId}</DialogTitle>
+          <DialogTitle className="sr-only">Order Details</DialogTitle>
           {selectedOrderForView && (
             <>
-              <div className={cn(
-                "p-8 text-white relative",
-                selectedOrderForView.status === 'Cancelled' ? 'bg-destructive' : 'bg-primary'
-              )}>
-                <div className="flex justify-between items-center relative z-10">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Operation ID</p>
-                    <h2 className="text-3xl font-black font-headline tracking-tighter">#{selectedOrderForView.orderId}</h2>
+              <div className="p-8 bg-primary text-white">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] font-black uppercase opacity-70">Order Number</p>
+                    <h2 className="text-3xl font-black font-headline">#{selectedOrderForView.orderId}</h2>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-black uppercase opacity-70 mb-1">Total Bill</p>
+                    <p className="text-[10px] font-black uppercase opacity-70">Total Value</p>
                     <p className="text-3xl font-black font-headline">₹{selectedOrderForView.total}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-8 grid md:grid-cols-2 gap-8 max-h-[60vh] overflow-y-auto">
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <h5 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Order Items</h5>
+              <div className="p-8 space-y-6">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <h5 className="text-[10px] font-black uppercase opacity-40">Cart Items</h5>
                     <div className="space-y-2">
                       {selectedOrderForView.items?.map((item: any, i: number) => (
-                        <div key={i} className="flex justify-between items-center p-3 bg-secondary/30 dark:bg-zinc-800 rounded-xl">
-                          <div className="flex-1">
-                            <p className="font-bold text-xs">{item.name}</p>
-                            <p className="text-[9px] font-black text-primary">₹{item.price} x {item.quantity}</p>
-                          </div>
-                          <span className="font-black text-primary text-sm">₹{item.price * item.quantity}</span>
+                        <div key={i} className="flex justify-between items-center text-xs font-bold">
+                          <span>{item.name} x{item.quantity}</span>
+                          <span className="text-primary">₹{item.price * item.quantity}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-                </div>
-
-                <div className="space-y-6">
                   <div className="space-y-4">
-                    <h5 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Logistics</h5>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-[9px] font-black uppercase opacity-40">Client</p>
-                          <p className="text-xs font-bold">{selectedOrderForView.customerName} ({selectedOrderForView.customerPhone})</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="text-[9px] font-black uppercase opacity-40">Destination</p>
-                          <p className="text-xs font-bold leading-relaxed">{selectedOrderForView.address || 'Dine-in / Takeaway'}</p>
-                        </div>
-                      </div>
+                    <h5 className="text-[10px] font-black uppercase opacity-40">Client Info</h5>
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold"><User className="inline w-3 h-3 mr-1" /> {selectedOrderForView.customerName}</p>
+                      <p className="text-xs font-medium opacity-60"><MapPin className="inline w-3 h-3 mr-1" /> {selectedOrderForView.address || 'In-Store'}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <DialogFooter className="p-6 bg-secondary/30 dark:bg-zinc-800 flex flex-wrap gap-3 sm:justify-center">
+              <DialogFooter className="p-6 bg-secondary/30 dark:bg-zinc-800 flex gap-3">
                 {selectedOrderForView.status === 'Pending' && (
-                  <Button 
-                    className="flex-1 min-w-[140px] rounded-xl h-14 bg-primary font-black uppercase text-[10px] tracking-widest"
-                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Preparing')}
-                  >
-                    Accept & Cook
-                  </Button>
+                  <Button className="flex-1 rounded-xl h-14 bg-primary font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Preparing')}>Accept</Button>
                 )}
                 {selectedOrderForView.status === 'Preparing' && (
-                  <Button 
-                    className="flex-1 min-w-[140px] rounded-xl h-14 bg-orange-500 font-black uppercase text-[10px] tracking-widest"
-                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Delivered')}
-                  >
-                    Mark Fulfilled
-                  </Button>
+                  <Button className="flex-1 rounded-xl h-14 bg-orange-500 font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Delivered')}>Complete</Button>
                 )}
-                <Button 
-                  variant="outline" 
-                  className="flex-1 min-w-[140px] rounded-xl h-14 border-2 font-black uppercase text-[10px] tracking-widest"
-                  onClick={() => setSelectedOrderForView(null)}
-                >
-                  Close
-                </Button>
+                <Button variant="outline" className="flex-1 rounded-xl h-14 font-black uppercase text-[10px]" onClick={() => setSelectedOrderForView(null)}>Close</Button>
               </DialogFooter>
             </>
           )}
         </DialogContent>
       </Dialog>
 
+      {/* Menu Item Management Dialog */}
       <Dialog open={isMenuDialogOpen} onOpenChange={setIsMenuDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-[2.5rem] p-8 bg-white dark:bg-zinc-900 border-none">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">{editingItem ? 'Update Product' : 'Add New Item'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6 mt-8">
-            <div className="grid grid-cols-2 gap-6">
+        <DialogContent className="max-w-xl rounded-[2.5rem] p-8 border-none bg-white dark:bg-zinc-900">
+          <DialogTitle className="text-2xl font-black font-headline">{editingItem ? 'Edit Product' : 'Add Product'}</DialogTitle>
+          <div className="space-y-4 mt-6">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[9px] font-black uppercase opacity-60 ml-2">Name</Label>
-                <Input value={menuFormData.name} onChange={e => setMenuFormData({...menuFormData, name: e.target.value})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                <Label className="text-[10px] font-black uppercase opacity-40">Name</Label>
+                <Input value={menuFormData.name} onChange={e => setMenuFormData({...menuFormData, name: e.target.value})} className="h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
-                <Label className="text-[9px] font-black uppercase opacity-60 ml-2">Price (₹)</Label>
-                <Input type="number" value={menuFormData.price} onChange={e => setMenuFormData({...menuFormData, price: e.target.value})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                <Label className="text-[10px] font-black uppercase opacity-40">Price</Label>
+                <Input type="number" value={menuFormData.price} onChange={e => setMenuFormData({...menuFormData, price: e.target.value})} className="h-12 rounded-xl" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-[9px] font-black uppercase opacity-60 ml-2">Category</Label>
-                <select value={menuFormData.category} onChange={e => setMenuFormData({...menuFormData, category: e.target.value})} className="w-full h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none px-4 text-[10px] font-black uppercase outline-none">
-                  {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[9px] font-black uppercase opacity-60 ml-2">Image Link</Label>
-                <Input value={menuFormData.imageUrl} onChange={e => setMenuFormData({...menuFormData, imageUrl: e.target.value})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
-              </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase opacity-40">Image URL</Label>
+              <Input value={menuFormData.imageUrl} onChange={e => setMenuFormData({...menuFormData, imageUrl: e.target.value})} className="h-12 rounded-xl" />
             </div>
-          </div>
-          <div className="flex gap-4 mt-8">
-            <Button variant="outline" className="flex-1 h-14 rounded-xl font-black uppercase text-[10px]" onClick={() => setIsMenuDialogOpen(false)}>Discard</Button>
-            <Button className="flex-1 h-14 rounded-xl font-black uppercase text-[10px] bg-primary" onClick={handleSaveMenuItem} disabled={saveLoading}>
-              {saveLoading ? <Loader2 className="animate-spin" /> : 'Save Changes'}
+            <Button className="w-full h-14 rounded-xl font-black uppercase bg-primary mt-4" onClick={handleSaveMenuItem} disabled={saveLoading}>
+              {saveLoading ? <Loader2 className="animate-spin" /> : 'Save Product'}
             </Button>
           </div>
         </DialogContent>
