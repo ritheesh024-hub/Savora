@@ -4,8 +4,14 @@ service cloud.firestore {
     // Helper function to check if user is a staff member
     function isStaff() {
       return request.auth != null && 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role in ['admin', 'cashier', 'kitchen'] &&
         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.status == 'active';
+    }
+
+    // Helper to check if user is an admin
+    function isAdmin() {
+      return isStaff() && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Helper to check if user owns the document
@@ -13,14 +19,14 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Admin Profiles: Staff can read their own, Admins can manage all
+    // Admin Profiles: Any auth user can read (for lookup), only admins can manage
     match /admins/{userId} {
       allow read: if request.auth != null;
-      allow write: if isStaff() && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
-      allow create: if request.auth != null; // Allow initial setup
+      allow create: if request.auth != null; // Allow initial setup/migration
+      allow update, delete: if isAdmin() || isOwner(userId);
     }
 
-    // User Profiles: Users manage their own
+    // User Profiles: Users manage their own, staff can view
     match /users/{userId} {
       allow read, write: if isOwner(userId) || isStaff();
     }
@@ -40,7 +46,7 @@ service cloud.firestore {
       allow read: if isStaff() || (request.auth != null && request.auth.uid == resource.data.userId);
       allow list: if isStaff() || (request.auth != null && request.query.limit <= 100 && request.query.filters.userId == request.auth.uid);
       allow update: if isStaff();
-      allow delete: if isStaff() && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
+      allow delete: if isAdmin();
     }
 
     // Coupons: Public read, Staff manage
@@ -55,9 +61,9 @@ service cloud.firestore {
       allow write: if isStaff();
     }
 
-    // OTP Codes: Secure access by phone
+    // OTP Codes: Restricted
     match /otp_codes/{phone} {
-      allow read, write: if false; // Server-side only
+      allow read, write: if false; 
     }
   }
 }

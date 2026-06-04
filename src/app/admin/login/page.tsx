@@ -98,10 +98,11 @@ export default function AdminLoginPage() {
       try {
         userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
       } catch (signInError: any) {
+        // If user doesn't exist, or credentials invalid, try creating (for first setup)
         if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
           try {
             userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
-            toast({ title: "Account Created", description: "Your login credentials have been initialized." });
+            toast({ title: "Account Created", description: "Your staff credentials have been initialized." });
           } catch (createError: any) {
             if (createError.code === 'auth/email-already-in-use') {
               throw new Error("Incorrect password for this staff email.");
@@ -129,14 +130,15 @@ export default function AdminLoginPage() {
       emailSnap.docs.forEach(docSnap => {
         if (docSnap.id !== uid) {
           oldRecordIds.push(docSnap.id);
-          // Keep the best quality data if multiple exist (unlikely but safe)
           if (!existingRecordData || docSnap.data().lastLoginAt) {
             existingRecordData = docSnap.data();
           }
         }
       });
 
-      if (oldRecordIds.length > 0) {
+      if (oldRecordIds.length > 0 || normalizedEmail === PRIMARY_ADMIN_EMAIL) {
+        const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
+        
         const migratedData = {
           ...(existingRecordData || {}),
           id: uid,
@@ -144,68 +146,59 @@ export default function AdminLoginPage() {
           email: normalizedEmail,
           lastLoginAt: serverTimestamp(),
           onlineStatus: 'online',
-          status: (existingRecordData as any)?.status || 'active'
+          // Force active for primary admin, otherwise respect existing status or default active
+          status: isPrimary ? 'active' : (existingRecordData as any)?.status || 'active',
+          role: isPrimary ? 'admin' : (existingRecordData as any)?.role || selectedRole || 'cashier'
         };
         
         await setDoc(adminRef, migratedData, { merge: true });
         
-        // Batch delete old records
+        // Batch delete old placeholder records
         for (const oldId of oldRecordIds) {
           await deleteDoc(doc(db, 'admins', oldId));
         }
         
-        toast({ title: "Account Migrated", description: "Your permissions have been linked to your secure identity." });
+        toast({ title: isPrimary ? "Admin Restored" : "Account Migrated", description: "Your permissions have been synchronized." });
         router.push('/admin/dashboard');
         return;
       }
 
       // Final fallback if NO record exists at all
       if (!adminSnap.exists()) {
-        const allAdminsSnap = await getDocs(query(adminsColl, limit(1)));
-        if (allAdminsSnap.empty || normalizedEmail === PRIMARY_ADMIN_EMAIL) {
-          const firstAdminData = { 
-            id: uid,
-            uid: uid,
-            email: normalizedEmail, 
-            name: normalizedEmail.split('@')[0],
-            role: 'admin',
-            status: 'active',
-            onlineStatus: 'online',
-            createdAt: serverTimestamp(),
-            lastLoginAt: serverTimestamp(),
-            stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
-          };
-          await setDoc(adminRef, firstAdminData);
-          toast({ title: "Admin Access Restored", description: "Your staff profile has been reconstructed." });
-          router.push('/admin/dashboard');
-          return;
+        const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
+        const firstAdminData = { 
+          id: uid,
+          uid: uid,
+          email: normalizedEmail, 
+          name: normalizedEmail.split('@')[0],
+          role: isPrimary ? 'admin' : (selectedRole || 'cashier'),
+          status: isPrimary ? 'active' : 'disabled',
+          onlineStatus: 'online',
+          createdAt: serverTimestamp(),
+          lastLoginAt: serverTimestamp(),
+          stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
+        };
+        await setDoc(adminRef, firstAdminData);
+        
+        if (isPrimary || isFirstSetup) {
+           toast({ title: "Admin Access Granted", description: "Your profile has been activated." });
+           router.push('/admin/dashboard');
         } else {
-          const newRequestData = { 
-            id: uid,
-            uid: uid,
-            email: normalizedEmail, 
-            name: normalizedEmail.split('@')[0],
-            role: selectedRole || 'cashier',
-            status: 'disabled',
-            onlineStatus: 'offline',
-            createdAt: serverTimestamp(),
-            lastLoginAt: serverTimestamp(),
-            stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
-          };
-          await setDoc(adminRef, newRequestData);
-          toast({ 
-            title: "Access Requested", 
-            description: "Your registration has been sent to the Admin for approval." 
-          });
-          setStep('selection');
-          return;
+           toast({ title: "Access Requested", description: "Your registration is pending admin approval." });
+           setStep('selection');
         }
+        return;
       }
 
       const data = adminSnap.data();
       if (data.status === 'disabled') {
-        await auth.signOut();
-        throw new Error("Access Denied. Your account is currently disabled. Contact your administrator.");
+        // One last check: If they are the primary email but somehow disabled, fix it
+        if (normalizedEmail === PRIMARY_ADMIN_EMAIL) {
+          await updateDoc(adminRef, { status: 'active', role: 'admin' });
+        } else {
+          await auth.signOut();
+          throw new Error("Access Denied. Your account is currently disabled. Contact your administrator.");
+        }
       }
       
       await updateDoc(adminRef, { 
@@ -359,7 +352,7 @@ export default function AdminLoginPage() {
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-2xl border border-green-100 dark:border-green-800 flex gap-3 items-start">
                 <RefreshCw className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                 <p className="text-[9px] font-black text-green-700 dark:text-green-400 leading-tight uppercase">
-                  Primary account detected. Your permissions will be auto-verified upon sign-in.
+                  Primary account detected. Your profile will be auto-activated upon sign-in.
                 </p>
               </div>
             )}
