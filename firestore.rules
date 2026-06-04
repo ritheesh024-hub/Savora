@@ -1,70 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is a staff member
-    function isStaff() {
-      return request.auth != null && 
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role in ['admin', 'cashier', 'kitchen'] &&
-        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.status == 'active';
-    }
-
-    // Helper to check if user is an admin
-    function isAdmin() {
-      return isStaff() && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    // Helper to check if user owns the document
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // Admin Profiles: Staff can list members, users can read their own
-    match /admins/{userId} {
-      allow read: if request.auth != null;
-      allow list: if request.auth != null; // Allow directory listing for verified sessions
-      allow create: if request.auth != null; // Allow registration
-      allow update, delete: if isAdmin() || isOwner(userId);
-    }
-
-    // User Profiles: Users manage their own, staff can view
-    match /users/{userId} {
-      allow read, write: if isOwner(userId) || isStaff();
-    }
-
-    // Products: Public read, Staff write
-    match /products/{productId} {
-      allow read: if true;
-      allow write: if isStaff();
-    }
-
-    // Orders: 
-    // 1. Authenticated users can create
-    // 2. Users can list/read ONLY their own orders
-    // 3. Staff can manage everything
-    match /orders/{orderId} {
-      allow create: if request.auth != null;
-      allow read: if isStaff() || (request.auth != null && request.auth.uid == resource.data.userId);
-      allow list: if isStaff() || (request.auth != null && request.query.limit <= 100 && request.query.filters.userId == request.auth.uid);
-      allow update: if isStaff();
-      allow delete: if isAdmin();
-    }
-
-    // Coupons: Public read, Staff manage
-    match /coupons/{code} {
-      allow read: if true;
-      allow write: if isStaff();
-    }
-
-    // Settings: Public read, Staff manage
-    match /settings/{settingId} {
-      allow read: if true;
-      allow write: if isStaff();
-    }
-
-    // OTP Codes: Restricted
-    match /otp_codes/{phone} {
-      allow read, write: if false; 
+    // PUBLIC ACCESS: Rules have been removed to allow full read/write access.
+    // Use this for rapid development and testing.
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }
