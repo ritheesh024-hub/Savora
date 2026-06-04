@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -67,16 +66,15 @@ export default function CheckoutPage() {
       setFormData(prev => ({
         ...prev,
         name: prev.name || user.displayName || '',
-        phone: prev.phone || '' // Phone isn't usually in Google profile by default
       }));
-      // Autofill address if profile exists in Firestore
+      // Autofill details if profile exists in Firestore
       if (db) {
         getDoc(doc(db, 'users', user.uid)).then(snap => {
           if (snap.exists()) {
             const data = snap.data();
             setFormData(prev => ({
               ...prev,
-              name: prev.name || data.name || '',
+              name: prev.name || data.name || user.displayName || '',
               phone: prev.phone || data.phone || '',
               address: prev.address || data.address || ''
             }));
@@ -121,15 +119,7 @@ export default function CheckoutPage() {
           description: `${data.discount}% discount activated.` 
         });
       } else {
-        if (code === 'STUDENT10') {
-           const discountVal = Math.round(subtotal * 0.1);
-           setDiscount(discountVal);
-           setAppliedCoupon(code);
-           setCouponInput('');
-           toast({ title: "Coupon Applied! 🎉", description: "10% Student Discount activated." });
-        } else {
-           throw new Error("Invalid promo code.");
-        }
+         throw new Error("Invalid promo code.");
       }
     } catch (e: any) {
       toast({ variant: "destructive", title: "Coupon Error", description: e.message });
@@ -185,11 +175,12 @@ export default function CheckoutPage() {
     const currentOrderId = orderId || `EB-${Date.now()}`;
     const orderData = {
       orderId: currentOrderId,
+      userId: user.uid,
       customerName: formData.name,
       customerPhone: formData.phone,
+      customerEmail: user.email || '',
       address: formData.address,
       instructions: formData.instructions || '',
-      userId: user.uid,
       items: cart.map(item => ({
         id: item.id,
         name: item.name,
@@ -202,6 +193,7 @@ export default function CheckoutPage() {
       couponCode: appliedCoupon,
       deliveryFee: Number(deliveryFee),
       total: Number(total),
+      totalAmount: Number(total), // compliance field
       status: 'Pending',
       paymentMethod: formData.paymentMethod,
       orderType: 'Online',

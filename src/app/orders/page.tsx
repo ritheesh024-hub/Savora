@@ -1,14 +1,13 @@
-
 "use client"
 import React, { useState, useMemo, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingBag, ChevronRight, Phone, Clock, Loader2, PackageX, History, User } from 'lucide-react';
+import { ShoppingBag, ChevronRight, Phone, Clock, Loader2, PackageX, History, User, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { AuthModal } from '@/components/AuthModal';
@@ -20,7 +19,8 @@ export default function OrdersHistoryPage() {
   const db = useFirestore();
   const { user, loading: userLoading } = useUser();
 
-  // If user is logged in, query by userId. Otherwise, query by customerPhone if triggered.
+  // SECURE QUERY: Always filter by userId if user is logged in
+  // This matches our production-ready Security Rules
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     
@@ -28,22 +28,25 @@ export default function OrdersHistoryPage() {
       return query(
         collection(db, 'orders'),
         where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc')
+        orderBy('createdAt', 'desc'),
+        limit(50)
       );
     }
     
+    // Guest search by phone number
     if (searchTriggered && phoneNumber.length === 10) {
       return query(
         collection(db, 'orders'),
         where('customerPhone', '==', phoneNumber),
-        orderBy('createdAt', 'desc')
+        orderBy('createdAt', 'desc'),
+        limit(20)
       );
     }
     
     return null;
   }, [db, user, phoneNumber, searchTriggered]);
 
-  const { data: orders, loading: ordersLoading } = useCollection<any>(ordersQuery);
+  const { data: orders, loading: ordersLoading, error } = useCollection<any>(ordersQuery);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +118,12 @@ export default function OrdersHistoryPage() {
               <div className="py-20 text-center space-y-4">
                 <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
                 <p className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Searching your orders...</p>
+              </div>
+            ) : error ? (
+              <div className="py-20 text-center space-y-4 bg-destructive/5 rounded-3xl border-2 border-dashed border-destructive/20 p-8">
+                <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+                <h3 className="text-xl font-black text-destructive uppercase tracking-tighter">Sync Interrupted</h3>
+                <p className="text-sm font-medium text-muted-foreground">We couldn't retrieve your order history. This might be due to a security filter or connection issue.</p>
               </div>
             ) : (user || searchTriggered) ? (
               orders && orders.length > 0 ? (

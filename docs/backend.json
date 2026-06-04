@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "AdminProfile": {
@@ -57,7 +56,9 @@
       "type": "object",
       "properties": {
         "orderId": { "type": "string" },
+        "userId": { "type": "string" },
         "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
         "customerPhone": { "type": "string" },
         "address": { "type": "string" },
         "instructions": { "type": "string" },
@@ -75,14 +76,16 @@
           }
         },
         "subtotal": { "type": "number" },
+        "discount": { "type": "number" },
+        "couponCode": { "type": "string" },
         "deliveryFee": { "type": "number" },
         "total": { "type": "number" },
+        "totalAmount": { "type": "number" },
         "status": { "type": "string", "enum": ["Pending", "Preparing", "Out for Delivery", "Delivered", "Cancelled"] },
         "paymentMethod": { "type": "string" },
-        "userId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["customerName", "customerPhone", "address", "items", "total", "status", "createdAt"]
+      "required": ["userId", "customerName", "customerEmail", "items", "total", "status", "createdAt"]
     },
     "FoodItem": {
       "title": "Food Item",
