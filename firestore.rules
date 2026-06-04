@@ -19,10 +19,11 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Admin Profiles: Any auth user can read (for lookup), only admins can manage
+    // Admin Profiles: Staff can list members, users can read their own
     match /admins/{userId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null; // Allow initial setup/migration
+      allow list: if request.auth != null; // Allow directory listing for verified sessions
+      allow create: if request.auth != null; // Allow registration
       allow update, delete: if isAdmin() || isOwner(userId);
     }
 

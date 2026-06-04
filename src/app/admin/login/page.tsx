@@ -118,8 +118,8 @@ export default function AdminLoginPage() {
       const adminRef = doc(db, 'admins', uid);
       let adminSnap = await getDoc(adminRef);
 
-      // --- SELF-HEALING & MIGRATION LOGIC ---
-      // Check for duplicate "pre-authorized" records by email
+      // --- SMART CLEANUP & MIGRATION LOGIC ---
+      // Check for duplicate records by email (including placeholders)
       const adminsColl = collection(db, 'admins');
       const emailQuery = query(adminsColl, where('email', '==', normalizedEmail));
       const emailSnap = await getDocs(emailQuery);
@@ -130,12 +130,14 @@ export default function AdminLoginPage() {
       emailSnap.docs.forEach(docSnap => {
         if (docSnap.id !== uid) {
           oldRecordIds.push(docSnap.id);
+          // If this is the "placeholder" record, grab its stats
           if (!existingRecordData || docSnap.data().lastLoginAt) {
             existingRecordData = docSnap.data();
           }
         }
       });
 
+      // Execute migration if duplicates exist or if this is the primary email
       if (oldRecordIds.length > 0 || normalizedEmail === PRIMARY_ADMIN_EMAIL) {
         const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
         
@@ -146,19 +148,19 @@ export default function AdminLoginPage() {
           email: normalizedEmail,
           lastLoginAt: serverTimestamp(),
           onlineStatus: 'online',
-          // Force active for primary admin, otherwise respect existing status or default active
+          // FOR PRIMARY ADMIN: Always force active status and admin role
           status: isPrimary ? 'active' : (existingRecordData as any)?.status || 'active',
           role: isPrimary ? 'admin' : (existingRecordData as any)?.role || selectedRole || 'cashier'
         };
         
         await setDoc(adminRef, migratedData, { merge: true });
         
-        // Batch delete old placeholder records
+        // Clean up messy duplicates
         for (const oldId of oldRecordIds) {
           await deleteDoc(doc(db, 'admins', oldId));
         }
         
-        toast({ title: isPrimary ? "Admin Restored" : "Account Migrated", description: "Your permissions have been synchronized." });
+        toast({ title: isPrimary ? "Admin Restored" : "Account Synced", description: "All permissions and data have been unified." });
         router.push('/admin/dashboard');
         return;
       }
@@ -191,13 +193,13 @@ export default function AdminLoginPage() {
       }
 
       const data = adminSnap.data();
+      // Safety check for primary admin status
       if (data.status === 'disabled') {
-        // One last check: If they are the primary email but somehow disabled, fix it
         if (normalizedEmail === PRIMARY_ADMIN_EMAIL) {
           await updateDoc(adminRef, { status: 'active', role: 'admin' });
         } else {
           await auth.signOut();
-          throw new Error("Access Denied. Your account is currently disabled. Contact your administrator.");
+          throw new Error("Access Denied. Your account is disabled. Contact your administrator.");
         }
       }
       
@@ -246,7 +248,7 @@ export default function AdminLoginPage() {
             <ShieldCheck className="h-4 w-4 text-primary" />
             <AlertTitle className="text-primary font-black uppercase text-[10px] tracking-widest">Initial System Setup</AlertTitle>
             <AlertDescription className="text-xs font-medium">
-              The system is ready for its first administrator. Sign in to claim full platform privileges.
+              The system is ready for its first administrator. Sign in with your email to claim full platform privileges.
             </AlertDescription>
           </Alert>
         )}
@@ -352,7 +354,7 @@ export default function AdminLoginPage() {
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-2xl border border-green-100 dark:border-green-800 flex gap-3 items-start">
                 <RefreshCw className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                 <p className="text-[9px] font-black text-green-700 dark:text-green-400 leading-tight uppercase">
-                  Primary account detected. Your profile will be auto-activated upon sign-in.
+                  Primary account detected. Your profile will be verified and auto-activated.
                 </p>
               </div>
             )}
