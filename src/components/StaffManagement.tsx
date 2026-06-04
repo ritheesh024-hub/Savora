@@ -9,18 +9,16 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Users, UserPlus, Trash2, 
   ShieldCheck, Receipt, ChefHat,
-  Loader2, Mail, Lock, Search,
-  MoreVertical, Edit3, Power, Eye,
-  Smartphone, Activity,
-  AlertCircle, CheckCircle2,
-  Ban, RefreshCcw, Camera, Fingerprint, Copy
+  Loader2, Search,
+  MoreVertical, Edit3, Eye,
+  Fingerprint, Copy, AlertCircle, CheckCircle2,
+  Ban, RefreshCcw, UserCircle2, UserCog
 } from 'lucide-react';
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog';
 import { 
@@ -48,7 +46,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useUser } from '@/firebase';
 import { collection, query, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, orderBy } from 'firebase/firestore';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
@@ -61,6 +59,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 export const StaffManagement = () => {
   const db = useFirestore();
   const auth = getAuth();
+  const { user: currentUser } = useUser();
   
   const staffQuery = useMemo(() => {
     if (!db) return null;
@@ -183,6 +182,11 @@ export const StaffManagement = () => {
     const staffRef = doc(db, 'admins', staffId);
     
     if (type === 'delete') {
+      if (staffId === currentUser?.uid) {
+        toast({ variant: "destructive", title: "Action Blocked", description: "You cannot delete your own active session." });
+        setIsAlertDialogOpen(false);
+        return;
+      }
       deleteDoc(staffRef)
         .then(() => toast({ title: "Staff Deleted" }))
         .catch(async (error) => {
@@ -321,7 +325,7 @@ export const StaffManagement = () => {
                   <tr className="text-[10px] font-black uppercase text-muted-foreground text-left">
                     <th className="px-8 py-6">Member & UID</th>
                     <th className="px-8 py-6">Role</th>
-                    <th className="px-8 py-6">Session</th>
+                    <th className="px-8 py-6">Identity Verification</th>
                     <th className="px-8 py-6">Status</th>
                     <th className="px-8 py-6 text-right">Actions</th>
                   </tr>
@@ -335,7 +339,7 @@ export const StaffManagement = () => {
                       </td>
                     </tr>
                   ) : filteredStaff.map((staff) => (
-                    <tr key={staff.id} className="hover:bg-secondary/5 transition-colors group">
+                    <tr key={staff.id} className={cn("hover:bg-secondary/5 transition-colors group", staff.id === currentUser?.uid && "bg-primary/5")}>
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12 rounded-2xl shadow-md border-2 border-background shrink-0">
@@ -345,7 +349,12 @@ export const StaffManagement = () => {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col min-w-0">
-                            <span className="font-black text-sm group-hover:text-primary transition-colors truncate">{staff.name || 'Anonymous'}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-sm group-hover:text-primary transition-colors truncate">{staff.name || 'Anonymous'}</span>
+                              {staff.id === currentUser?.uid && (
+                                <Badge variant="outline" className="text-[7px] font-black uppercase border-primary/20 text-primary bg-primary/5 px-1 py-0">You</Badge>
+                              )}
+                            </div>
                             <span className="text-[9px] font-medium opacity-50 truncate">{staff.email}</span>
                             <span className="text-[8px] font-black text-muted-foreground/60 flex items-center gap-1 mt-0.5">
                               <Fingerprint className="w-2.5 h-2.5" /> {staff.id.slice(0, 16)}...
@@ -359,7 +368,19 @@ export const StaffManagement = () => {
                           {staff.role}
                         </Badge>
                       </td>
-                      <td className="px-8 py-6">{getOnlineStatus(staff.onlineStatus)}</td>
+                      <td className="px-8 py-6">
+                        {staff.id.startsWith('staff-') ? (
+                          <div className="flex flex-col gap-1">
+                             <Badge className="bg-orange-50 text-orange-600 border-orange-100 font-black text-[7px] uppercase w-fit px-1.5 py-0">Invite Placeholder</Badge>
+                             <p className="text-[8px] font-medium text-muted-foreground italic">Linked via email invite</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                             <Badge className="bg-green-50 text-green-600 border-green-100 font-black text-[7px] uppercase w-fit px-1.5 py-0">Real Identity</Badge>
+                             <p className="text-[8px] font-black text-muted-foreground/40 uppercase">Verified Firebase UID</p>
+                          </div>
+                        )}
+                      </td>
                       <td className="px-8 py-6">
                         {staff.status === 'active' ? (
                           <Badge className="bg-green-100 text-green-700 border-none px-2 font-black text-[8px] uppercase">Active</Badge>
@@ -385,7 +406,13 @@ export const StaffManagement = () => {
                             ) : (
                               <DropdownMenuItem onSelect={(e) => { e.preventDefault(); triggerAlert('enable', staff.id); }} className="rounded-xl gap-3 py-3 font-bold text-green-600 cursor-pointer"><CheckCircle2 className="w-4 h-4" /> Unblock Access</DropdownMenuItem>
                             )}
-                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); triggerAlert('delete', staff.id); }} className="rounded-xl gap-3 py-3 font-bold text-destructive cursor-pointer"><Trash2 className="w-4 h-4" /> Delete Forever</DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onSelect={(e) => { e.preventDefault(); triggerAlert('delete', staff.id); }} 
+                              className={cn("rounded-xl gap-3 py-3 font-bold text-destructive cursor-pointer", staff.id === currentUser?.uid && "opacity-30 cursor-not-allowed")}
+                              disabled={staff.id === currentUser?.uid}
+                            >
+                              <Trash2 className="w-4 h-4" /> Delete Forever
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -476,6 +503,27 @@ export const StaffManagement = () => {
                     </p>
                   </div>
                 </div>
+                
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-800 rounded-2xl flex items-start gap-4">
+                  {selectedStaff.id.startsWith('staff-') ? (
+                    <>
+                      <UserCog className="w-6 h-6 text-orange-500 shrink-0 mt-1" />
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-orange-700">Account Type: Placeholder</p>
+                        <p className="text-[11px] font-medium leading-relaxed">This record was created via a manual invite. It will automatically merge with a real account when the user logs in for the first time.</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <UserCircle2 className="w-6 h-6 text-green-600 shrink-0 mt-1" />
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-green-700">Account Type: Verified</p>
+                        <p className="text-[11px] font-medium leading-relaxed">This is a confirmed operational account linked to a unique Firebase identifier.</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className={cn(
                     "p-6 rounded-3xl space-y-1 transition-all",

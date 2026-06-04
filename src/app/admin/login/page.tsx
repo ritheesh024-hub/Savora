@@ -11,8 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { 
   ShoppingBag, Lock, Mail, Loader2, ArrowRight, 
   ShieldCheck, Receipt, ChefHat, 
-  ChevronLeft, Fingerprint, Info, AlertTriangle,
-  RefreshCw
+  ChevronLeft, RefreshCw
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { doc, setDoc, getDoc, collection, getDocs, limit, query, updateDoc, serverTimestamp, where, deleteDoc } from 'firebase/firestore';
@@ -25,7 +24,6 @@ type SelectedRole = 'admin' | 'cashier' | 'kitchen';
 export default function AdminLoginPage() {
   const [step, setStep] = useState<LoginStep>('selection');
   const [selectedRole, setSelectedRole] = useState<SelectedRole | null>(null);
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -120,38 +118,49 @@ export default function AdminLoginPage() {
       let adminSnap = await getDoc(adminRef);
 
       // --- SELF-HEALING & MIGRATION LOGIC ---
-      if (!adminSnap.exists()) {
-        const adminsColl = collection(db, 'admins');
-        
-        // Check for duplicate "pre-authorized" records by email
-        const emailQuery = query(adminsColl, where('email', '==', normalizedEmail), limit(1));
-        const emailSnap = await getDocs(emailQuery);
-        
-        if (!emailSnap.empty) {
-          const oldRecord = emailSnap.docs[0];
-          const oldData = oldRecord.data();
-          const oldId = oldRecord.id;
+      // Check for duplicate "pre-authorized" records by email
+      const adminsColl = collection(db, 'admins');
+      const emailQuery = query(adminsColl, where('email', '==', normalizedEmail));
+      const emailSnap = await getDocs(emailQuery);
+      
+      let existingRecordData = null;
+      let oldRecordIds: string[] = [];
 
-          // Only migrate if it's a different ID (like staff-...)
-          if (oldId !== uid) {
-            const migratedData = {
-              ...oldData,
-              id: uid,
-              uid: uid,
-              lastLoginAt: serverTimestamp(),
-              onlineStatus: 'online'
-            };
-            
-            await setDoc(adminRef, migratedData);
-            await deleteDoc(doc(db, 'admins', oldId));
-            
-            toast({ title: "Account Migrated", description: "Linked your identity to pre-authorized permissions." });
-            router.push('/admin/dashboard');
-            return;
+      emailSnap.docs.forEach(docSnap => {
+        if (docSnap.id !== uid) {
+          oldRecordIds.push(docSnap.id);
+          // Keep the best quality data if multiple exist (unlikely but safe)
+          if (!existingRecordData || docSnap.data().lastLoginAt) {
+            existingRecordData = docSnap.data();
           }
         }
+      });
 
-        // Check if it's the primary admin or first setup
+      if (oldRecordIds.length > 0) {
+        const migratedData = {
+          ...(existingRecordData || {}),
+          id: uid,
+          uid: uid,
+          email: normalizedEmail,
+          lastLoginAt: serverTimestamp(),
+          onlineStatus: 'online',
+          status: (existingRecordData as any)?.status || 'active'
+        };
+        
+        await setDoc(adminRef, migratedData, { merge: true });
+        
+        // Batch delete old records
+        for (const oldId of oldRecordIds) {
+          await deleteDoc(doc(db, 'admins', oldId));
+        }
+        
+        toast({ title: "Account Migrated", description: "Your permissions have been linked to your secure identity." });
+        router.push('/admin/dashboard');
+        return;
+      }
+
+      // Final fallback if NO record exists at all
+      if (!adminSnap.exists()) {
         const allAdminsSnap = await getDocs(query(adminsColl, limit(1)));
         if (allAdminsSnap.empty || normalizedEmail === PRIMARY_ADMIN_EMAIL) {
           const firstAdminData = { 
