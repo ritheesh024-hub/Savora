@@ -1,8 +1,9 @@
+
 "use client"
 import React, { useState, useMemo, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,8 +20,7 @@ export default function OrdersHistoryPage() {
   const db = useFirestore();
   const { user, loading: userLoading } = useUser();
 
-  // SECURE QUERY: Always filter by userId if user is logged in
-  // This matches our production-ready Security Rules
+  // SECURE QUERY: Remove orderBy to prevent index errors for users
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     
@@ -28,8 +28,7 @@ export default function OrdersHistoryPage() {
       return query(
         collection(db, 'orders'),
         where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc'),
-        limit(50)
+        limit(100)
       );
     }
     
@@ -38,15 +37,24 @@ export default function OrdersHistoryPage() {
       return query(
         collection(db, 'orders'),
         where('customerPhone', '==', phoneNumber),
-        orderBy('createdAt', 'desc'),
-        limit(20)
+        limit(50)
       );
     }
     
     return null;
   }, [db, user, phoneNumber, searchTriggered]);
 
-  const { data: orders, loading: ordersLoading, error } = useCollection<any>(ordersQuery);
+  const { data: rawOrders, loading: ordersLoading, error } = useCollection<any>(ordersQuery);
+
+  // Client-side sorting for maximum compatibility
+  const orders = useMemo(() => {
+    if (!rawOrders) return [];
+    return [...rawOrders].sort((a, b) => {
+      const timeA = a.createdAt?.seconds || 0;
+      const timeB = b.createdAt?.seconds || 0;
+      return timeB - timeA;
+    });
+  }, [rawOrders]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +148,9 @@ export default function OrdersHistoryPage() {
                               <h4 className="font-black text-lg truncate">#{order.orderId}</h4>
                               <Badge variant="outline" className={cn(
                                 "text-[8px] uppercase font-black px-2 py-0.5 rounded-full border-none",
-                                order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                                order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 
+                                order.status === 'Cancelled' ? 'bg-red-100 text-red-700' : 
+                                'bg-orange-100 text-orange-700'
                               )}>
                                 {order.status}
                               </Badge>
@@ -174,9 +184,6 @@ export default function OrdersHistoryPage() {
                     <h3 className="text-2xl font-black mb-2">No orders found</h3>
                     <p className="text-muted-foreground font-medium">We couldn't find any orders {user ? 'under your account' : 'for this phone number'}.</p>
                   </div>
-                  <Link href="/menu">
-                    <Button className="rounded-full px-10 h-14 font-black">Browse Menu</Button>
-                  </Link>
                 </div>
               )
             ) : null}

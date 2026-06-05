@@ -1,12 +1,10 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, Menu, X, User, LogOut, History } from 'lucide-react';
-import { useStore } from '@/app/lib/store';
+import { ShoppingBag, Menu, X, User, LogOut, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { CartDrawer } from './CartDrawer';
 import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
@@ -28,9 +26,6 @@ export const Navbar = () => {
   
   const { user, loading: userLoading } = useUser();
   const auth = useAuth();
-  
-  const cart = useStore((state) => state.cart);
-  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -71,45 +66,22 @@ export const Navbar = () => {
             </span>
           </Link>
 
-          {/* Desktop Search */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full group">
-              <Search className={cn(
-                "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors",
-                !scrolled ? "text-white/60 group-hover:text-white" : "text-muted-foreground"
-              )} />
-              <input 
-                type="text" 
-                placeholder="Search your cravings..." 
-                className={cn(
-                  "w-full h-11 pl-11 pr-4 rounded-full text-sm outline-none transition-all",
-                  !scrolled 
-                    ? "bg-white/10 text-white placeholder:text-white/60 focus:bg-white/20 border border-white/10" 
-                    : "bg-secondary text-foreground focus:ring-2 focus:ring-primary/20"
-                )}
-              />
-            </div>
-          </div>
+          {/* Spacer */}
+          <div className="flex-1" />
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
             
             <Link href="/orders">
-              <Button variant="ghost" size="icon" className={cn(
-                "rounded-full transition-colors",
+              <Button variant="ghost" size="sm" className={cn(
+                "rounded-full gap-2 px-5 font-black uppercase text-[10px] tracking-widest transition-colors",
                 !scrolled ? "text-white hover:bg-white/10" : "text-foreground"
               )}>
-                <History className="w-5 h-5" />
+                <History className="w-4 h-4" />
+                Track History
               </Button>
             </Link>
-            
-            <CartDrawer>
-              <Button variant="default" className="rounded-full gap-2 px-6 h-11 shadow-lg shadow-primary/20">
-                <ShoppingBag className="w-4 h-4" />
-                <span className="font-black">{cartCount}</span>
-              </Button>
-            </CartDrawer>
 
             {!userLoading && (
               user ? (
@@ -159,21 +131,6 @@ export const Navbar = () => {
           {/* Mobile Actions */}
           <div className="md:hidden flex items-center gap-1">
             <ThemeToggle />
-            
-            <CartDrawer>
-              <Button variant="ghost" size="icon" className={cn(
-                "relative rounded-full w-10 h-10",
-                !scrolled ? "text-white" : "text-foreground"
-              )}>
-                <ShoppingBag className="w-5 h-5" />
-                {cartCount > 0 && (
-                  <Badge className="absolute top-1 right-1 px-1 py-0 min-w-[1rem] h-[1rem] flex items-center justify-center rounded-full bg-primary text-white text-[9px] border-2 border-background">
-                    {cartCount}
-                  </Badge>
-                )}
-              </Button>
-            </CartDrawer>
-            
             <Button variant="ghost" size="icon" className={cn(
               "rounded-full w-10 h-10 transition-colors",
               !scrolled ? "text-white" : "text-foreground"
@@ -189,7 +146,6 @@ export const Navbar = () => {
         <div className="md:hidden absolute top-full left-0 w-full glass border-t border-white/10 animate-in slide-in-from-top duration-300">
           <div className="flex flex-col p-6 gap-2">
             <Link href="/" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Home</Link>
-            <Link href="/menu" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Digital Menu</Link>
             <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Order History</Link>
             {!user ? (
               <button 
