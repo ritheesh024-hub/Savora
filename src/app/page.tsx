@@ -43,87 +43,70 @@ export default function Home() {
 
   const { data: menuItems, loading: menuLoading } = useCollection<FoodItem>(highlightsQuery);
 
-  const heroBg = placeholderData.placeholderImages.find(img => img.id === 'hero-bg-main')?.imageUrl || '';
+  // Reference background: Dark abstract spiral or moody gourmet
+  const heroBg = "https://picsum.photos/seed/ezzybites-dark-hero/1920/1080";
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-950 overflow-x-hidden">
       <Navbar />
       
       <main className="flex-1">
-        {/* HERO SECTION - PREMIUM MINIMALIST WITH BACKGROUND */}
-        <section className="relative min-h-[85vh] flex items-center justify-center pt-20 pb-16 overflow-hidden">
-          {/* Background Image Layer */}
+        {/* HERO SECTION - REPLICATING REFERENCE IMAGE STYLE */}
+        <section className="relative min-h-[90vh] flex items-center pt-24 pb-20 overflow-hidden bg-black">
+          {/* Background Layer with Dark Spiral Feel */}
           <div className="absolute inset-0 z-0">
             <Image 
               src={heroBg}
               alt="Premium Background"
               fill
-              className="object-cover"
+              className="object-cover opacity-50"
               priority
-              data-ai-hint="food background"
+              data-ai-hint="dark abstract spiral background"
             />
-            {/* Gradient Overlay for Text Readability */}
-            <div className="absolute inset-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-[2px]" />
+            {/* Professional Vignette Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20 z-10" />
           </div>
 
-          <div className="container mx-auto px-4 relative z-20 max-w-4xl text-center">
-            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              <div className="inline-flex items-center gap-2 bg-primary/10 px-6 py-2.5 rounded-full border border-primary/20 mx-auto shadow-sm">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-[10px] font-black tracking-widest uppercase text-primary">Premium Fast Food Experience</span>
+          <div className="container mx-auto px-6 relative z-20 max-w-6xl">
+            <div className="max-w-3xl space-y-10 animate-in fade-in slide-in-from-left-6 duration-1000">
+              {/* Premium Badge */}
+              <div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/10 shadow-2xl">
+                <span className="text-[10px] md:text-[11px] font-black tracking-[0.2em] uppercase text-white/80">Premium Fast Food Redefined</span>
               </div>
               
-              <div className="space-y-6">
-                <h1 className="text-6xl md:text-[7rem] font-headline font-black leading-[0.9] tracking-tighter text-[#2D2D2D] dark:text-white uppercase">
+              {/* Reference Headline Style */}
+              <div className="space-y-8">
+                <h1 className="text-6xl md:text-[7.5rem] font-headline font-black leading-[0.9] tracking-tighter text-white uppercase">
                   Flavor that <br />
                   <span className="text-primary italic">Commands</span> <br />
                   Respect.
                 </h1>
-                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-medium">
-                  Elevate your daily ritual with chef-crafted flavors delivered right to your sanctuary. Fresh ingredients, lightning speed, and taste unified in one perfect bite.
+                <p className="text-lg md:text-2xl text-white/60 max-w-xl leading-relaxed font-medium">
+                  Elevate your daily ritual with chef-crafted flavors delivered right to your sanctuary. Fresh ingredients, lightning speed.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center pt-6">
+              {/* Action Buttons - Reference Style */}
+              <div className="flex flex-col sm:flex-row items-center gap-5 pt-4">
                 <Link href="/menu" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto rounded-3xl h-18 md:h-24 px-20 text-xl font-black shadow-2xl shadow-primary/20 bg-orange-gradient text-white border-none transform transition-all hover:scale-105 active:scale-95 uppercase tracking-tighter">
+                  <Button className="w-full sm:w-auto rounded-full h-16 md:h-20 px-12 text-lg font-black shadow-2xl bg-[#ef4444] hover:bg-[#dc2626] text-white border-none transform transition-all active:scale-95 uppercase tracking-tight gap-3">
                     Start Your Order
-                    <ArrowRight className="ml-2 w-6 h-6" />
+                    <ArrowRight className="w-6 h-6" />
+                  </Button>
+                </Link>
+                <Link href="/orders" className="w-full sm:w-auto">
+                  <Button variant="outline" className="w-full sm:w-auto rounded-full h-16 md:h-20 px-12 text-lg font-black bg-white/5 backdrop-blur-xl border-white/20 text-[#ef4444] hover:bg-white/10 transition-all uppercase tracking-tight gap-3">
+                    <History className="w-5 h-5" />
+                    Track History
                   </Button>
                 </Link>
               </div>
-
-              <div className="flex flex-wrap items-center gap-10 justify-center pt-14 border-t border-border/20">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 shadow-sm border border-green-100 dark:border-green-800">
-                    <Truck className="w-6 h-6" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[10px] font-black uppercase tracking-widest leading-none text-green-600 mb-1">Free</p>
-                    <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Delivery</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 shadow-sm border border-orange-100 dark:border-orange-800">
-                    <Clock className="w-6 h-6" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[10px] font-black uppercase tracking-widest leading-none text-orange-600 mb-1">25 Min</p>
-                    <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Guarantee</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 dark:border-blue-800">
-                    <ShieldCheck className="w-6 h-6" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[10px] font-black uppercase tracking-widest leading-none text-blue-600 mb-1">FSSAI</p>
-                    <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Certified</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
+          
+          {/* Subtle Parallax Detail (Optional visual anchor) */}
+          <div className="absolute right-0 bottom-0 w-1/3 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
         </section>
 
         {/* SEARCH BAR (MOBILE) */}
@@ -171,11 +154,11 @@ export default function Home() {
         </section>
 
         {/* OFFERS SECTION */}
-        <section className="py-20 bg-secondary/10 dark:bg-zinc-900/30">
+        <section className="py-12 bg-secondary/10 dark:bg-zinc-900/30">
           <div className="container mx-auto px-4">
-            <div className="flex items-center gap-4 mb-12">
+            <div className="flex items-center gap-4 mb-8">
                <div className="h-px bg-border flex-1" />
-               <h2 className="text-3xl font-black uppercase tracking-tighter whitespace-nowrap">Limited <span className="text-primary italic">Offers</span></h2>
+               <h2 className="text-2xl font-black uppercase tracking-tighter whitespace-nowrap">Limited <span className="text-primary italic">Offers</span></h2>
                <div className="h-px bg-border flex-1" />
             </div>
             <PromoBanner />
@@ -183,12 +166,12 @@ export default function Home() {
         </section>
 
         {/* AI SAVOR TOOL */}
-        <section className="py-24 container mx-auto px-4">
+        <section className="py-20 container mx-auto px-4">
           <SavorTool />
         </section>
 
         {/* FEATURES */}
-        <section className="py-24 bg-white dark:bg-zinc-950">
+        <section className="py-20 bg-white dark:bg-zinc-950">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-3 gap-10">
               {[
@@ -209,7 +192,7 @@ export default function Home() {
         </section>
 
         {/* FAQ */}
-        <section className="py-24 container mx-auto px-4 max-w-4xl">
+        <section className="py-20 container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-16">
             <HelpCircle className="w-14 h-14 text-primary mx-auto mb-6" />
             <h2 className="text-5xl font-headline font-black uppercase tracking-tighter">Common Questions</h2>
