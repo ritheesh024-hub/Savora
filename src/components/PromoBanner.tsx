@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -21,7 +22,6 @@ export const PromoBanner = () => {
       code: 'STUDENT10',
       title: 'Academic Special',
       description: 'FLAT 10% OFF on every order.',
-      icon: GraduationCap,
       gradient: 'from-[#FF6B00] to-[#FF8A00]'
     },
     {
@@ -29,7 +29,6 @@ export const PromoBanner = () => {
       code: 'EZZYBITES15',
       title: 'Midnight Cravings',
       description: '15% OFF your first late-night meal.',
-      icon: Zap,
       gradient: 'from-[#6366F1] to-[#4F46E5]'
     },
     {
@@ -37,7 +36,6 @@ export const PromoBanner = () => {
       code: 'WEEKEND20',
       title: 'Weekend Bonanza',
       description: 'FLAT 20% OFF this Sunday only.',
-      icon: PartyPopper,
       gradient: 'from-[#F43F5E] to-[#E11D48]'
     }
   ];
@@ -67,11 +65,9 @@ export const PromoBanner = () => {
                   "relative w-full h-[160px] md:h-[180px] overflow-hidden rounded-[2rem] transition-all duration-700 preserve-3d shadow-xl group-hover:shadow-2xl",
                   "bg-gradient-to-br", offer.gradient
                 )}>
-                  {/* Content */}
                   <div className="relative h-full flex flex-col justify-center p-6 md:p-8 z-10 text-center items-center">
                     <div className="space-y-4 w-full">
                       <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/20">
-                        <offer.icon className="w-3.5 h-3.5 text-white" />
                         <span className="text-[9px] font-black uppercase tracking-widest text-white">{offer.title}</span>
                       </div>
                       
@@ -90,7 +86,6 @@ export const PromoBanner = () => {
                     </div>
                   </div>
                   
-                  {/* Decorative Elements */}
                   <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
                   <div className="absolute -left-8 -top-8 w-32 h-32 bg-black/10 rounded-full blur-2xl" />
                 </div>

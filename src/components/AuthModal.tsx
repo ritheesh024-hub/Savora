@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -79,12 +80,14 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       if (onSuccess) onSuccess();
       onClose();
     } catch (error: any) {
-      console.error("Auth error:", error);
-      
+      // Gracefully handle if user closes the popup
       if (error.code === 'auth/popup-closed-by-user') {
         setLoading(false);
-        return;
+        return; 
       }
+
+      // Log only unexpected errors
+      console.error("Auth error:", error);
 
       if (error.code === 'auth/unauthorized-domain') {
         const domain = typeof window !== 'undefined' ? window.location.hostname : '';
