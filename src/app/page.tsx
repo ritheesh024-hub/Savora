@@ -46,7 +46,7 @@ export default function Home() {
       <Navbar />
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative min-h-[85vh] flex items-center overflow-hidden">
+        <section className="relative min-h-[75vh] md:min-h-[85vh] flex items-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <Image 
               src={getImg('hero-bg')} 
@@ -85,14 +85,14 @@ export default function Home() {
         </section>
 
         {/* PROMO OFFERS */}
-        <section className="relative z-30 -mt-10 mb-20">
+        <section className="relative z-30 -mt-8 md:-mt-12 mb-12 md:mb-16">
           <PromoBanner />
         </section>
 
         {/* SIGNATURE HIGHLIGHTS */}
-        <section className="py-20 bg-zinc-50 dark:bg-zinc-950">
+        <section className="py-16 md:py-20 bg-zinc-50 dark:bg-zinc-950">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-10 md:mb-12">
                <div className="space-y-3">
                  <Badge variant="outline" className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-primary border-primary/20">The Favorites</Badge>
                  <h2 className="text-4xl md:text-6xl font-headline font-black">Signature <span className="text-primary italic">Highlights.</span></h2>
@@ -110,7 +110,7 @@ export default function Home() {
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Syncing live kitchen...</p>
               </div>
             ) : menuItems && menuItems.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                 {menuItems.map((item) => (
                   <FoodCard key={item.id} item={item} />
                 ))}
@@ -125,12 +125,12 @@ export default function Home() {
         </section>
 
         {/* SAVOR TOOL AI SECTION */}
-        <section className="py-20 container mx-auto px-4">
+        <section className="py-16 md:py-20 container mx-auto px-4">
           <SavorTool />
         </section>
 
         {/* FEATURES SECTION */}
-        <section className="py-20 bg-background">
+        <section className="py-16 md:py-20 bg-background">
           <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-4 gap-12">
               <div className="lg:col-span-1 space-y-4">
@@ -157,7 +157,7 @@ export default function Home() {
         </section>
 
         {/* FAQ SECTION */}
-        <section className="py-20 container mx-auto px-4 max-w-4xl">
+        <section className="py-16 md:py-20 container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-12">
             <HelpCircle className="w-12 h-12 text-primary mx-auto mb-4" />
             <h2 className="text-4xl md:text-5xl font-headline font-black">Got Questions? <br /><span className="text-primary italic">We have answers.</span></h2>
@@ -179,7 +179,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="bg-background border-t pt-20 pb-10">
+      <footer className="bg-background border-t pt-16 md:pt-20 pb-10">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div className="space-y-6">
