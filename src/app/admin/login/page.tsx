@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { useAuth, useUser, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
 
   const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
 
-  // Check system state
+  // Check system state to see if it's the very first administrator
   useEffect(() => {
     async function checkSystemState() {
       if (!db) return;
@@ -56,7 +56,7 @@ export default function AdminLoginPage() {
     checkSystemState();
   }, [db]);
 
-  // Redirect if already logged in and verified
+  // If a user is already logged in, verify they have an admin profile
   useEffect(() => {
     async function checkExistingAuth() {
       if (!userLoading && user && db) {
@@ -65,6 +65,9 @@ export default function AdminLoginPage() {
           const adminSnap = await getDoc(adminRef);
           if (adminSnap.exists() && adminSnap.data().status === 'active') {
             router.push('/admin/dashboard');
+          } else {
+            // If they are logged in as a normal user but trying to reach admin, 
+            // we don't automatically log them out unless they try to force login here.
           }
         } catch (e) {
           console.error("Error checking existing auth:", e);
@@ -98,11 +101,11 @@ export default function AdminLoginPage() {
       try {
         userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
       } catch (signInError: any) {
-        // If user doesn't exist, or credentials invalid, try creating (for first setup)
+        // Handle potential first-time setup or account creation
         if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
           try {
             userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
-            toast({ title: "Account Created", description: "Your staff credentials have been initialized." });
+            toast({ title: "Account Created", description: "Staff credentials initialized." });
           } catch (createError: any) {
             if (createError.code === 'auth/email-already-in-use') {
               throw new Error("Incorrect password for this staff email.");
@@ -118,8 +121,7 @@ export default function AdminLoginPage() {
       const adminRef = doc(db, 'admins', uid);
       let adminSnap = await getDoc(adminRef);
 
-      // --- SMART CLEANUP & MIGRATION LOGIC ---
-      // Check for duplicate records by email (including placeholders)
+      // Check if this email is already a staff member in a placeholder record
       const adminsColl = collection(db, 'admins');
       const emailQuery = query(adminsColl, where('email', '==', normalizedEmail));
       const emailSnap = await getDocs(emailQuery);
@@ -130,14 +132,13 @@ export default function AdminLoginPage() {
       emailSnap.docs.forEach(docSnap => {
         if (docSnap.id !== uid) {
           oldRecordIds.push(docSnap.id);
-          // If this is the "placeholder" record, grab its stats
           if (!existingRecordData || docSnap.data().lastLoginAt) {
             existingRecordData = docSnap.data();
           }
         }
       });
 
-      // Execute migration if duplicates exist or if this is the primary email
+      // Merge placeholder records if they exist
       if (oldRecordIds.length > 0 || normalizedEmail === PRIMARY_ADMIN_EMAIL) {
         const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
         
@@ -148,24 +149,21 @@ export default function AdminLoginPage() {
           email: normalizedEmail,
           lastLoginAt: serverTimestamp(),
           onlineStatus: 'online',
-          // FOR PRIMARY ADMIN: Always force active status and admin role
           status: isPrimary ? 'active' : (existingRecordData as any)?.status || 'active',
           role: isPrimary ? 'admin' : (existingRecordData as any)?.role || selectedRole || 'cashier'
         };
         
         await setDoc(adminRef, migratedData, { merge: true });
-        
-        // Clean up messy duplicates
         for (const oldId of oldRecordIds) {
           await deleteDoc(doc(db, 'admins', oldId));
         }
         
-        toast({ title: isPrimary ? "Admin Restored" : "Account Synced", description: "All permissions and data have been unified." });
+        toast({ title: isPrimary ? "Admin Restored" : "Account Synced", description: "Identity verified." });
         router.push('/admin/dashboard');
         return;
       }
 
-      // Final fallback if NO record exists at all
+      // If no admin record exists, create one but potentially disable it until manual approval
       if (!adminSnap.exists()) {
         const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
         const firstAdminData = { 
@@ -183,23 +181,23 @@ export default function AdminLoginPage() {
         await setDoc(adminRef, firstAdminData);
         
         if (isPrimary || isFirstSetup) {
-           toast({ title: "Admin Access Granted", description: "Your profile has been activated." });
+           toast({ title: "Admin Access Granted", description: "Profile activated." });
            router.push('/admin/dashboard');
         } else {
-           toast({ title: "Access Requested", description: "Your registration is pending admin approval." });
+           toast({ title: "Access Requested", description: "Pending administrator approval." });
+           await signOut(auth); // Sign out since they aren't approved yet
            setStep('selection');
         }
         return;
       }
 
       const data = adminSnap.data();
-      // Safety check for primary admin status
       if (data.status === 'disabled') {
         if (normalizedEmail === PRIMARY_ADMIN_EMAIL) {
           await updateDoc(adminRef, { status: 'active', role: 'admin' });
         } else {
-          await auth.signOut();
-          throw new Error("Access Denied. Your account is disabled. Contact your administrator.");
+          await signOut(auth);
+          throw new Error("Access Denied. Your staff account is disabled.");
         }
       }
       
@@ -215,7 +213,7 @@ export default function AdminLoginPage() {
       console.error('Auth error:', error);
       toast({ 
         variant: "destructive", 
-        title: "Login Error", 
+        title: "Staff Login Failed", 
         description: error.message || "Failed to authenticate staff record." 
       });
     } finally {
@@ -240,45 +238,27 @@ export default function AdminLoginPage() {
             <ShoppingBag className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-black font-headline tracking-tighter">Ezzy<span className="text-primary italic">Ops</span></h1>
-          <p className="text-muted-foreground text-xs font-black uppercase tracking-[0.3em]">Operational Gateways</p>
+          <p className="text-muted-foreground text-xs font-black uppercase tracking-[0.3em]">Operational Access</p>
         </div>
 
         {isFirstSetup && (
           <Alert className="max-w-xl mb-8 bg-primary/10 border-primary/20 rounded-2xl animate-in zoom-in duration-500">
             <ShieldCheck className="h-4 w-4 text-primary" />
-            <AlertTitle className="text-primary font-black uppercase text-[10px] tracking-widest">Initial System Setup</AlertTitle>
+            <AlertTitle className="text-primary font-black uppercase text-[10px] tracking-widest">System Boot</AlertTitle>
             <AlertDescription className="text-xs font-medium">
-              The system is ready for its first administrator. Sign in with your email to claim full platform privileges.
+              Ready for primary administrator setup. Use your work email to claim platform privileges.
             </AlertDescription>
           </Alert>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
-          <RoleCard 
-            icon={ShieldCheck} 
-            title="Executive Admin" 
-            desc="Full platform control, analytics & settings" 
-            color="bg-primary"
-            onClick={() => handleRoleSelect('admin')}
-          />
-          <RoleCard 
-            icon={Receipt} 
-            title="Billing Cashier" 
-            desc="POS, Billing & Dine-in management" 
-            color="bg-blue-600"
-            onClick={() => handleRoleSelect('cashier')}
-          />
-          <RoleCard 
-            icon={ChefHat} 
-            title="Kitchen Chef" 
-            desc="Live orders & preparation status" 
-            color="bg-orange-500"
-            onClick={() => handleRoleSelect('kitchen')}
-          />
+          <RoleCard icon={ShieldCheck} title="Executive Admin" desc="Platform control & analytics" color="bg-primary" onClick={() => handleRoleSelect('admin')} />
+          <RoleCard icon={Receipt} title="Billing Cashier" desc="POS & Dine-in management" color="bg-blue-600" onClick={() => handleRoleSelect('cashier')} />
+          <RoleCard icon={ChefHat} title="Kitchen Chef" desc="Live orders & status" color="bg-orange-500" onClick={() => handleRoleSelect('kitchen')} />
         </div>
         
-        <p className="mt-12 text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">
-          Authorized Personnel Only
+        <p className="mt-12 text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-30">
+          Staff Identity Portal
         </p>
       </div>
     );
@@ -312,10 +292,10 @@ export default function AdminLoginPage() {
             </div>
           </div>
           <CardTitle className="text-2xl font-black font-headline uppercase tracking-tighter">
-            {selectedRole} Secure Login
+            {selectedRole} Login
           </CardTitle>
           <CardDescription className="font-bold text-[10px] uppercase tracking-widest opacity-60">
-            Ezzy Bites Operational Console
+            Internal Staff Verification
           </CardDescription>
         </CardHeader>
 
@@ -354,7 +334,7 @@ export default function AdminLoginPage() {
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-2xl border border-green-100 dark:border-green-800 flex gap-3 items-start">
                 <RefreshCw className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                 <p className="text-[9px] font-black text-green-700 dark:text-green-400 leading-tight uppercase">
-                  Primary account detected. Your profile will be verified and auto-activated.
+                  Primary identity recognized. Verification auto-sync enabled.
                 </p>
               </div>
             )}
@@ -374,15 +354,11 @@ export default function AdminLoginPage() {
                 <Loader2 className="w-6 h-6 animate-spin" />
               ) : (
                 <div className="flex items-center gap-3">
-                  <span>Authorize & Enter</span>
+                  <span>Enter Console</span>
                   <ArrowRight className="w-5 h-5" />
                 </div>
               )}
             </Button>
-            
-            <p className="text-[9px] text-center text-muted-foreground font-bold uppercase tracking-widest opacity-40">
-              Session is encrypted and logged for security.
-            </p>
           </CardFooter>
         </form>
       </Card>
@@ -405,7 +381,7 @@ function RoleCard({ icon: Icon, title, desc, color, onClick }: any) {
           <p className="text-xs font-medium text-muted-foreground leading-relaxed">{desc}</p>
         </div>
         <div className="pt-4 flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest opacity-0 group-hover:opacity-100 transition-all">
-          Enter Gateway <ArrowRight className="w-3 h-3" />
+          Authorize <ArrowRight className="w-3 h-3" />
         </div>
       </CardContent>
     </Card>

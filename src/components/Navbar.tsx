@@ -1,16 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Menu, X, User, LogOut, History, Search } from 'lucide-react';
+import { ShoppingBag, Menu, X, User, LogOut, History, ShieldCheck, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useDoc } from '@/firebase';
 import { AuthModal } from './AuthModal';
 import { CartDrawer } from './CartDrawer';
 import { useStore } from '@/app/lib/store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { doc } from 'firebase/firestore';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -27,7 +28,18 @@ export const Navbar = () => {
   
   const { user, loading: userLoading } = useUser();
   const auth = useAuth();
+  const db = useFirestore();
   const { cart } = useStore();
+
+  // Role Verification: Check if this user is a Customer or Staff
+  const userDocRef = useMemo(() => user && db ? doc(db, 'users', user.uid) : null, [user, db]);
+  const adminDocRef = useMemo(() => user && db ? doc(db, 'admins', user.uid) : null, [user, db]);
+  
+  const { data: customerProfile, loading: customerLoading } = useDoc(userDocRef);
+  const { data: adminProfile, loading: adminLoading } = useDoc(adminDocRef);
+
+  const isCustomer = !!customerProfile;
+  const isStaff = !!adminProfile;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -82,36 +94,56 @@ export const Navbar = () => {
               </Button>
             </CartDrawer>
 
-            {!userLoading && (
+            {!userLoading && !customerLoading && !adminLoading && (
               user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="outline-none rounded-full ring-offset-background focus:ring-2 focus:ring-primary/20 transition-transform active:scale-95">
-                      <Avatar className="h-11 w-11 border-2 border-background shadow-lg">
-                        <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                        <AvatarFallback className="bg-orange-gradient text-white font-black text-xs">
-                          {user.displayName?.slice(0, 2).toUpperCase() || 'EB'}
-                        </AvatarFallback>
-                      </Avatar>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64 rounded-[2rem] p-3 border-none shadow-3xl bg-white dark:bg-zinc-900 mt-2">
-                    <DropdownMenuLabel className="px-4 py-4">
-                      <p className="text-sm font-black uppercase tracking-tight truncate">{user.displayName}</p>
-                      <p className="text-[10px] font-medium opacity-50 truncate">{user.email}</p>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild className="rounded-2xl py-3 font-bold cursor-pointer hover:bg-primary/5 transition-colors">
-                      <Link href="/orders" className="flex items-center gap-3">
-                        <History className="w-5 h-5 text-primary" /> My History
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout} className="rounded-2xl py-3 font-bold text-destructive cursor-pointer hover:bg-destructive/5 transition-colors flex items-center gap-3">
-                      <LogOut className="w-5 h-5" /> Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                isStaff && !isCustomer ? (
+                  /* STAFF AUTHENTICATED STATE */
+                  <Link href="/admin/dashboard">
+                    <Button variant="outline" className="rounded-2xl h-11 px-4 gap-2 font-black uppercase text-[9px] tracking-widest border-primary/20 bg-primary/5 text-primary">
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  /* CUSTOMER AUTHENTICATED STATE */
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="outline-none rounded-full ring-offset-background focus:ring-2 focus:ring-primary/20 transition-transform active:scale-95">
+                        <Avatar className="h-11 w-11 border-2 border-background shadow-lg">
+                          <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
+                          <AvatarFallback className="bg-orange-gradient text-white font-black text-xs">
+                            {user.displayName?.slice(0, 2).toUpperCase() || 'EB'}
+                          </AvatarFallback>
+                        </Avatar>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64 rounded-[2rem] p-3 border-none shadow-3xl bg-white dark:bg-zinc-900 mt-2">
+                      <DropdownMenuLabel className="px-4 py-4">
+                        <p className="text-sm font-black uppercase tracking-tight truncate">{user.displayName || user.email?.split('@')[0]}</p>
+                        <p className="text-[10px] font-medium opacity-50 truncate">{user.email}</p>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild className="rounded-2xl py-3 font-bold cursor-pointer hover:bg-primary/5 transition-colors">
+                        <Link href="/orders" className="flex items-center gap-3">
+                          <History className="w-5 h-5 text-primary" /> My History
+                        </Link>
+                      </DropdownMenuItem>
+                      {isStaff && (
+                        <DropdownMenuItem asChild className="rounded-2xl py-3 font-bold cursor-pointer hover:bg-orange-50 transition-colors">
+                          <Link href="/admin/dashboard" className="flex items-center gap-3 text-orange-600">
+                            <ShieldCheck className="w-5 h-5" /> Staff Console
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleLogout} className="rounded-2xl py-3 font-bold text-destructive cursor-pointer hover:bg-destructive/5 transition-colors flex items-center gap-3">
+                        <LogOut className="w-5 h-5" /> Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )
               ) : (
+                /* GUEST STATE */
                 <Button 
                   onClick={() => setIsAuthModalOpen(true)}
                   className="rounded-2xl px-6 h-12 font-black uppercase text-[10px] tracking-widest transition-all bg-orange-gradient text-white shadow-lg shadow-primary/20 hidden md:flex"
@@ -143,12 +175,19 @@ export const Navbar = () => {
                 Join the Family
               </Button>
             ) : (
-              <button 
-                onClick={() => { handleLogout(); setIsMenuOpen(false); }} 
-                className="px-6 py-4 font-black uppercase tracking-widest text-[11px] text-destructive text-left hover:bg-destructive/5 rounded-2xl transition-all"
-              >
-                Sign Out
-              </button>
+              <>
+                {isStaff && (
+                  <Link href="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="px-6 py-4 font-black uppercase tracking-widest text-[11px] text-primary flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" /> Staff Console
+                  </Link>
+                )}
+                <button 
+                  onClick={() => { handleLogout(); setIsMenuOpen(false); }} 
+                  className="px-6 py-4 font-black uppercase tracking-widest text-[11px] text-destructive text-left hover:bg-destructive/5 rounded-2xl transition-all"
+                >
+                  Sign Out
+                </button>
+              </>
             )}
           </div>
         </div>
