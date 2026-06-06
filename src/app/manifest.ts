@@ -1,4 +1,3 @@
-
 import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -25,6 +24,11 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
     shortcuts: [
+      {
+        name: 'Explore Menu',
+        url: '/menu',
+        icons: [{ src: 'https://placehold.co/96x96/ef4444/ffffff?text=Menu', sizes: '96x96' }]
+      },
       {
         name: 'Track Orders',
         url: '/orders',

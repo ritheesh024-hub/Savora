@@ -1,14 +1,15 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Menu, X, User, LogOut, History } from 'lucide-react';
+import { ShoppingBag, Menu, X, User, LogOut, History, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { AuthModal } from './AuthModal';
+import { CartDrawer } from './CartDrawer';
+import { useStore } from '@/app/lib/store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   DropdownMenu, 
@@ -26,6 +27,7 @@ export const Navbar = () => {
   
   const { user, loading: userLoading } = useUser();
   const auth = useAuth();
+  const { cart } = useStore();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -73,6 +75,16 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
             
+            <Link href="/menu">
+              <Button variant="ghost" size="sm" className={cn(
+                "rounded-full gap-2 px-5 font-black uppercase text-[10px] tracking-widest transition-colors",
+                !scrolled ? "text-white hover:bg-white/10" : "text-foreground"
+              )}>
+                <Utensils className="w-4 h-4" />
+                Digital Menu
+              </Button>
+            </Link>
+
             <Link href="/orders">
               <Button variant="ghost" size="sm" className={cn(
                 "rounded-full gap-2 px-5 font-black uppercase text-[10px] tracking-widest transition-colors",
@@ -82,6 +94,20 @@ export const Navbar = () => {
                 Track History
               </Button>
             </Link>
+
+            <CartDrawer>
+              <Button variant="ghost" size="icon" className={cn(
+                "rounded-full w-10 h-10 transition-colors relative",
+                !scrolled ? "text-white hover:bg-white/10" : "text-foreground"
+              )}>
+                <ShoppingBag className="w-5 h-5" />
+                {cart.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center animate-in zoom-in">
+                    {cart.reduce((acc, i) => acc + i.quantity, 0)}
+                  </span>
+                )}
+              </Button>
+            </CartDrawer>
 
             {!userLoading && (
               user ? (
@@ -131,6 +157,19 @@ export const Navbar = () => {
           {/* Mobile Actions */}
           <div className="md:hidden flex items-center gap-1">
             <ThemeToggle />
+            <CartDrawer>
+              <Button variant="ghost" size="icon" className={cn(
+                "rounded-full w-10 h-10 transition-colors relative",
+                !scrolled ? "text-white" : "text-foreground"
+              )}>
+                <ShoppingBag className="w-5 h-5" />
+                {cart.length > 0 && (
+                  <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center">
+                    {cart.reduce((acc, i) => acc + i.quantity, 0)}
+                  </span>
+                )}
+              </Button>
+            </CartDrawer>
             <Button variant="ghost" size="icon" className={cn(
               "rounded-full w-10 h-10 transition-colors",
               !scrolled ? "text-white" : "text-foreground"
@@ -146,6 +185,7 @@ export const Navbar = () => {
         <div className="md:hidden absolute top-full left-0 w-full glass border-t border-white/10 animate-in slide-in-from-top duration-300">
           <div className="flex flex-col p-6 gap-2">
             <Link href="/" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Home</Link>
+            <Link href="/menu" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Digital Menu</Link>
             <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Order History</Link>
             {!user ? (
               <button 
