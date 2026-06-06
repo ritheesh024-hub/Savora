@@ -4,7 +4,6 @@ import { Navbar } from '@/components/Navbar';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { PromoBanner } from '@/components/PromoBanner';
 import { SavorTool } from '@/components/SavorTool';
-import { Categories } from '@/components/Categories';
 import { 
   ShoppingBag, ChefHat, Truck, Award, 
   HelpCircle, Instagram, Twitter, Facebook,
@@ -22,7 +21,6 @@ import placeholderData from '@/app/lib/placeholder-images.json';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { FoodItem } from '@/app/lib/store';
-import { cn } from '@/lib/utils';
 
 export default function Home() {
   const [currentYear, setCurrentYear] = useState<number | null>(null);
@@ -127,14 +125,6 @@ export default function Home() {
              />
           </div>
         </div>
-
-        {/* CATEGORIES SECTION */}
-        <section className="py-12 bg-white dark:bg-zinc-950">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-black uppercase tracking-tighter mb-8">What's on your <span className="text-primary italic">Mind?</span></h2>
-            <Categories />
-          </div>
-        </section>
 
         {/* MENU HIGHLIGHTS */}
         <section className="py-12 bg-[#F8F9FA] dark:bg-zinc-900/50">
