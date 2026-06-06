@@ -8,6 +8,7 @@ import {
   ArrowRight, History, Utensils
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FoodCard } from '@/components/FoodCard';
 import { MENU_ITEMS } from '@/app/lib/menu-data';
