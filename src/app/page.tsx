@@ -2,10 +2,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { PromoBanner } from '@/components/PromoBanner';
+import { SavorTool } from '@/components/SavorTool';
 import { 
   ShoppingBag, Star, ChefHat, Truck, Award, 
   HelpCircle, Instagram, Twitter, Facebook,
-  ArrowRight, History, Utensils, Loader2
+  ArrowRight, History, Utensils, Loader2, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +30,6 @@ export default function Home() {
 
   const highlightsQuery = useMemo(() => {
     if (!db) return null;
-    // Fetch available items for the homepage highlights
     return query(
       collection(db, 'products'),
       where('isAvailable', '==', true),
@@ -85,20 +86,13 @@ export default function Home() {
                   </Button>
                 </Link>
               </div>
-              <div className="pt-8 flex flex-wrap gap-10 border-l border-white/20 pl-8 animate-in fade-in duration-1000 delay-700">
-                {[
-                  { label: "Swift Delivery", val: "25m" },
-                  { label: "Happy Customers", val: "10k+" },
-                  { label: "Rating", val: "4.9/5" }
-                ].map((s, i) => (
-                  <div key={i}>
-                    <p className="text-2xl font-black text-white">{s.val}</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40">{s.label}</p>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
+        </section>
+
+        {/* PROMO OFFERS */}
+        <section className="relative z-30 -mt-10 mb-20">
+          <PromoBanner />
         </section>
 
         {/* SIGNATURE HIGHLIGHTS */}
@@ -134,6 +128,11 @@ export default function Home() {
               </div>
             )}
           </div>
+        </section>
+
+        {/* SAVOR TOOL AI SECTION */}
+        <section className="py-20 container mx-auto px-4">
+          <SavorTool />
         </section>
 
         {/* FEATURES SECTION */}
