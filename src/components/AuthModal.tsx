@@ -10,11 +10,12 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Loader2, AlertCircle, Info } from 'lucide-react';
+import { ShoppingBag, Loader2, Info, Copy, Check } from 'lucide-react';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuth, useFirestore } from '@/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -24,8 +25,18 @@ interface AuthModalProps {
 
 export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<{ message: string; domain?: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+  
   const auth = useAuth();
   const db = useFirestore();
+
+  const handleCopyDomain = (domain: string) => {
+    navigator.clipboard.writeText(domain);
+    setCopied(true);
+    toast({ title: "Domain Copied", description: "Now paste this into Firebase Authorized Domains." });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleGoogleSignIn = async () => {
     if (!auth || !db) {
@@ -38,6 +49,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
     }
     
     setLoading(true);
+    setAuthError(null);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
@@ -45,7 +57,6 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
-      // Save/Update user profile in Firestore
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
       
@@ -70,26 +81,24 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
     } catch (error: any) {
       console.error("Auth error:", error);
       
-      // Silent handling for user closure
       if (error.code === 'auth/popup-closed-by-user') {
         setLoading(false);
         return;
       }
 
-      let errorMessage = "Something went wrong with Google Sign-In.";
-      
       if (error.code === 'auth/unauthorized-domain') {
-        const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
-        errorMessage = `This domain (${currentDomain}) is not authorized. Please add it to 'Authorized Domains' in your Firebase Console under Authentication > Settings.`;
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = "Sign-in popup was blocked by your browser. Please allow popups for this site.";
+        const domain = typeof window !== 'undefined' ? window.location.hostname : '';
+        setAuthError({
+          message: "This domain is not authorized in Firebase. Please add it to your Authorized Domains list.",
+          domain
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Sign In Failed",
+          description: error.message || "Something went wrong with Google Sign-In.",
+        });
       }
-
-      toast({
-        variant: "destructive",
-        title: "Sign In Failed",
-        description: errorMessage,
-      });
     } finally {
       setLoading(false);
     }
@@ -112,7 +121,29 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           </div>
         </DialogHeader>
 
-        <div className="mt-10 space-y-4">
+        {authError && (
+          <Alert variant="destructive" className="mt-6 border-none bg-red-50 text-red-900 rounded-2xl">
+            <AlertTitle className="font-black text-xs uppercase mb-2">Configuration Required</AlertTitle>
+            <AlertDescription className="text-[11px] font-medium leading-relaxed">
+              {authError.message}
+              {authError.domain && (
+                <div className="mt-3 p-3 bg-white/50 rounded-xl flex items-center justify-between gap-2 border border-red-100">
+                  <code className="text-[10px] font-mono break-all">{authError.domain}</code>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-8 w-8 shrink-0 hover:bg-red-100"
+                    onClick={() => handleCopyDomain(authError.domain!)}
+                  >
+                    {copied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+                </div>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="mt-8 space-y-4">
           <Button 
             onClick={handleGoogleSignIn}
             disabled={loading}
@@ -138,7 +169,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
             <p className="text-[9px] font-bold text-muted-foreground uppercase">Popups must be enabled</p>
           </div>
           
-          <p className="text-[9px] text-center text-muted-foreground font-bold uppercase tracking-widest opacity-50 px-8">
+          <p className="text-[9px] text-center text-muted-foreground font-bold uppercase tracking-widest opacity-50 px-8 leading-relaxed">
             By continuing, you agree to our Terms of Service and Privacy Policy.
           </p>
         </div>
