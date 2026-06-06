@@ -8,7 +8,7 @@ import {
   ShoppingBag, ChefHat, Truck, Award, 
   HelpCircle, Instagram, Twitter, Facebook,
   ArrowRight, History, Utensils, Loader2,
-  Search, Star, Sparkles
+  Search, Star, Sparkles, Clock, ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,22 +45,23 @@ export default function Home() {
   const getImg = (id: string) => placeholderData.placeholderImages.find(img => img.id === id)?.imageUrl || '';
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8F9FA] dark:bg-zinc-950 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-950 overflow-x-hidden">
       <Navbar />
       
       <main className="flex-1">
-        {/* HERO SECTION - SWIGGY STYLE */}
-        <section className="relative pt-24 pb-12 md:pt-32 md:pb-20 overflow-hidden bg-white dark:bg-zinc-950">
+        {/* HERO SECTION - CLEAN SWIGGY STYLE */}
+        <section className="relative pt-24 pb-12 md:pt-36 md:pb-24 overflow-hidden bg-gradient-to-br from-white to-secondary/20 dark:from-zinc-950 dark:to-zinc-900">
           <div className="container mx-auto px-4 relative z-20">
-            <div className="grid lg:grid-cols-2 items-center gap-12">
-              <div className="space-y-8 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 bg-orange-100 dark:bg-orange-500/10 px-4 py-2 rounded-full border border-orange-200 dark:border-orange-500/20 animate-in slide-in-from-bottom duration-700">
-                  <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                  <span className="text-[10px] font-black tracking-widest uppercase text-primary">Student Specials Live Now</span>
+            <div className="grid lg:grid-cols-2 items-center gap-16">
+              {/* LEFT SIDE: TEXT & CTA */}
+              <div className="space-y-8 text-center lg:text-left animate-in fade-in slide-in-from-left duration-700">
+                <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-[10px] font-black tracking-widest uppercase text-primary">Premium Fast Food Experience</span>
                 </div>
                 
                 <div className="space-y-4">
-                  <h1 className="text-5xl md:text-8xl font-headline font-black leading-[0.9] tracking-tighter">
+                  <h1 className="text-5xl md:text-8xl font-headline font-black leading-[0.95] tracking-tighter">
                     Flavor that <br />
                     <span className="text-primary italic">Commands</span> <br />
                     Respect.
@@ -70,42 +71,52 @@ export default function Home() {
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start pt-4">
                   <Link href="/menu" className="w-full sm:w-auto">
-                    <Button size="lg" className="w-full sm:w-auto rounded-2xl h-16 md:h-20 px-12 text-lg font-black shadow-2xl shadow-primary/20 hover:scale-105 transition-all bg-orange-gradient text-white border-none">
-                      Order Now
+                    <Button size="lg" className="w-full sm:w-auto rounded-2xl h-16 md:h-20 px-12 text-lg font-black shadow-2xl shadow-primary/20 bg-orange-gradient text-white border-none transform transition-transform hover:scale-105 active:scale-95">
+                      Start Your Order
                       <ArrowRight className="ml-2 w-6 h-6" />
                     </Button>
                   </Link>
                 </div>
+
+                <div className="flex flex-wrap items-center gap-6 justify-center lg:justify-start pt-4 border-t border-border/50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                      <Truck className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Free Delivery</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">25 Min Delivery</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">FSSAI Certified</span>
+                  </div>
+                </div>
               </div>
 
-              {/* 3D FOOD COMPOSITION */}
-              <div className="relative h-[400px] md:h-[600px] animate-in fade-in zoom-in duration-1000 hidden lg:block">
-                <div className="absolute inset-0 bg-primary/5 rounded-full blur-3xl" />
-                <div className="relative h-full preserve-3d">
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[450px] aspect-square animate-float">
-                    <Image src={getImg('hero-burger')} alt="Premium Burger" fill className="object-contain drop-shadow-[0_50px_50px_rgba(0,0,0,0.2)]" priority />
-                  </div>
-                  <div className="absolute top-0 right-0 w-48 h-48 animate-float-slow delay-500">
-                    <Image src={getImg('hero-fries')} alt="Fries" fill className="object-contain drop-shadow-xl" />
-                  </div>
-                  <div className="absolute bottom-12 left-0 w-40 h-40 animate-float delay-1000">
-                    <Image src={getImg('hero-drink')} alt="Drink" fill className="object-contain drop-shadow-xl" />
-                  </div>
+              {/* RIGHT SIDE: SINGLE CLEAN HERO IMAGE */}
+              <div className="relative flex items-center justify-center animate-in fade-in slide-in-from-right duration-1000">
+                <div className="relative w-full max-w-[500px] aspect-square">
+                  {/* Subtle Background Glow */}
+                  <div className="absolute inset-0 bg-primary/10 rounded-full blur-[100px] opacity-60" />
                   
-                  {/* Floating Badges */}
-                  <div className="absolute top-1/4 -right-4 glass p-4 rounded-2xl shadow-3xl rotate-12 flex items-center gap-3 animate-float-slow">
-                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white"><Star className="w-5 h-5 fill-current" /></div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40 leading-none">Rating</p>
-                      <p className="text-lg font-black">4.9/5</p>
-                    </div>
-                  </div>
-                  
-                  <div className="absolute bottom-1/4 -left-8 bg-orange-gradient p-5 rounded-[2rem] shadow-3xl -rotate-6 text-white animate-float delay-300">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1">Offer</p>
-                    <p className="text-2xl font-black italic leading-none">50% OFF</p>
+                  {/* Main Product Image - No Floating Animations */}
+                  <div className="relative h-full w-full transform transition-transform duration-700 hover:scale-[1.02]">
+                    <Image 
+                      src={getImg('hero-burger')} 
+                      alt="Premium Featured Dish" 
+                      fill 
+                      className="object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)]" 
+                      priority 
+                    />
                   </div>
                 </div>
               </div>
@@ -114,7 +125,7 @@ export default function Home() {
         </section>
 
         {/* SEARCH BAR (BELOW HERO) */}
-        <div className="container mx-auto px-4 -mt-8 relative z-30 lg:hidden">
+        <div className="container mx-auto px-4 -mt-10 relative z-30 lg:hidden">
           <div className="glass p-3 rounded-2xl shadow-3xl flex items-center border border-white/50">
              <Search className="w-5 h-5 text-muted-foreground ml-3" />
              <Input 
@@ -127,16 +138,16 @@ export default function Home() {
         </div>
 
         {/* MENU HIGHLIGHTS */}
-        <section className="py-12 bg-[#F8F9FA] dark:bg-zinc-900/50">
+        <section className="py-16 bg-white dark:bg-zinc-950">
           <div className="container mx-auto px-4">
-            <div className="flex justify-between items-end mb-8">
+            <div className="flex justify-between items-end mb-10">
               <div>
-                <Badge className="bg-primary/10 text-primary border-none mb-2 font-black uppercase text-[9px] px-3">Top Rated</Badge>
-                <h2 className="text-3xl md:text-5xl font-black font-headline">Best <span className="text-primary italic">Sellers.</span></h2>
+                <Badge variant="outline" className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 mb-3">The Favorites</Badge>
+                <h2 className="text-4xl md:text-6xl font-black font-headline">Best <span className="text-primary italic">Sellers.</span></h2>
               </div>
               <Link href="/menu">
                 <Button variant="ghost" className="font-black text-[11px] uppercase tracking-widest gap-2 text-primary hover:bg-primary/5">
-                  See Full Menu <ArrowRight className="w-4 h-4" />
+                  Full Menu <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
             </div>
@@ -157,21 +168,21 @@ export default function Home() {
           </div>
         </section>
 
-        {/* OFFERS SECTION - COMPACT 3D CARDS */}
-        <section className="py-12 bg-white dark:bg-zinc-950">
+        {/* OFFERS SECTION */}
+        <section className="py-16 bg-secondary/10 dark:bg-zinc-900/30">
           <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-black uppercase tracking-tighter mb-8">Best <span className="text-primary italic">Offers</span> For You</h2>
+            <h2 className="text-2xl font-black uppercase tracking-tighter mb-8 px-2">Limited <span className="text-primary italic">Offers</span></h2>
             <PromoBanner />
           </div>
         </section>
 
         {/* AI SAVOR TOOL */}
-        <section className="py-12 container mx-auto px-4">
+        <section className="py-20 container mx-auto px-4">
           <SavorTool />
         </section>
 
         {/* FEATURES */}
-        <section className="py-16 bg-[#F8F9FA] dark:bg-zinc-900/50">
+        <section className="py-20 bg-white dark:bg-zinc-950">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-3 gap-8">
               {[
@@ -179,8 +190,8 @@ export default function Home() {
                 { icon: Truck, title: "Hyper-Local", desc: "A 25-minute delivery promise for all local sanctuary orders." },
                 { icon: Award, title: "Gold Standard", desc: "Only A-grade ingredients. No preservatives, just pure taste." }
               ].map((f, i) => (
-                <div key={i} className="bg-white dark:bg-zinc-900 p-8 rounded-[2rem] shadow-soft hover:shadow-xl transition-all border border-border/40">
-                  <div className="w-14 h-14 bg-orange-gradient rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg shadow-primary/20">
+                <div key={i} className="bg-secondary/20 dark:bg-zinc-900/50 p-8 rounded-[2rem] shadow-soft hover:shadow-xl transition-all border border-border/40 group">
+                  <div className="w-14 h-14 bg-orange-gradient rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
                     <f.icon className="w-7 h-7" />
                   </div>
                   <h4 className="text-xl font-black mb-2 uppercase tracking-tight">{f.title}</h4>
@@ -192,10 +203,10 @@ export default function Home() {
         </section>
 
         {/* FAQ */}
-        <section className="py-16 container mx-auto px-4 max-w-4xl">
+        <section className="py-20 container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-12">
             <HelpCircle className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h2 className="text-4xl font-headline font-black">Got Questions?</h2>
+            <h2 className="text-4xl font-headline font-black uppercase tracking-tighter">Frequently Asked Questions</h2>
           </div>
           <Accordion type="single" collapsible className="space-y-4">
             {[
@@ -203,7 +214,7 @@ export default function Home() {
               { q: "Is there a student special?", a: "Yes! Use code STUDENT10 at checkout for 10% OFF on all orders above ₹200." },
               { q: "How do you handle bulk orders?", a: "For event catering, contact our hotline via WhatsApp for a custom logistics plan." }
             ].map((faq, i) => (
-              <AccordionItem key={i} value={`item-${i}`} className="border-none bg-white dark:bg-zinc-900 rounded-[1.5rem] px-8 shadow-sm">
+              <AccordionItem key={i} value={`item-${i}`} className="border-none bg-secondary/20 dark:bg-zinc-900/50 rounded-[1.5rem] px-8 shadow-sm">
                 <AccordionTrigger className="font-black text-lg hover:no-underline py-6 text-left">{faq.q}</AccordionTrigger>
                 <AccordionContent className="text-muted-foreground pb-6 text-base font-medium">{faq.a}</AccordionContent>
               </AccordionItem>
