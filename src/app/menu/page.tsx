@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { FoodCard } from '@/components/FoodCard';
 import { CATEGORIES } from '@/app/lib/menu-data';
@@ -7,6 +7,7 @@ import { Search, Loader2, PackageX, AlertCircle, Filter, Grid3X3, StretchHorizon
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useSearchParams } from 'next/navigation';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -20,14 +21,21 @@ import { collection, query } from 'firebase/firestore';
 import { FoodItem, useStore } from '@/app/lib/store';
 import { cn } from '@/lib/utils';
 
-export default function MenuPage() {
+function MenuContent() {
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get('q') || '';
+  
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(urlQuery);
   const [priceSort, setPriceSort] = useState<'none' | 'asc' | 'desc'>('none');
   const [dietFilter, setDietFilter] = useState<'all' | 'veg' | 'non-veg'>('all');
   
   const db = useFirestore();
   const { menuViewMode, setMenuViewMode } = useStore();
+
+  useEffect(() => {
+    if (urlQuery) setSearchQuery(urlQuery);
+  }, [urlQuery]);
 
   const productsQuery = useMemo(() => {
     if (!db) return null;
@@ -97,7 +105,7 @@ export default function MenuPage() {
             <div className="relative flex-1 w-full">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input 
-                placeholder="What are you craving?" 
+                placeholder="Search menu..." 
                 className="h-14 pl-14 rounded-full border-none bg-secondary/40 text-base font-bold placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -193,5 +201,13 @@ export default function MenuPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function MenuPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>}>
+      <MenuContent />
+    </Suspense>
   );
 }

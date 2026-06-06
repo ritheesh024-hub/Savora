@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Menu, X, User, LogOut, History, ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingBag, Menu, X, User, LogOut, History, ShieldCheck, LayoutDashboard, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,7 @@ import { CartDrawer } from './CartDrawer';
 import { useStore } from '@/app/lib/store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { doc } from 'firebase/firestore';
+import { Input } from '@/components/ui/input';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -25,13 +27,15 @@ export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [navSearch, setNavSearch] = useState('');
   
   const { user, loading: userLoading } = useUser();
   const auth = useAuth();
   const db = useFirestore();
   const { cart } = useStore();
+  const router = useRouter();
 
-  // Role Verification: Check if this user is a Customer or Staff
+  // Role Verification
   const userDocRef = useMemo(() => user && db ? doc(db, 'users', user.uid) : null, [user, db]);
   const adminDocRef = useMemo(() => user && db ? doc(db, 'admins', user.uid) : null, [user, db]);
   
@@ -55,39 +59,60 @@ export const Navbar = () => {
     }
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (navSearch.trim()) {
+      router.push(`/menu?q=${encodeURIComponent(navSearch.trim())}`);
+      setNavSearch('');
+    }
+  };
+
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 z-[100] transition-all duration-500",
+      "fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4",
       scrolled ? "glass border-b border-border/50 py-2 shadow-soft" : "bg-white/90 dark:bg-zinc-950/90 py-4"
     )}>
-      <div className="container mx-auto px-4">
-        <div className="h-14 md:h-16 flex items-center justify-between px-2">
+      <div className="container mx-auto">
+        <div className="h-14 md:h-16 flex items-center justify-between gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <div className="w-10 h-10 bg-orange-gradient rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-all shadow-lg shadow-primary/20">
               <ShoppingBag className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl md:text-2xl font-headline font-black tracking-tight">
+            <span className="text-xl font-headline font-black tracking-tighter hidden sm:inline">
               Ezzy<span className="text-primary italic">Bites</span>
             </span>
           </Link>
 
+          {/* Search Bar - iPhone Style */}
+          <div className="flex-1 max-w-lg hidden md:block">
+            <form onSubmit={handleSearchSubmit} className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input 
+                value={navSearch}
+                onChange={(e) => setNavSearch(e.target.value)}
+                placeholder="Search premium bites..." 
+                className="w-full h-11 pl-11 pr-4 rounded-full border-none bg-secondary/50 focus:bg-white dark:focus:bg-zinc-900 transition-all font-medium text-sm focus:ring-2 focus:ring-primary/20"
+              />
+            </form>
+          </div>
+
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6 flex-1 justify-center">
+          <div className="hidden xl:flex items-center gap-6">
             <Link href="/" className="text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors">Home</Link>
             <Link href="/menu" className="text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors">Menu</Link>
             <Link href="/orders" className="text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors">Orders</Link>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-2">
             <ThemeToggle />
             
             <CartDrawer>
-              <Button variant="ghost" size="icon" className="rounded-full w-11 h-11 transition-all relative hover:bg-primary/5">
+              <Button variant="ghost" size="icon" className="rounded-full w-10 h-10 transition-all relative hover:bg-primary/5">
                 <ShoppingBag className="w-5 h-5" />
                 {cart.length > 0 && (
-                  <span className="absolute top-1 right-1 w-5 h-5 bg-primary text-white text-[9px] font-black rounded-full flex items-center justify-center animate-in zoom-in border-2 border-background">
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background">
                     {cart.reduce((acc, i) => acc + i.quantity, 0)}
                   </span>
                 )}
@@ -97,21 +122,19 @@ export const Navbar = () => {
             {!userLoading && !customerLoading && !adminLoading && (
               user ? (
                 isStaff && !isCustomer ? (
-                  /* STAFF AUTHENTICATED STATE */
                   <Link href="/admin/dashboard">
-                    <Button variant="outline" className="rounded-2xl h-11 px-4 gap-2 font-black uppercase text-[9px] tracking-widest border-primary/20 bg-primary/5 text-primary">
-                      <LayoutDashboard className="w-4 h-4" />
-                      Dashboard
+                    <Button variant="outline" className="rounded-xl h-10 px-4 gap-2 font-black uppercase text-[9px] tracking-widest border-primary/20 bg-primary/5 text-primary">
+                      <LayoutDashboard className="w-3.5 h-3.5" />
+                      Dash
                     </Button>
                   </Link>
                 ) : (
-                  /* CUSTOMER AUTHENTICATED STATE */
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="outline-none rounded-full ring-offset-background focus:ring-2 focus:ring-primary/20 transition-transform active:scale-95">
-                        <Avatar className="h-11 w-11 border-2 border-background shadow-lg">
+                        <Avatar className="h-10 w-10 border border-background shadow-md">
                           <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                          <AvatarFallback className="bg-orange-gradient text-white font-black text-xs">
+                          <AvatarFallback className="bg-orange-gradient text-white font-black text-[10px]">
                             {user.displayName?.slice(0, 2).toUpperCase() || 'EB'}
                           </AvatarFallback>
                         </Avatar>
@@ -123,54 +146,66 @@ export const Navbar = () => {
                         <p className="text-[10px] font-medium opacity-50 truncate">{user.email}</p>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild className="rounded-2xl py-3 font-bold cursor-pointer hover:bg-primary/5 transition-colors">
+                      <DropdownMenuItem asChild className="rounded-2xl py-3 font-bold cursor-pointer hover:bg-primary/5">
                         <Link href="/orders" className="flex items-center gap-3">
                           <History className="w-5 h-5 text-primary" /> My History
                         </Link>
                       </DropdownMenuItem>
                       {isStaff && (
-                        <DropdownMenuItem asChild className="rounded-2xl py-3 font-bold cursor-pointer hover:bg-orange-50 transition-colors">
+                        <DropdownMenuItem asChild className="rounded-2xl py-3 font-bold cursor-pointer hover:bg-orange-50">
                           <Link href="/admin/dashboard" className="flex items-center gap-3 text-orange-600">
                             <ShieldCheck className="w-5 h-5" /> Staff Console
                           </Link>
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout} className="rounded-2xl py-3 font-bold text-destructive cursor-pointer hover:bg-destructive/5 transition-colors flex items-center gap-3">
+                      <DropdownMenuItem onClick={handleLogout} className="rounded-2xl py-3 font-bold text-destructive cursor-pointer hover:bg-destructive/5 flex items-center gap-3">
                         <LogOut className="w-5 h-5" /> Sign Out
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )
               ) : (
-                /* GUEST STATE */
                 <Button 
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="rounded-2xl px-6 h-12 font-black uppercase text-[10px] tracking-widest transition-all bg-orange-gradient text-white shadow-lg shadow-primary/20 hidden md:flex"
+                  className="rounded-full px-5 h-10 font-black uppercase text-[10px] tracking-widest bg-orange-gradient text-white shadow-lg hidden md:flex"
                 >
-                  <User className="w-4 h-4 mr-2" /> Sign In
+                  Sign In
                 </Button>
               )
             )}
 
-            <Button variant="ghost" size="icon" className="md:hidden rounded-full w-11 h-11" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <Button variant="ghost" size="icon" className="md:hidden rounded-full w-10 h-10" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Search Bar */}
+      <div className="md:hidden mt-2 pb-2">
+        <form onSubmit={handleSearchSubmit} className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input 
+            value={navSearch}
+            onChange={(e) => setNavSearch(e.target.value)}
+            placeholder="Search..." 
+            className="w-full h-10 pl-10 rounded-full border-none bg-secondary/50 text-xs font-medium"
+          />
+        </form>
       </div>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-white dark:bg-zinc-950 border-t border-border animate-in slide-in-from-top duration-300 shadow-2xl">
           <div className="flex flex-col p-6 gap-2">
-            <Link href="/" onClick={() => setIsMenuOpen(false)} className="px-6 py-4 font-black uppercase tracking-widest text-[11px] hover:bg-primary/5 rounded-2xl transition-all">Home</Link>
-            <Link href="/menu" onClick={() => setIsMenuOpen(false)} className="px-6 py-4 font-black uppercase tracking-widest text-[11px] hover:bg-primary/5 rounded-2xl transition-all">Menu</Link>
-            <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="px-6 py-4 font-black uppercase tracking-widest text-[11px] hover:bg-primary/5 rounded-2xl transition-all">Orders</Link>
+            <Link href="/" onClick={() => setIsMenuOpen(false)} className="px-6 py-4 font-black uppercase tracking-widest text-[11px] hover:bg-primary/5 rounded-2xl">Home</Link>
+            <Link href="/menu" onClick={() => setIsMenuOpen(false)} className="px-6 py-4 font-black uppercase tracking-widest text-[11px] hover:bg-primary/5 rounded-2xl">Menu</Link>
+            <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="px-6 py-4 font-black uppercase tracking-widest text-[11px] hover:bg-primary/5 rounded-2xl">Orders</Link>
             {!user ? (
               <Button 
                 onClick={() => { setIsAuthModalOpen(true); setIsMenuOpen(false); }} 
-                className="mt-4 h-16 rounded-2xl bg-orange-gradient font-black uppercase text-[11px] tracking-widest"
+                className="mt-4 h-14 rounded-2xl bg-orange-gradient font-black uppercase text-[11px]"
               >
                 Join the Family
               </Button>
@@ -183,7 +218,7 @@ export const Navbar = () => {
                 )}
                 <button 
                   onClick={() => { handleLogout(); setIsMenuOpen(false); }} 
-                  className="px-6 py-4 font-black uppercase tracking-widest text-[11px] text-destructive text-left hover:bg-destructive/5 rounded-2xl transition-all"
+                  className="px-6 py-4 font-black uppercase tracking-widest text-[11px] text-destructive text-left hover:bg-destructive/5 rounded-2xl"
                 >
                   Sign Out
                 </button>
