@@ -103,7 +103,7 @@ export const Navbar = () => {
 
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4",
+      "fixed top-0 left-0 right-0 z-40 transition-all duration-500 px-4",
       scrolled 
         ? "bg-white/40 dark:bg-black/40 backdrop-blur-3xl border-b border-white/10 py-1.5 shadow-xl" 
         : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-3"
@@ -224,7 +224,7 @@ export const Navbar = () => {
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 border-none bg-background flex flex-col">
+                <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 border-none bg-background flex flex-col z-50">
                   <SheetHeader className="p-6 text-left border-b bg-secondary/10">
                     <SheetTitle className="sr-only">Main Menu</SheetTitle>
                     {user ? (
