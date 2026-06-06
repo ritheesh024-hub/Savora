@@ -5,9 +5,9 @@ import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { PromoBanner } from '@/components/PromoBanner';
 import { SavorTool } from '@/components/SavorTool';
 import { 
-  ShoppingBag, Star, ChefHat, Truck, Award, 
+  ShoppingBag, ChefHat, Truck, Award, 
   HelpCircle, Instagram, Twitter, Facebook,
-  ArrowRight, History, Utensils, Loader2, Sparkles
+  ArrowRight, History, Utensils, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,11 +42,11 @@ export default function Home() {
   const getImg = (id: string) => placeholderData.placeholderImages.find(img => img.id === id)?.imageUrl || '';
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 relative">
         {/* HERO SECTION */}
-        <section className="relative min-h-[75vh] md:min-h-[85vh] flex items-center overflow-hidden">
+        <section className="relative h-[80vh] md:h-[90vh] flex items-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <Image 
               src={getImg('hero-bg')} 
@@ -61,7 +61,7 @@ export default function Home() {
           </div>
           <div className="container mx-auto px-4 relative z-20 pt-12">
             <div className="max-w-4xl space-y-6">
-              <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-xl px-4 py-1 rounded-full border border-white/20 animate-in slide-in-from-bottom duration-700">
+              <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/20 animate-in slide-in-from-bottom duration-700">
                 <div className="h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
                 <span className="text-[9px] font-black tracking-[0.3em] uppercase text-white/90">Premium Fast Food Redefined</span>
               </div>
@@ -72,7 +72,7 @@ export default function Home() {
               <p className="text-base md:text-xl text-white/70 max-w-xl leading-relaxed animate-in fade-in slide-in-from-bottom duration-1000 delay-200 font-medium">
                 Elevate your daily ritual with chef-crafted flavors delivered right to your sanctuary. Fresh ingredients, lightning speed.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 pt-4 animate-in fade-in duration-1000 delay-500">
+              <div className="flex pt-4 animate-in fade-in duration-1000 delay-500">
                 <Link href="/menu" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto rounded-full h-16 md:h-20 px-12 text-lg font-black shadow-2xl shadow-primary/40 hover:scale-105 transition-all group bg-primary text-white">
                     Start Your Order
@@ -84,15 +84,15 @@ export default function Home() {
           </div>
         </section>
 
-        {/* PROMO OFFERS */}
-        <section className="relative z-30 -mt-8 md:-mt-12 mb-12 md:mb-16">
+        {/* PROMO OFFERS - Cleanly separated */}
+        <section className="relative z-30 -mt-20 md:-mt-32 pb-12">
           <PromoBanner />
         </section>
 
         {/* SIGNATURE HIGHLIGHTS */}
         <section className="py-16 md:py-20 bg-zinc-50 dark:bg-zinc-950">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-10 md:mb-12">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
                <div className="space-y-3">
                  <Badge variant="outline" className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-primary border-primary/20">The Favorites</Badge>
                  <h2 className="text-4xl md:text-6xl font-headline font-black">Signature <span className="text-primary italic">Highlights.</span></h2>
@@ -125,12 +125,12 @@ export default function Home() {
         </section>
 
         {/* SAVOR TOOL AI SECTION */}
-        <section className="py-16 md:py-20 container mx-auto px-4">
+        <section className="py-16 md:py-24 container mx-auto px-4">
           <SavorTool />
         </section>
 
         {/* FEATURES SECTION */}
-        <section className="py-16 md:py-20 bg-background">
+        <section className="py-20 bg-background">
           <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-4 gap-12">
               <div className="lg:col-span-1 space-y-4">
@@ -157,7 +157,7 @@ export default function Home() {
         </section>
 
         {/* FAQ SECTION */}
-        <section className="py-16 md:py-20 container mx-auto px-4 max-w-4xl">
+        <section className="py-20 container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-12">
             <HelpCircle className="w-12 h-12 text-primary mx-auto mb-4" />
             <h2 className="text-4xl md:text-5xl font-headline font-black">Got Questions? <br /><span className="text-primary italic">We have answers.</span></h2>
@@ -179,7 +179,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="bg-background border-t pt-16 md:pt-20 pb-10">
+      <footer className="bg-background border-t pt-20 pb-10">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div className="space-y-6">
