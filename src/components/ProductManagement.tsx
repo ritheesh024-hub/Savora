@@ -14,7 +14,9 @@ import {
   Loader2, Filter, Package, Star, 
   Flame, Clock, ChevronDown, Check,
   MoreVertical, X, Sparkles, Box,
-  ArrowUpDown, Ban, Power
+  ArrowUpDown, Ban, Power,
+  ChevronRight,
+  Layers
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -68,7 +70,7 @@ interface ProductFormData {
 const DEFAULT_FORM_DATA: ProductFormData = {
   name: '',
   description: '',
-  category: 'Veg Maggie',
+  category: 'Biryani',
   price: 0,
   discountPrice: 0,
   imageUrl: '',
@@ -91,7 +93,7 @@ export const ProductManagement = () => {
   
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -99,11 +101,19 @@ export const ProductManagement = () => {
   const [formData, setFormData] = useState<ProductFormData>(DEFAULT_FORM_DATA);
 
   const stats = useMemo(() => {
-    if (!products) return { total: 0, active: 0, featured: 0 };
+    if (!products) return { total: 0, active: 0, featured: 0, categoryCounts: {} as Record<string, number> };
+    
+    const counts: Record<string, number> = {};
+    products.forEach(p => {
+      const cat = p.category || 'Uncategorized';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+
     return {
       total: products.length,
       active: products.filter(p => p.isAvailable).length,
-      featured: products.filter(p => p.isFeatured).length
+      featured: products.filter(p => p.isFeatured).length,
+      categoryCounts: counts
     };
   }, [products]);
 
@@ -111,11 +121,11 @@ export const ProductManagement = () => {
     if (!products) return [];
     return products.filter(p => {
       const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
+      const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
       const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? p.isAvailable : !p.isAvailable);
       return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [products, searchQuery, categoryFilter, statusFilter]);
+  }, [products, searchQuery, selectedCategory, statusFilter]);
 
   const handleOpenModal = (item: FoodItem | null = null) => {
     if (item) {
@@ -123,7 +133,7 @@ export const ProductManagement = () => {
       setFormData({
         name: item.name || '',
         description: item.description || '',
-        category: item.category || 'Veg Maggie',
+        category: item.category || 'Biryani',
         price: item.price || 0,
         discountPrice: item.discountPrice || 0,
         imageUrl: item.imageUrl || '',
@@ -239,36 +249,62 @@ export const ProductManagement = () => {
         <StatsCard label="Featured Items" value={stats.featured} icon={Star} color="bg-orange-50 text-orange-600" />
       </div>
 
+      {/* Category Stats Scroll */}
+      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+        {CATEGORIES.map(cat => {
+          const count = cat === 'All' ? stats.total : (stats.categoryCounts[cat] || 0);
+          if (cat !== 'All' && count === 0) return null;
+          return (
+            <div key={cat} className="bg-white dark:bg-zinc-900 border rounded-2xl px-6 py-4 flex flex-col gap-1 min-w-[140px] shadow-sm shrink-0">
+               <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">{cat}</p>
+               <h4 className="text-xl font-black italic">{count} <span className="text-[10px] non-italic opacity-40">Items</span></h4>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Filter Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 items-center bg-white dark:bg-zinc-900 p-4 rounded-[2rem] border shadow-sm sticky top-24 z-30">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search products..." 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)} 
-            className="h-12 pl-12 rounded-xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" 
-          />
+      <div className="space-y-4 sticky top-24 z-30">
+        <div className="flex flex-col lg:flex-row gap-4 items-center bg-white dark:bg-zinc-900 p-4 rounded-[2rem] border shadow-sm">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search products..." 
+              value={searchQuery} 
+              onChange={(e) => setSearchQuery(e.target.value)} 
+              className="h-12 pl-12 rounded-xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" 
+            />
+          </div>
+          <div className="flex gap-2 w-full lg:w-auto">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-12 w-full lg:w-40 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-black uppercase text-[9px] tracking-widest">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl">
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex gap-2 w-full lg:w-auto overflow-x-auto scrollbar-hide pb-1">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="h-12 w-[140px] rounded-xl bg-secondary/30 border-none font-black uppercase text-[9px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl">
-              {CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-12 w-[120px] rounded-xl bg-secondary/30 border-none font-black uppercase text-[9px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl">
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
+
+        {/* Category Horizontal Filter */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-2 px-2">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={cn(
+                "rounded-full px-6 h-10 font-black uppercase text-[9px] tracking-widest transition-all shrink-0 border",
+                selectedCategory === cat 
+                  ? "bg-primary text-white shadow-lg shadow-primary/20 border-primary" 
+                  : "bg-white dark:bg-zinc-900 border-muted hover:border-primary/40 text-muted-foreground hover:text-primary"
+              )}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -323,12 +359,16 @@ export const ProductManagement = () => {
                    </Badge>
                    {item.isFeatured && <Badge className="bg-orange-500 text-white border-none px-3 font-black text-[8px] uppercase">Featured</Badge>}
                 </div>
+                <div className="absolute bottom-4 left-4 z-10">
+                   <Badge className="bg-white/90 dark:bg-black/90 backdrop-blur text-primary border-none font-black px-3 py-1 rounded-lg text-[9px] uppercase tracking-widest shadow-xl">
+                     {item.category || 'Uncategorized'}
+                   </Badge>
+                </div>
               </div>
 
               <CardContent className="p-6 space-y-4">
                 <div className="space-y-1">
-                  <p className="text-[9px] font-black uppercase text-primary/60 tracking-widest">{item.category}</p>
-                  <h4 className="font-black text-sm uppercase truncate leading-none">{item.name}</h4>
+                  <h4 className="font-black text-sm uppercase truncate leading-none group-hover:text-primary transition-colors">{item.name}</h4>
                 </div>
 
                 <div className="flex items-end justify-between border-t border-dashed pt-4">
