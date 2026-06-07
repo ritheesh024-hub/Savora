@@ -104,3 +104,9 @@
 html { scroll-behavior: smooth; height: 100%; }
 body { height: 100%; position: relative; }
 @media (max-width: 768px) { .animate-in { animation-duration: 400ms !important; } }
+
+/* SVG Drawing Utilities */
+.stroke-dasharray-100 { stroke-dasharray: 100; }
+.stroke-dashoffset-100 { stroke-dashoffset: 100; }
+.stroke-dashoffset-0 { stroke-dashoffset: 0; }
+.stroke-dasharray-20 { stroke-dasharray: 20; }
