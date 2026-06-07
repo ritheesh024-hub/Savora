@@ -1,38 +1,41 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { ShoppingBag, Coffee, Pizza, Utensils, Zap } from 'lucide-react';
 
 /**
- * LUXURY STARTUP BRAND INTRO
- * Duration: 3.0s total
- * Sequence: Glow -> Draw -> Fill -> Text -> Seamless Merge
+ * LUXURY STARTUP 3D-FEEL INTRO
+ * Optimized for Mobile/Tablets
+ * Duration: 3.0s
  */
 const ENABLE_BRAND_INTRO = true;
 
 export const BrandIntro = () => {
   const [isVisible, setIsVisible] = useState(true);
-  const [stage, setStage] = useState(0); // 0: Ambient, 1: Draw, 2: Fill, 3: Text, 4: Merge
+  const [stage, setStage] = useState(0); // 0: 3D Coffee, 1: Food Platter, 2: Zoom, 3: Assemble Logo, 4: Merge
 
   useEffect(() => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    const hasSeenIntro = sessionStorage.getItem('eb_luxury_intro_shown');
+    const isPC = typeof window !== 'undefined' && window.innerWidth >= 1024;
+    const hasSeenIntro = sessionStorage.getItem('eb_luxury_v3_shown');
 
-    if (!ENABLE_BRAND_INTRO || !isMobile || hasSeenIntro) {
+    if (!ENABLE_BRAND_INTRO || isPC || hasSeenIntro) {
       setIsVisible(false);
       return;
     }
 
-    // High-precision sequence timing
+    // Sequence timings
     const timers = [
-      setTimeout(() => setStage(1), 800),   // Start Drawing (0.8s)
-      setTimeout(() => setStage(2), 1500),  // Start Filling (1.5s)
-      setTimeout(() => setStage(3), 2200),  // Show Text (2.2s)
-      setTimeout(() => setStage(4), 2700),  // Merge Transition (2.7s)
+      setTimeout(() => setStage(1), 800),   // Transition to Platter (0.8s)
+      setTimeout(() => setStage(2), 1500),  // Camera Zoom (1.5s)
+      setTimeout(() => setStage(3), 2200),  // Assemble Logo (2.2s)
+      setTimeout(() => setStage(4), 2700),  // Seamless Merge (2.7s)
       setTimeout(() => {
         setIsVisible(false);
-        sessionStorage.setItem('eb_luxury_intro_shown', 'true');
-      }, 3300), // Cleanup
+        sessionStorage.setItem('eb_luxury_v3_shown', 'true');
+      }, 3200), // Cleanup
     ];
 
     return () => timers.forEach(t => clearTimeout(t));
@@ -41,103 +44,135 @@ export const BrandIntro = () => {
   if (!isVisible) return null;
 
   return (
-    <div 
-      className={cn(
-        "fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center transition-all duration-700 ease-in-out overflow-hidden",
-        stage === 4 ? "opacity-0 pointer-events-none" : "opacity-100"
-      )}
+    <motion.div 
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[9999] bg-[#FFFAF3] flex flex-col items-center justify-center overflow-hidden"
     >
-      {/* 0. Ambient Orange Glow */}
-      <div className={cn(
-        "absolute w-[150vw] h-[150vw] rounded-full blur-[120px] transition-all duration-1000 ease-out",
-        stage >= 0 ? "bg-primary/10 scale-100 opacity-100" : "bg-transparent scale-50 opacity-0"
-      )} />
+      {/* Background Gradient Ambiance */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#FFF5ED] via-[#FFFAF3] to-white" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200vw] h-[200vw] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
 
-      {/* 1 & 2: SVG Logo Drawing & Fill */}
-      <div className={cn(
-        "relative z-10 transition-all duration-500 ease-in-out transform",
-        stage === 4 ? "scale-50 -translate-x-[40%] -translate-y-[45%]" : "scale-100"
-      )}>
-        <svg 
-          width="120" 
-          height="120" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="1" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-          className="text-primary overflow-visible"
-        >
-          {/* Main Body Path */}
-          <path 
-            d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" 
-            className={cn(
-              "transition-all duration-[1000ms] ease-in-out",
-              stage === 0 ? "stroke-dasharray-[100] stroke-dashoffset-[100]" : "stroke-dasharray-[100] stroke-dashoffset-0",
-              stage >= 2 ? "fill-primary text-primary" : "fill-transparent"
-            )}
-          />
-          <path 
-            d="m3 6h18" 
-            className={cn(
-              "transition-all duration-[800ms] delay-300 ease-in-out",
-              stage === 0 ? "opacity-0" : "opacity-100"
-            )}
-          />
-          <path 
-            d="M16 10a4 4 0 0 1-8 0" 
-            className={cn(
-              "transition-all duration-[800ms] delay-500 ease-in-out",
-              stage === 0 ? "stroke-dasharray-[20] stroke-dashoffset-[20]" : "stroke-dasharray-[20] stroke-dashoffset-0"
-            )}
-          />
-          
-          {/* Light Sweep Effect Overlay */}
-          {stage >= 2 && (
-            <rect x="0" y="0" width="24" height="24" className="animate-sweep fill-white/20 mix-blend-overlay" />
+      {/* 3D Content Container */}
+      <div className="relative z-10 w-64 h-64 flex items-center justify-center">
+        <AnimatePresence mode="wait">
+          {/* Stage 0: 3D Coffee Cup */}
+          {stage === 0 && (
+            <motion.div
+              key="coffee"
+              initial={{ opacity: 0, scale: 0.5, rotateY: -90 }}
+              animate={{ opacity: 1, scale: 1, rotateY: 360 }}
+              exit={{ opacity: 0, scale: 1.2, rotateY: 720 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="flex flex-col items-center gap-4"
+            >
+              <div className="w-24 h-32 bg-white rounded-t-xl rounded-b-[2rem] border-4 border-primary/20 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-4 left-0 w-full h-8 bg-primary/10" />
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary/20 rounded-full" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0" />
+              </div>
+              <motion.span 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/40"
+              >
+                Brewing Excellence
+              </motion.span>
+            </motion.div>
           )}
-        </svg>
+
+          {/* Stage 1 & 2: Food Platter Showcase */}
+          {(stage === 1 || stage === 2) && (
+            <motion.div
+              key="platter"
+              initial={{ opacity: 0, scale: 0.8, rotate: -45 }}
+              animate={{ 
+                opacity: 1, 
+                scale: stage === 2 ? 1.5 : 1, 
+                rotate: stage === 2 ? 360 : 0 
+              }}
+              exit={{ opacity: 0, scale: 2, filter: "blur(20px)" }}
+              transition={{ duration: 0.7, ease: "easeInOut" }}
+              className="relative flex items-center justify-center"
+            >
+              {/* Platter Base */}
+              <div className="w-48 h-48 bg-white rounded-full shadow-3xl border border-primary/10 flex items-center justify-center">
+                <div className="grid grid-cols-2 gap-4">
+                  <Pizza className="w-10 h-10 text-primary opacity-20" />
+                  <Utensils className="w-10 h-10 text-orange-400 opacity-20" />
+                  <ShoppingBag className="w-10 h-10 text-red-400 opacity-20" />
+                  <Zap className="w-10 h-10 text-amber-500 opacity-20" />
+                </div>
+              </div>
+              
+              {/* Particle Elements orbiting */}
+              {[...Array(8)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  animate={{ 
+                    rotate: 360,
+                    scale: [1, 1.2, 1]
+                  }}
+                  transition={{ 
+                    rotate: { duration: 3, repeat: Infinity, ease: "linear" },
+                    scale: { duration: 1, repeat: Infinity, delay: i * 0.1 }
+                  }}
+                  className="absolute w-2 h-2 bg-primary/20 rounded-full"
+                  style={{
+                    left: `${50 + 60 * Math.cos(i * 45 * Math.PI / 180)}%`,
+                    top: `${50 + 60 * Math.sin(i * 45 * Math.PI / 180)}%`,
+                  }}
+                />
+              ))}
+            </motion.div>
+          )}
+
+          {/* Stage 3 & 4: Logo Assembly & Merge */}
+          {(stage === 3 || stage === 4) && (
+            <motion.div
+              key="logo"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ 
+                opacity: 1, 
+                scale: stage === 4 ? 0.4 : 1,
+                x: stage === 4 ? -120 : 0,
+                y: stage === 4 ? -320 : 0
+              }}
+              transition={{ duration: 0.6, ease: "circOut" }}
+              className="flex flex-col items-center text-center"
+            >
+              <div className="w-24 h-24 bg-orange-gradient rounded-3xl flex items-center justify-center shadow-3xl transform rotate-12 mb-6">
+                <ShoppingBag className="w-12 h-12 text-white" />
+              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn(
+                  "transition-opacity duration-300",
+                  stage === 4 ? "opacity-0" : "opacity-100"
+                )}
+              >
+                <h1 className="text-4xl font-black font-headline tracking-tighter text-foreground uppercase mb-2">
+                  Ezzy<span className="text-primary italic">Bites</span>
+                </h1>
+                <p className="text-[9px] font-black uppercase tracking-[0.5em] text-muted-foreground/40">
+                  Fast • Fresh • Delicious
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* 3. Brand Identity Reveal */}
-      <div className={cn(
-        "mt-8 text-center transition-all duration-700 ease-out transform",
-        stage >= 3 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8",
-        stage === 4 && "opacity-0 scale-90"
-      )}>
-        <h1 className="text-5xl font-black font-headline tracking-[-0.05em] text-white uppercase mb-2">
-          Ezzy<span className="text-primary italic">Bites</span>
-        </h1>
-        <div className="flex items-center justify-center gap-4">
-          <div className="h-[1px] w-8 bg-white/10" />
-          <p className="text-[9px] font-black uppercase tracking-[0.6em] text-white/40">
-            Fast • Fresh • Delicious
-          </p>
-          <div className="h-[1px] w-8 bg-white/10" />
-        </div>
+      {/* Luxury Progress Bar */}
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-40 h-[2px] bg-primary/5 rounded-full overflow-hidden">
+        <motion.div 
+          initial={{ width: "0%" }}
+          animate={{ width: "100%" }}
+          transition={{ duration: 3.0, ease: "linear" }}
+          className="h-full bg-primary"
+        />
       </div>
-
-      {/* Luxury Progress Line */}
-      <div className={cn(
-        "absolute bottom-16 left-1/2 -translate-x-1/2 w-48 h-[1px] bg-white/5 overflow-hidden transition-opacity duration-500",
-        stage === 4 ? "opacity-0" : "opacity-100"
-      )}>
-        <div className={cn(
-          "h-full bg-primary transition-all duration-[3000ms] ease-linear",
-          stage >= 0 ? "w-full" : "w-0"
-        )} />
-      </div>
-
-      <style jsx>{`
-        @keyframes sweep {
-          0% { transform: translateX(-100%) skewX(-45deg); }
-          100% { transform: translateX(200%) skewX(-45deg); }
-        }
-        .animate-sweep {
-          animation: sweep 1.5s infinite;
-        }
-      `}</style>
-    </div>
+    </motion.div>
   );
 };
