@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,8 +63,6 @@ interface ProductFormData {
   isFeatured: boolean;
   spiceLevel: 'None' | 'Mild' | 'Medium' | 'Hot' | 'Extra Hot';
   prepTime: number;
-  stock: number;
-  lowStockLevel: number;
 }
 
 const DEFAULT_FORM_DATA: ProductFormData = {
@@ -78,9 +77,7 @@ const DEFAULT_FORM_DATA: ProductFormData = {
   isBestSeller: false,
   isFeatured: false,
   spiceLevel: 'None',
-  prepTime: 20,
-  stock: 100,
-  lowStockLevel: 10
+  prepTime: 20
 };
 
 export const ProductManagement = () => {
@@ -96,18 +93,16 @@ export const ProductManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [stockFilter, setStockFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Form State
   const [formData, setFormData] = useState<ProductFormData>(DEFAULT_FORM_DATA);
 
   const stats = useMemo(() => {
-    if (!products) return { total: 0, active: 0, oos: 0, featured: 0 };
+    if (!products) return { total: 0, active: 0, featured: 0 };
     return {
       total: products.length,
       active: products.filter(p => p.isAvailable).length,
-      oos: products.filter(p => (p.stock || 0) <= 0).length,
       featured: products.filter(p => p.isFeatured).length
     };
   }, [products]);
@@ -118,10 +113,9 @@ export const ProductManagement = () => {
       const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
       const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? p.isAvailable : !p.isAvailable);
-      const matchesStock = stockFilter === 'all' || (stockFilter === 'low' ? (p.stock || 0) <= (p.lowStockLevel || 10) : (p.stock || 0) > (p.lowStockLevel || 10));
-      return matchesSearch && matchesCategory && matchesStatus && matchesStock;
+      return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [products, searchQuery, categoryFilter, statusFilter, stockFilter]);
+  }, [products, searchQuery, categoryFilter, statusFilter]);
 
   const handleOpenModal = (item: FoodItem | null = null) => {
     if (item) {
@@ -138,9 +132,7 @@ export const ProductManagement = () => {
         isBestSeller: item.isBestSeller ?? false,
         isFeatured: item.isFeatured ?? false,
         spiceLevel: item.spiceLevel || 'None',
-        prepTime: item.prepTime || 20,
-        stock: item.stock || 0,
-        lowStockLevel: item.lowStockLevel || 10
+        prepTime: item.prepTime || 20
       });
     } else {
       setEditingItem(null);
@@ -161,10 +153,8 @@ export const ProductManagement = () => {
     const finalData = {
       ...formData,
       id,
-      price: Number(formData.price),
+      price: Number(formData.price || 0),
       discountPrice: Number(formData.discountPrice || 0),
-      stock: Number(formData.stock || 0),
-      lowStockLevel: Number(formData.lowStockLevel || 10),
       prepTime: Number(formData.prepTime || 20),
       rating: editingItem?.rating || 4.5,
       createdAt: editingItem?.createdAt || serverTimestamp()
@@ -235,7 +225,7 @@ export const ProductManagement = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-1">
           <h2 className="text-4xl font-black font-headline uppercase tracking-tighter">Product <span className="text-primary italic">Vault</span></h2>
-          <p className="text-muted-foreground text-sm font-medium">Configure your menu, manage stock, and optimize visibility.</p>
+          <p className="text-muted-foreground text-sm font-medium">Configure your menu and optimize visibility.</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="h-14 px-8 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-2 bg-primary text-white shadow-xl shadow-primary/20 hover:scale-105 transition-all">
           <Plus className="w-5 h-5" /> Create New Product
@@ -243,10 +233,9 @@ export const ProductManagement = () => {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatsCard label="Total Products" value={stats.total} icon={LayoutGrid} color="bg-blue-50 text-blue-600" />
         <StatsCard label="Active Listings" value={stats.active} icon={CheckCircle2} color="bg-green-50 text-green-600" />
-        <StatsCard label="Out of Stock" value={stats.oos} icon={AlertCircle} color="bg-red-50 text-red-600" />
         <StatsCard label="Featured Items" value={stats.featured} icon={Star} color="bg-orange-50 text-orange-600" />
       </div>
 
@@ -278,16 +267,6 @@ export const ProductManagement = () => {
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={stockFilter} onValueChange={setStockFilter}>
-            <SelectTrigger className="h-12 w-[120px] rounded-xl bg-secondary/30 border-none font-black uppercase text-[9px]">
-              <SelectValue placeholder="Stock" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl">
-              <SelectItem value="all">Any Stock</SelectItem>
-              <SelectItem value="low">Low Stock</SelectItem>
-              <SelectItem value="instock">In Stock</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -361,12 +340,9 @@ export const ProductManagement = () => {
                       </div>
                    </div>
                    <div className="text-right">
-                      <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Stock</p>
-                      <Badge variant="secondary" className={cn(
-                        "rounded-lg px-2 font-black text-[10px]",
-                        (item.stock || 0) <= (item.lowStockLevel || 10) ? "text-red-600 bg-red-50" : ""
-                      )}>
-                        {item.stock} Units
+                      <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Prep Time</p>
+                      <Badge variant="secondary" className="rounded-lg px-2 font-black text-[10px]">
+                        {item.prepTime}m
                       </Badge>
                    </div>
                 </div>
@@ -395,114 +371,77 @@ export const ProductManagement = () => {
 
       {/* Add/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950 max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-2xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950 max-h-[90vh] flex flex-col">
           <div className="p-8 bg-primary text-white shrink-0">
              <DialogHeader>
-                <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">{editingItem ? 'Edit Product' : 'New Dish Selection'}</DialogTitle>
-                <DialogDescription className="text-white/70 font-medium text-xs uppercase tracking-widest">Update catalog information and visibility logic.</DialogDescription>
+                <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">{editingItem ? 'Edit Product' : 'New Dish'}</DialogTitle>
+                <DialogDescription className="text-white/70 font-medium text-xs uppercase tracking-widest">Update dish information and visibility logic.</DialogDescription>
              </DialogHeader>
           </div>
 
-          <div className="p-10 space-y-10 overflow-y-auto scrollbar-hide flex-1">
-             <div className="grid md:grid-cols-2 gap-10">
-                {/* Left Col: Basics */}
-                <div className="space-y-6">
-                   <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.2em] border-b pb-2">Basic Identity</h5>
-                   <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Product Name</Label>
-                        <Input value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. Flaming Chicken Momos" className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Description</Label>
-                        <Textarea value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Describe the flavors and ingredients..." className="min-h-[100px] rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-medium text-sm" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Menu Category</Label>
-                            <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
-                               <SelectTrigger className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold"><SelectValue /></SelectTrigger>
-                               <SelectContent className="rounded-2xl">{CATEGORIES.filter(c => c !== 'All').map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                            </Select>
-                         </div>
-                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Preparation Time (Mins)</Label>
-                            <div className="relative">
-                               <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                               <Input type="number" value={formData.prepTime || 0} onChange={e => setFormData({...formData, prepTime: Number(e.target.value)})} className="h-14 pl-12 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
-                            </div>
-                         </div>
-                      </div>
-                   </div>
-
-                   <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.2em] border-b pb-2 pt-4">Visual Asset</h5>
-                   <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Public Image URL</Label>
-                        <Input value={formData.imageUrl || ''} onChange={e => setFormData({...formData, imageUrl: e.target.value})} placeholder="https://..." className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
-                      </div>
-                      {formData.imageUrl && (
-                        <div className="h-48 relative rounded-3xl overflow-hidden border-4 border-secondary/50">
-                           <Image src={formData.imageUrl} alt="Preview" fill className="object-cover" unoptimized />
-                        </div>
-                      )}
-                   </div>
+          <div className="p-10 space-y-8 overflow-y-auto scrollbar-hide flex-1">
+             <div className="grid md:grid-cols-2 gap-8">
+                {/* Identity */}
+                <div className="space-y-4">
+                  <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.2em] border-b pb-2">Identity</h5>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Product Name</Label>
+                    <Input value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. Classic Burger" className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Menu Category</Label>
+                    <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
+                      <SelectTrigger className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold"><SelectValue /></SelectTrigger>
+                      <SelectContent className="rounded-2xl">{CATEGORIES.filter(c => c !== 'All').map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
-                {/* Right Col: Logistics & Pricing */}
-                <div className="space-y-6">
-                   <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.2em] border-b pb-2">Pricing & Logistics</h5>
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Price (₹)</Label>
-                        <Input type="number" value={formData.price || 0} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Compare Price (₹)</Label>
-                        <Input type="number" value={formData.discountPrice || 0} onChange={e => setFormData({...formData, discountPrice: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Stock Level</Label>
-                        <Input type="number" value={formData.stock || 0} onChange={e => setFormData({...formData, stock: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Low Stock Alert @</Label>
-                        <Input type="number" value={formData.lowStockLevel || 0} onChange={e => setFormData({...formData, lowStockLevel: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
-                      </div>
-                   </div>
+                {/* Economics */}
+                <div className="space-y-4">
+                  <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.2em] border-b pb-2">Economics</h5>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Price (₹)</Label>
+                      <Input type="number" value={formData.price || 0} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Discount (₹)</Label>
+                      <Input type="number" value={formData.discountPrice || 0} onChange={e => setFormData({...formData, discountPrice: Number(e.target.value)})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Prep Time (Mins)</Label>
+                    <Input type="number" value={formData.prepTime || 20} onChange={e => setFormData({...formData, prepTime: Number(e.target.value)})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                  </div>
+                </div>
+             </div>
 
-                   <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.2em] border-b pb-2 pt-4">Food Attributes</h5>
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Dietary Type</Label>
-                        <Select value={formData.isVeg ? 'veg' : 'non-veg'} onValueChange={v => setFormData({...formData, isVeg: v === 'veg'})}>
-                           <SelectTrigger className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold"><SelectValue /></SelectTrigger>
-                           <SelectContent className="rounded-2xl">
-                              <SelectItem value="veg">Vegetarian</SelectItem>
-                              <SelectItem value="non-veg">Non-Vegetarian</SelectItem>
-                           </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Spice Intensity</Label>
-                        <Select value={formData.spiceLevel} onValueChange={(v: any) => setFormData({...formData, spiceLevel: v})}>
-                           <SelectTrigger className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold"><SelectValue /></SelectTrigger>
-                           <SelectContent className="rounded-2xl">
-                              <SelectItem value="None">No Spice</SelectItem>
-                              <SelectItem value="Mild">Mild Heat</SelectItem>
-                              <SelectItem value="Medium">Medium Kick</SelectItem>
-                              <SelectItem value="Hot">Hot & Spicy</SelectItem>
-                              <SelectItem value="Extra Hot">Blazing Heat</SelectItem>
-                           </SelectContent>
-                        </Select>
-                      </div>
-                   </div>
+             <div className="space-y-4">
+                <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.2em] border-b pb-2">Description & Media</h5>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Public Image URL</Label>
+                  <Input value={formData.imageUrl || ''} onChange={e => setFormData({...formData, imageUrl: e.target.value})} placeholder="https://..." className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Description</Label>
+                  <Textarea value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Flavor details..." className="min-h-[80px] rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-medium text-sm" />
+                </div>
+             </div>
 
-                   <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.2em] border-b pb-2 pt-4">Visibility Engine</h5>
-                   <div className="space-y-4 pt-2">
-                      <ToggleOption label="Active Listing" desc="Visible on public menu for ordering" checked={!!formData.isAvailable} onChange={v => setFormData({...formData, isAvailable: v})} icon={Power} />
-                      <ToggleOption label="Featured Item" desc="Promote at the top of the homepage" checked={!!formData.isFeatured} onChange={v => setFormData({...formData, isFeatured: v})} icon={Sparkles} />
-                      <ToggleOption label="Bestseller Badge" desc="Add priority badge for high conversion" checked={!!formData.isBestSeller} onChange={v => setFormData({...formData, isBestSeller: v})} icon={Flame} />
+             <div className="space-y-4">
+                <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.2em] border-b pb-2">Visibility & Attributes</h5>
+                <div className="grid md:grid-cols-2 gap-4">
+                   <div className="space-y-3">
+                      <ToggleOption label="Active Listing" checked={!!formData.isAvailable} onChange={v => setFormData({...formData, isAvailable: v})} icon={Power} />
+                      <ToggleOption label="Featured Item" checked={!!formData.isFeatured} onChange={v => setFormData({...formData, isFeatured: v})} icon={Sparkles} />
+                   </div>
+                   <div className="space-y-3">
+                      <ToggleOption label="Bestseller Badge" checked={!!formData.isBestSeller} onChange={v => setFormData({...formData, isBestSeller: v})} icon={Flame} />
+                      <div className="flex items-center justify-between p-3 bg-secondary/30 dark:bg-zinc-800 rounded-xl">
+                        <Label className="text-[11px] font-black uppercase">Veg Only</Label>
+                        <Switch checked={formData.isVeg} onCheckedChange={v => setFormData({...formData, isVeg: v})} />
+                      </div>
                    </div>
                 </div>
              </div>
@@ -512,7 +451,7 @@ export const ProductManagement = () => {
              <Button variant="outline" className="h-14 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Cancel</Button>
              <Button className="h-14 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-xl shadow-primary/20" onClick={handleSave} disabled={saveLoading}>
                {saveLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-               Synchronize Document
+               Save Product
              </Button>
           </DialogFooter>
         </DialogContent>
@@ -535,16 +474,11 @@ const StatsCard = ({ label, value, icon: Icon, color }: any) => (
   </Card>
 );
 
-const ToggleOption = ({ label, desc, checked, onChange, icon: Icon }: any) => (
-  <div className="flex items-center justify-between p-4 bg-secondary/30 dark:bg-zinc-800 rounded-2xl border border-transparent hover:border-primary/20 transition-all">
-    <div className="flex gap-4 items-start">
-      <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-700 flex items-center justify-center shrink-0">
-        <Icon className="w-5 h-5 text-primary" />
-      </div>
-      <div>
-        <p className="font-black text-[11px] uppercase leading-none mb-1">{label}</p>
-        <p className="text-[9px] font-medium opacity-50">{desc}</p>
-      </div>
+const ToggleOption = ({ label, checked, onChange, icon: Icon }: any) => (
+  <div className="flex items-center justify-between p-3 bg-secondary/30 dark:bg-zinc-800 rounded-xl transition-all">
+    <div className="flex gap-3 items-center">
+      <Icon className="w-4 h-4 text-primary" />
+      <p className="font-black text-[11px] uppercase">{label}</p>
     </div>
     <Switch checked={checked} onCheckedChange={onChange} />
   </div>

@@ -1,3 +1,4 @@
+
 "use client"
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -27,8 +28,6 @@ export interface FoodItem {
   isFeatured?: boolean;
   spiceLevel?: 'None' | 'Mild' | 'Medium' | 'Hot' | 'Extra Hot';
   prepTime?: number;
-  stock?: number;
-  lowStockLevel?: number;
   createdAt?: any;
 }
 

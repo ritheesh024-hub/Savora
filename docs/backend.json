@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "AdminProfile": {
@@ -105,8 +106,6 @@
         "isFeatured": { "type": "boolean" },
         "spiceLevel": { "type": "string", "enum": ["None", "Mild", "Medium", "Hot", "Extra Hot"] },
         "prepTime": { "type": "number", "description": "Minutes" },
-        "stock": { "type": "number" },
-        "lowStockLevel": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "price", "category", "imageUrl", "isAvailable"]
