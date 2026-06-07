@@ -14,6 +14,7 @@ export interface FoodItem {
   name: string;
   description: string;
   price: number;
+  discountPrice?: number;
   category: string;
   imageUrl: string;
   isVeg: boolean;
@@ -23,6 +24,11 @@ export interface FoodItem {
   isBeverage?: boolean;
   isBestSeller?: boolean;
   isPopular?: boolean;
+  isFeatured?: boolean;
+  spiceLevel?: 'None' | 'Mild' | 'Medium' | 'Hot' | 'Extra Hot';
+  prepTime?: number;
+  stock?: number;
+  lowStockLevel?: number;
   createdAt?: any;
 }
 

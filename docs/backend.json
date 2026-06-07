@@ -95,11 +95,18 @@
         "name": { "type": "string" },
         "description": { "type": "string" },
         "price": { "type": "number" },
+        "discountPrice": { "type": "number" },
         "category": { "type": "string" },
         "imageUrl": { "type": "string" },
         "isVeg": { "type": "boolean" },
         "rating": { "type": "number" },
         "isAvailable": { "type": "boolean" },
+        "isBestSeller": { "type": "boolean" },
+        "isFeatured": { "type": "boolean" },
+        "spiceLevel": { "type": "string", "enum": ["None", "Mild", "Medium", "Hot", "Extra Hot"] },
+        "prepTime": { "type": "number", "description": "Minutes" },
+        "stock": { "type": "number" },
+        "lowStockLevel": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "price", "category", "imageUrl", "isAvailable"]

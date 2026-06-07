@@ -4,22 +4,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { 
-  IndianRupee, Zap, Loader2, 
+   indianRupee, Loader2, 
   Package, Clock, ChefHat, 
-  Trash2, Plus, Edit2, 
-  Database, Receipt, ShoppingBag, 
+  Trash2, Database, Receipt, ShoppingBag, 
   Volume2, VolumeX, BellRing,
   MapPin, User, Settings, CheckCircle2,
-  Users, UserPlus, Globe, Utensils, Truck,
-  TicketPercent, BarChart3, Fingerprint
+  Users, UserPlus, Globe, Utensils,
+  TicketPercent, BarChart3, Fingerprint,
+  LayoutGrid
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, query, limit, doc, updateDoc, deleteDoc, setDoc, serverTimestamp, orderBy, increment } from 'firebase/firestore';
+import { collection, query, limit, doc, updateDoc, orderBy, increment } from 'firebase/firestore';
 import { DashboardAnalysis } from './DashboardAnalysis';
 import { BillingSystem } from './BillingSystem';
 import { StoreSettings } from './StoreSettings';
@@ -28,6 +26,7 @@ import { KitchenSystem } from './KitchenSystem';
 import { StaffManagement } from './StaffManagement';
 import { CouponManager } from './CouponManager';
 import { UserManagement } from './UserManagement';
+import { ProductManagement } from './ProductManagement';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { StaffRole } from '@/app/admin/dashboard/page';
@@ -72,13 +71,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     return groups;
   }, [realOrders]);
 
-  const [isMenuDialogOpen, setIsMenuDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [saveLoading, setSaveLoading] = useState(false);
-  const [menuFormData, setMenuFormData] = useState({
-    name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5', isBeverage: false
-  });
-
   const handleUpdateStatus = (id: string, newStatus: string) => {
     if (!db) return;
     const orderRef = doc(db, 'orders', id);
@@ -105,46 +97,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
           requestResourceData: { status: newStatus }
         }));
       });
-  };
-
-  const handleSaveMenuItem = () => {
-    if (!db || !menuFormData.name || !menuFormData.imageUrl) return;
-    setSaveLoading(true);
-    const itemId = editingItem ? editingItem.id : `PROD-${Date.now()}`;
-    const itemRef = doc(db, 'products', itemId);
-    const finalData = {
-      ...menuFormData,
-      id: itemId,
-      price: Number(menuFormData.price),
-      rating: Number(menuFormData.rating),
-      createdAt: editingItem?.createdAt || serverTimestamp()
-    };
-    
-    setDoc(itemRef, finalData, { merge: true })
-      .then(() => {
-        setSaveLoading(false);
-        playSound('pop');
-        setIsMenuDialogOpen(false);
-      })
-      .catch(async (error) => {
-        setSaveLoading(false);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: itemRef.path,
-          operation: editingItem ? 'update' : 'create',
-          requestResourceData: finalData
-        }));
-      });
-  };
-
-  const handleDeleteItem = (id: string) => {
-    if (!db) return;
-    const itemRef = doc(db, 'products', id);
-    deleteDoc(itemRef).catch(async (error) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: itemRef.path,
-        operation: 'delete'
-      }));
-    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -174,7 +126,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const availableTabs = useMemo(() => {
     if (activeView === 'kitchen') return ['kitchen'];
     if (activeView === 'cashier') return ['overview', 'billing', 'orders'];
-    return ['overview', 'users', 'billing', 'orders', 'inventory', 'coupons', 'staff', 'settings'];
+    return ['overview', 'users', 'billing', 'orders', 'products', 'coupons', 'staff', 'settings'];
   }, [activeView]);
 
   return (
@@ -217,9 +169,9 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   )}
                 </TabsTrigger>
               )}
-              {availableTabs.includes('inventory') && (
-                <TabsTrigger value="inventory" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
-                  <Database className="w-3.5 h-3.5" /> Inventory
+              {availableTabs.includes('products') && (
+                <TabsTrigger value="products" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
+                  <LayoutGrid className="w-3.5 h-3.5" /> Products
                 </TabsTrigger>
               )}
               {availableTabs.includes('coupons') && (
@@ -323,39 +275,8 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
             </div>
           </TabsContent>
 
-          <TabsContent value="inventory" className="space-y-8">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-black font-headline uppercase tracking-tighter">Inventory</h2>
-              <Button onClick={() => { setEditingItem(null); setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5', isBeverage: false }); setIsMenuDialogOpen(true); }} className="rounded-xl h-12 px-6 font-black uppercase tracking-widest text-[10px] gap-2 bg-primary text-white">
-                <Plus className="w-5 h-5" /> Add New
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {dbMenu?.map((item: any) => (
-                <Card key={item.id} className="rounded-[2rem] border-none shadow-xl overflow-hidden bg-white dark:bg-zinc-900">
-                  <div className="h-40 relative">
-                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                  </div>
-                  <CardContent className="p-5 space-y-3">
-                    <h4 className="font-black text-sm truncate">{item.name}</h4>
-                    <div className="flex justify-between items-center">
-                      <p className="text-xl font-black text-primary italic">₹{item.price}</p>
-                      <Badge variant="outline" className={cn("text-[8px] uppercase font-black px-2 py-0.5", item.isAvailable ? "text-green-600 border-green-200" : "text-red-600 border-red-200")}>
-                        {item.isAvailable ? "Active" : "OOS"}
-                      </Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" className="flex-1 rounded-lg h-9 font-black text-[9px] uppercase bg-secondary/30" onClick={() => { setEditingItem(item); setMenuFormData({ ...item, price: item.price.toString() }); setIsMenuDialogOpen(true); }}>
-                        <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit
-                      </Button>
-                      <Button variant="ghost" className="h-9 w-9 text-destructive" onClick={() => handleDeleteItem(item.id)}>
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <TabsContent value="products">
+            <ProductManagement />
           </TabsContent>
 
           <TabsContent value="coupons">
@@ -432,33 +353,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               </DialogFooter>
             </>
           )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isMenuDialogOpen} onOpenChange={setIsMenuDialogOpen}>
-        <DialogContent className="max-w-xl rounded-[2.5rem] p-8 border-none bg-white dark:bg-zinc-900 shadow-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-black font-headline">{editingItem ? 'Edit Product' : 'Add Product'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40">Name</Label>
-                <Input value={menuFormData.name} onChange={e => setMenuFormData({...menuFormData, name: e.target.value})} className="h-12 rounded-xl" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40">Price</Label>
-                <Input type="number" value={menuFormData.price} onChange={e => setMenuFormData({...menuFormData, price: e.target.value})} className="h-12 rounded-xl" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase opacity-40">Image URL</Label>
-              <Input value={menuFormData.imageUrl} onChange={e => setMenuFormData({...menuFormData, imageUrl: e.target.value})} className="h-12 rounded-xl" />
-            </div>
-            <Button className="w-full h-14 rounded-xl font-black uppercase bg-primary text-white mt-4" onClick={handleSaveMenuItem} disabled={saveLoading}>
-              {saveLoading ? <Loader2 className="animate-spin" /> : 'Save Product'}
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
     </section>
