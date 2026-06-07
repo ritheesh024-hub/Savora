@@ -59,7 +59,7 @@ export default function Home() {
       
       <main className="flex-1">
         {/* COMPACT HERO SECTION */}
-        <section className="relative md:min-h-[90vh] min-h-[60vh] flex items-center md:pt-24 pt-16 md:pb-20 pb-10 overflow-hidden bg-black">
+        <section className="relative md:min-h-[90vh] min-h-[55vh] flex items-center md:pt-24 pt-12 md:pb-20 pb-6 overflow-hidden bg-black">
           <div className="absolute inset-0 z-0">
             <Image 
               src={heroBg}
@@ -74,28 +74,28 @@ export default function Home() {
           </div>
 
           <div className="container mx-auto px-6 relative z-20 max-w-5xl text-center md:text-left">
-            <div className="md:space-y-12 space-y-4 animate-in fade-in zoom-in duration-1000">
+            <div className="md:space-y-12 space-y-3 animate-in fade-in zoom-in duration-1000">
               <div className="hidden md:inline-flex items-center gap-2 bg-white/5 backdrop-blur-2xl px-6 py-2.5 rounded-full border border-white/10 shadow-2xl">
                 <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white/80">Premium Fast Food Redefined</span>
               </div>
               
-              <div className="md:space-y-6 space-y-2">
-                <h1 className="text-4xl md:text-[8rem] font-headline font-black leading-[0.95] md:leading-[0.85] tracking-tighter text-white uppercase">
+              <div className="md:space-y-6 space-y-1.5">
+                <h1 className="text-3xl md:text-[8rem] font-headline font-black leading-tight md:leading-[0.85] tracking-tighter text-white uppercase">
                   Flavor that <br />
                   <span className="text-primary italic">Commands</span> <br />
                   Respect.
                 </h1>
-                <p className="text-xs md:text-xl text-white/60 max-w-xl md:mx-0 mx-auto leading-relaxed font-medium">
+                <p className="text-[11px] md:text-xl text-white/60 max-w-xl md:mx-0 mx-auto leading-relaxed font-medium">
                   Elevate your daily ritual with chef-crafted flavors delivered right to your sanctuary.
                 </p>
               </div>
 
-              <div className="flex md:justify-start justify-center pt-2 md:pt-4">
+              <div className="flex md:justify-start justify-center pt-1 md:pt-4">
                 <Link href="/menu">
-                  <Button className="rounded-full md:h-20 h-14 px-8 md:px-14 text-base md:text-xl font-black shadow-3xl bg-primary hover:bg-primary/90 text-white transform transition-all active:scale-95 uppercase tracking-tight gap-4">
+                  <Button className="rounded-full md:h-20 h-11 px-6 md:px-14 text-sm md:text-xl font-black shadow-3xl bg-primary hover:bg-primary/90 text-white transform transition-all active:scale-95 uppercase tracking-tight gap-3 md:gap-4">
                     Start Your Order
-                    <ArrowRight className="w-5 h-5" />
+                    <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
                   </Button>
                 </Link>
               </div>
@@ -104,15 +104,15 @@ export default function Home() {
         </section>
 
         {/* MOBILE APP INTERFACE - SEARCH & CATEGORIES */}
-        <div className="sticky top-12 z-30 bg-white dark:bg-zinc-950 md:hidden pt-4 pb-2 border-b">
-           <div className="container px-4 space-y-4">
+        <div className="sticky top-12 z-30 bg-white dark:bg-zinc-950 md:hidden pt-2 pb-1 border-b shadow-sm">
+           <div className="container px-4 space-y-3">
               <form onSubmit={handleSearch} className="relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search dishes, burgers, momos..." 
-                  className="w-full h-12 pl-12 rounded-2xl bg-secondary/50 border-none font-bold text-sm focus:ring-2 focus:ring-primary/20"
+                  className="w-full h-11 pl-11 rounded-2xl bg-secondary/50 border-none font-bold text-sm focus:ring-2 focus:ring-primary/20"
                 />
               </form>
               <Categories />
