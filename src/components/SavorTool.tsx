@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -40,42 +41,42 @@ export const SavorTool = () => {
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-primary/10 via-background to-accent/20 rounded-3xl p-6 md:p-10 border shadow-2xl overflow-hidden relative">
+    <div className="bg-gradient-to-br from-primary/10 via-background to-accent/20 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 border shadow-2xl overflow-hidden relative">
       <div className="absolute top-0 right-0 p-8 opacity-10">
-        <Sparkles className="w-32 h-32 text-primary rotate-12" />
+        <Sparkles className="md:w-32 md:h-32 w-20 h-20 text-primary rotate-12" />
       </div>
 
       <div className="max-w-3xl relative z-10">
-        <div className="flex items-center gap-2 text-primary font-bold mb-4 uppercase tracking-widest text-xs">
+        <div className="flex items-center gap-2 text-primary font-bold md:mb-4 mb-2 uppercase tracking-widest text-[10px] md:text-xs">
           <Sparkles className="w-4 h-4" />
           Powered by AI
         </div>
-        <h2 className="text-3xl md:text-4xl font-headline font-bold mb-6">
+        <h2 className="text-2xl md:text-4xl font-headline font-bold md:mb-6 mb-3 tracking-tight">
           The Intelligent <span className="text-primary">Savor Tool</span>
         </h2>
-        <p className="text-muted-foreground text-lg mb-8">
+        <p className="text-muted-foreground text-base md:text-lg md:mb-8 mb-6">
           Not sure what to eat? Let our AI analyze the vibe and pick the perfect
           meal for you.
         </p>
 
-        <div className="flex flex-wrap gap-4 mb-10">
+        <div className="flex flex-wrap gap-2 md:gap-4 md:mb-10 mb-6">
           <Badge
             variant="outline"
-            className="px-4 py-2 rounded-full flex items-center gap-2 bg-white/50 backdrop-blur"
+            className="px-3 py-1.5 md:px-4 md:py-2 rounded-full flex items-center gap-2 bg-white/50 backdrop-blur text-[10px] md:text-sm"
           >
-            <Sun className="w-4 h-4 text-orange-500" /> {context.weather}
+            <Sun className="w-3.5 h-3.5 text-orange-500" /> {context.weather}
           </Badge>
           <Badge
             variant="outline"
-            className="px-4 py-2 rounded-full flex items-center gap-2 bg-white/50 backdrop-blur"
+            className="px-3 py-1.5 md:px-4 md:py-2 rounded-full flex items-center gap-2 bg-white/50 backdrop-blur text-[10px] md:text-sm"
           >
-            <Coffee className="w-4 h-4 text-amber-800" /> {context.timeOfDay}
+            <Coffee className="w-3.5 h-3.5 text-amber-800" /> {context.timeOfDay}
           </Badge>
           <Badge
             variant="outline"
-            className="px-4 py-2 rounded-full flex items-center gap-2 bg-white/50 backdrop-blur"
+            className="px-3 py-1.5 md:px-4 md:py-2 rounded-full flex items-center gap-2 bg-white/50 backdrop-blur text-[10px] md:text-sm"
           >
-            <Heart className="w-4 h-4 text-pink-500" /> {context.userMood}
+            <Heart className="w-3.5 h-3.5 text-pink-500" /> {context.userMood}
           </Badge>
         </div>
 
@@ -83,11 +84,11 @@ export const SavorTool = () => {
           size="lg"
           onClick={getRecommendations}
           disabled={loading}
-          className="rounded-full px-8 h-14 text-lg font-bold shadow-xl shadow-primary/20 hover:scale-105 transition-transform"
+          className="rounded-full px-8 h-12 md:h-14 text-base md:text-lg font-bold shadow-xl shadow-primary/20 hover:scale-105 transition-transform"
         >
           {loading ? (
             <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 md:w-5 md:h-5 mr-2 animate-spin" />
               Thinking...
             </>
           ) : (
@@ -96,20 +97,20 @@ export const SavorTool = () => {
         </Button>
 
         {recommendations.length > 0 && (
-          <div className="grid md:grid-cols-2 gap-4 mt-10 animate-in fade-in slide-in-from-bottom duration-500">
+          <div className="grid md:grid-cols-2 gap-4 md:mt-10 mt-6 animate-in fade-in slide-in-from-bottom duration-500">
             {recommendations.map((rec, idx) => (
               <Card
                 key={idx}
-                className="bg-white/80 backdrop-blur border-primary/20 hover:border-primary transition-colors cursor-pointer group"
+                className="bg-white/80 backdrop-blur border-primary/20 hover:border-primary transition-colors cursor-pointer group rounded-2xl"
               >
-                <CardContent className="p-6">
-                  <h4 className="font-bold text-xl mb-2 group-hover:text-primary transition-colors">
+                <CardContent className="p-5 md:p-6">
+                  <h4 className="font-bold text-lg md:text-xl mb-2 group-hover:text-primary transition-colors">
                     {rec.name}
                   </h4>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-xs md:text-sm text-muted-foreground mb-3">
                     {rec.description}
                   </p>
-                  <div className="bg-primary/5 p-3 rounded-xl text-xs font-medium text-primary leading-relaxed">
+                  <div className="bg-primary/5 p-3 rounded-xl text-[10px] md:text-xs font-medium text-primary leading-relaxed">
                     <strong>Why?</strong> {rec.reasoning}
                   </div>
                 </CardContent>

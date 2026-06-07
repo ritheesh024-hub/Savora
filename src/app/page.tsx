@@ -49,7 +49,7 @@ export default function Home() {
       
       <main className="flex-1">
         {/* CINEMATIC HERO SECTION */}
-        <section className="relative min-h-[90vh] flex items-center pt-24 pb-20 overflow-hidden bg-black">
+        <section className="relative md:min-h-[90vh] min-h-[70vh] flex items-center md:pt-24 pt-20 md:pb-20 pb-12 overflow-hidden bg-black">
           <div className="absolute inset-0 z-0">
             <Image 
               src={heroBg}
@@ -64,28 +64,28 @@ export default function Home() {
           </div>
 
           <div className="container mx-auto px-6 relative z-20 max-w-5xl text-center">
-            <div className="space-y-12 animate-in fade-in zoom-in duration-1000">
+            <div className="md:space-y-12 space-y-6 animate-in fade-in zoom-in duration-1000">
               <div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-2xl px-6 py-2.5 rounded-full border border-white/10 shadow-2xl">
                 <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white/80">Premium Fast Food Redefined</span>
               </div>
               
-              <div className="space-y-6">
-                <h1 className="text-5xl md:text-[8rem] font-headline font-black leading-[0.85] tracking-tighter text-white uppercase">
+              <div className="md:space-y-6 space-y-4">
+                <h1 className="text-4xl md:text-[8rem] font-headline font-black leading-[0.9] md:leading-[0.85] tracking-tighter text-white uppercase">
                   Flavor that <br />
                   <span className="text-primary italic">Commands</span> <br />
                   Respect.
                 </h1>
-                <p className="text-base md:text-xl text-white/60 max-w-xl mx-auto leading-relaxed font-medium">
+                <p className="text-sm md:text-xl text-white/60 max-w-xl mx-auto leading-relaxed font-medium">
                   Elevate your daily ritual with chef-crafted flavors delivered right to your sanctuary. Fresh ingredients, lightning speed.
                 </p>
               </div>
 
-              <div className="flex justify-center pt-4">
+              <div className="flex justify-center pt-2 md:pt-4">
                 <Link href="/menu">
-                  <Button className="rounded-full h-18 md:h-20 px-14 text-xl font-black shadow-3xl bg-primary hover:bg-primary/90 text-white transform transition-all active:scale-95 uppercase tracking-tight gap-4">
+                  <Button className="rounded-full md:h-20 h-16 px-10 md:px-14 text-lg md:text-xl font-black shadow-3xl bg-primary hover:bg-primary/90 text-white transform transition-all active:scale-95 uppercase tracking-tight gap-4">
                     Start Your Order
-                    <ArrowRight className="w-6 h-6" />
+                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
                   </Button>
                 </Link>
               </div>
@@ -94,28 +94,28 @@ export default function Home() {
         </section>
 
         {/* SIGNATURE SELECTION */}
-        <section className="py-24 bg-white dark:bg-zinc-950">
+        <section className="md:py-24 py-12 bg-white dark:bg-zinc-950">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end md:mb-16 mb-8 gap-6">
               <div className="space-y-2">
                 <Badge variant="outline" className="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-primary border-primary/20">Chef's Special</Badge>
-                <h2 className="text-5xl md:text-7xl font-black font-headline uppercase tracking-tighter">Signature <span className="text-primary italic">Highlights.</span></h2>
+                <h2 className="text-4xl md:text-7xl font-black font-headline uppercase tracking-tighter">Signature <span className="text-primary italic">Highlights.</span></h2>
               </div>
               <Link href="/menu">
-                <Button variant="ghost" className="font-black text-[12px] uppercase tracking-widest gap-3 text-primary hover:bg-primary/5 h-14 px-8 rounded-2xl border-2 border-primary/10">
+                <Button variant="ghost" className="font-black text-[12px] uppercase tracking-widest gap-3 text-primary hover:bg-primary/5 md:h-14 h-12 px-8 rounded-2xl border-2 border-primary/10">
                   Full Menu <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
             </div>
 
             {menuLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-[2.5rem]" />
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-8">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
                 {menuItems?.map((item) => (
                   <FoodCard key={item.id} item={item} forceViewMode="small" />
                 ))}
@@ -125,11 +125,11 @@ export default function Home() {
         </section>
 
         {/* 3D OFFERS */}
-        <section className="py-16 bg-secondary/10 dark:bg-zinc-900/30">
+        <section className="md:py-16 py-8 bg-secondary/10 dark:bg-zinc-900/30">
           <div className="container mx-auto px-4">
-            <div className="flex items-center gap-6 mb-12">
+            <div className="flex items-center gap-4 md:gap-6 md:mb-12 mb-6">
                <div className="h-px bg-border flex-1" />
-               <h2 className="text-2xl font-black uppercase tracking-tighter whitespace-nowrap">Exclusive <span className="text-primary italic">Bounties</span></h2>
+               <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter whitespace-nowrap">Exclusive <span className="text-primary italic">Bounties</span></h2>
                <div className="h-px bg-border flex-1" />
             </div>
             <PromoBanner />
@@ -137,25 +137,25 @@ export default function Home() {
         </section>
 
         {/* AI INTELLIGENCE */}
-        <section className="py-24 container mx-auto px-4">
+        <section className="md:py-24 py-12 container mx-auto px-4">
           <SavorTool />
         </section>
 
         {/* TRUST SIGNALS */}
-        <section className="py-24 bg-white dark:bg-zinc-950 border-t border-border/50">
+        <section className="md:py-24 py-12 bg-white dark:bg-zinc-950 border-t border-border/50">
           <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-3 gap-12">
+            <div className="grid md:grid-cols-3 gap-6 md:gap-12">
               {[
                 { icon: Utensils, title: "Master Chefs", desc: "Crafted by professionals who prioritize technique and flavor above all else." },
                 { icon: Clock, title: "Hyper-Local", desc: "A strict 25-minute delivery promise for all local sanctuary orders." },
                 { icon: ShieldCheck, title: "Gold Standard", desc: "Only A-grade ingredients. No preservatives, just pure, unadulterated taste." }
               ].map((f, i) => (
-                <div key={i} className="bg-zinc-50 dark:bg-zinc-900/50 p-12 rounded-[3rem] shadow-sm hover:shadow-2xl transition-all duration-500 border border-border/20 group text-center">
-                  <div className="w-20 h-20 bg-orange-gradient rounded-[2rem] flex items-center justify-center mb-8 text-white shadow-2xl mx-auto group-hover:scale-110 group-hover:rotate-6 transition-transform">
-                    <f.icon className="w-9 h-9" />
+                <div key={i} className="bg-zinc-50 dark:bg-zinc-900/50 md:p-12 p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-sm hover:shadow-2xl transition-all duration-500 border border-border/20 group text-center">
+                  <div className="md:w-20 md:h-20 w-16 h-16 bg-orange-gradient rounded-[1.8rem] md:rounded-[2rem] flex items-center justify-center md:mb-8 mb-6 text-white shadow-2xl mx-auto group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                    <f.icon className="md:w-9 md:h-9 w-7 h-7" />
                   </div>
-                  <h4 className="text-2xl font-black mb-4 uppercase tracking-tight">{f.title}</h4>
-                  <p className="text-muted-foreground font-medium text-base leading-relaxed">{f.desc}</p>
+                  <h4 className="text-xl md:text-2xl font-black md:mb-4 mb-3 uppercase tracking-tight">{f.title}</h4>
+                  <p className="text-muted-foreground font-medium text-sm md:text-base leading-relaxed">{f.desc}</p>
                 </div>
               ))}
             </div>
@@ -163,55 +163,55 @@ export default function Home() {
         </section>
 
         {/* SUPPORT */}
-        <section className="py-24 container mx-auto px-4 max-w-3xl">
-          <div className="text-center mb-16 space-y-4">
-            <HelpCircle className="w-16 h-16 text-primary mx-auto opacity-20" />
-            <h2 className="text-5xl font-headline font-black uppercase tracking-tighter">Support Core</h2>
-            <p className="text-muted-foreground font-medium">Resolving your inquiries with precision.</p>
+        <section className="md:py-24 py-12 container mx-auto px-4 max-w-3xl">
+          <div className="text-center md:mb-16 mb-8 space-y-2 md:space-y-4">
+            <HelpCircle className="md:w-16 md:h-16 w-12 h-12 text-primary mx-auto opacity-20" />
+            <h2 className="text-3xl md:text-5xl font-headline font-black uppercase tracking-tighter">Support Core</h2>
+            <p className="text-muted-foreground font-medium text-sm md:text-base">Resolving your inquiries with precision.</p>
           </div>
-          <Accordion type="single" collapsible className="space-y-4">
+          <Accordion type="single" collapsible className="md:space-y-4 space-y-3">
             {[
               { q: "What is your delivery range?", a: "We serve a 3km radius around Pocharam and Anurag University campus for peak freshness." },
               { q: "Is there a student special?", a: "Yes! Use code STUDENT10 at checkout for 10% OFF on all orders above ₹200." },
               { q: "How do you handle bulk orders?", a: "For event catering, contact our hotline via WhatsApp for a custom logistics plan." }
             ].map((faq, i) => (
-              <AccordionItem key={i} value={`item-${i}`} className="border-none bg-zinc-50 dark:bg-zinc-900/50 rounded-3xl px-8 shadow-sm overflow-hidden mb-4">
-                <AccordionTrigger className="font-bold text-lg hover:no-underline py-8 text-left">{faq.q}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-8 text-base font-medium leading-relaxed">{faq.a}</AccordionContent>
+              <AccordionItem key={i} value={`item-${i}`} className="border-none bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl md:rounded-3xl md:px-8 px-6 shadow-sm overflow-hidden mb-2">
+                <AccordionTrigger className="font-bold text-base md:text-lg hover:no-underline md:py-8 py-5 text-left">{faq.q}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground md:pb-8 pb-5 text-sm md:text-base font-medium leading-relaxed">{faq.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
         </section>
       </main>
 
-      <footer className="bg-white dark:bg-zinc-950 border-t pt-24 pb-12">
+      <footer className="bg-white dark:bg-zinc-950 border-t md:pt-24 pt-12 md:pb-12 pb-8">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
-            <div className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 md:gap-16 gap-10 md:mb-20 mb-10">
+            <div className="space-y-6 md:space-y-8">
               <Logo size="lg" />
-              <p className="text-muted-foreground leading-relaxed text-base font-medium">Culinary art and lightning-fast logistics. Redefining campus life one bite at a time.</p>
+              <p className="text-muted-foreground leading-relaxed text-sm md:text-base font-medium">Culinary art and lightning-fast logistics. Redefining campus life one bite at a time.</p>
               <div className="flex gap-4">
                 {[Instagram, Twitter, Facebook].map((Icon, i) => (
-                  <Button key={i} variant="outline" size="icon" className="w-12 h-12 rounded-2xl text-muted-foreground hover:text-primary border-2"><Icon className="w-6 h-6" /></Button>
+                  <Button key={i} variant="outline" size="icon" className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl text-muted-foreground hover:text-primary border-2"><Icon className="md:w-6 md:h-6 w-5 h-5" /></Button>
                 ))}
               </div>
             </div>
-            <div className="lg:col-start-3 space-y-8">
-              <h4 className="font-black text-sm uppercase tracking-widest opacity-40">Core Navigation</h4>
-              <ul className="space-y-4 text-muted-foreground font-bold text-base">
+            <div className="lg:col-start-3 space-y-6 md:space-y-8">
+              <h4 className="font-black text-xs md:text-sm uppercase tracking-widest opacity-40">Core Navigation</h4>
+              <ul className="md:space-y-4 space-y-2 text-muted-foreground font-bold text-sm md:text-base">
                 <li><Link href="/menu" className="hover:text-primary flex items-center gap-3">Menu selection</Link></li>
                 <li><Link href="/orders" className="hover:text-primary flex items-center gap-3">Order history</Link></li>
               </ul>
             </div>
-            <div className="space-y-8">
-              <h4 className="font-black text-sm uppercase tracking-widest opacity-40">Operational</h4>
-              <ul className="space-y-4 text-muted-foreground font-bold text-base">
+            <div className="space-y-6 md:space-y-8">
+              <h4 className="font-black text-xs md:text-sm uppercase tracking-widest opacity-40">Operational</h4>
+              <ul className="md:space-y-4 space-y-2 text-muted-foreground font-bold text-sm md:text-base">
                 <li><Link href="/admin/login" className="hover:text-primary flex items-center gap-3">Staff console</Link></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-border/50 pt-12 text-center">
-            <p className="text-xs text-muted-foreground font-black uppercase tracking-[0.4em] opacity-40">© {currentYear || 2025} Ezzy Bites Premium Food-Tech</p>
+          <div className="border-t border-border/50 pt-8 md:pt-12 text-center">
+            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.4em] opacity-40">© {currentYear || 2025} Ezzy Bites Premium Food-Tech</p>
           </div>
         </div>
       </footer>
