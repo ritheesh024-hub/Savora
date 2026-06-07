@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,7 +19,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, query, limit, doc, updateDoc, orderBy, increment } from 'firebase/firestore';
+import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp } from 'firebase/firestore';
 import { DashboardAnalysis } from './DashboardAnalysis';
 import { BillingSystem } from './BillingSystem';
 import { StoreSettings } from './StoreSettings';
@@ -68,7 +67,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     };
     realOrders?.forEach(o => {
       if (o.status === 'Pending') groups.pending.push(o);
-      else if (o.status === 'Preparing' || o.status === 'Out for Delivery') groups.preparing.push(o);
+      else if (o.status === 'Confirmed' || o.status === 'Preparing' || o.status === 'Out for Delivery') groups.preparing.push(o);
       else if (o.status === 'Delivered' || o.status === 'Cancelled') groups.completed.push(o);
     });
     return groups;
@@ -77,7 +76,13 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const handleUpdateStatus = (id: string, newStatus: string) => {
     if (!db) return;
     const orderRef = doc(db, 'orders', id);
-    updateDoc(orderRef, { status: newStatus })
+    const updateData: any = { status: newStatus };
+    
+    if (newStatus === 'Confirmed') {
+      updateData.acceptedAt = serverTimestamp();
+    }
+
+    updateDoc(orderRef, updateData)
       .then(() => {
         if (user) {
           const staffRef = doc(db, 'admins', user.uid);
@@ -88,16 +93,18 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         }
 
         playSound('success');
-        toast({ title: `Order ${newStatus}` });
+        toast({ title: `Order ${newStatus} Successfully` });
+        
+        // Auto-close details if it was open
         if (selectedOrderForView?.id === id) {
-          setSelectedOrderForView(prev => prev ? { ...prev, status: newStatus } : null);
+          setSelectedOrderForView(null);
         }
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: orderRef.path,
           operation: 'update',
-          requestResourceData: { status: newStatus }
+          requestResourceData: updateData
         }));
       });
   };
@@ -116,6 +123,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
           </div>
         );
       case 'Pending': return <Badge className="bg-blue-100 text-blue-700 border-none px-3 font-black text-[9px] uppercase">New</Badge>;
+      case 'Confirmed': return <Badge className="bg-cyan-100 text-cyan-700 border-none px-3 font-black text-[9px] uppercase">Confirmed</Badge>;
       case 'Preparing': return <Badge className="bg-orange-100 text-orange-700 border-none px-3 font-black text-[9px] uppercase">Cooking</Badge>;
       case 'Out for Delivery': return <Badge className="bg-purple-100 text-purple-700 border-none px-3 font-black text-[9px] uppercase">Transit</Badge>;
       default: return <Badge variant="outline" className="px-3 font-black text-[9px] uppercase">{status}</Badge>;
@@ -257,6 +265,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                         <div className={cn(
                           "h-1.5 w-full", 
                           order.status === 'Pending' ? "bg-primary" : 
+                          order.status === 'Confirmed' ? "bg-cyan-500" :
                           order.status === 'Preparing' ? "bg-orange-500" : 
                           order.status === 'Cancelled' ? "bg-red-500" : "bg-green-500"
                         )} />
@@ -374,12 +383,18 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               <DialogFooter className="p-6 bg-secondary/30 dark:bg-zinc-800 flex gap-3">
                 {selectedOrderForView.status === 'Pending' && (
                   <>
-                    <Button className="flex-1 rounded-xl h-14 bg-primary text-white font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Preparing')}>Accept</Button>
+                    <Button className="flex-1 rounded-xl h-14 bg-primary text-white font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Confirmed')}>Accept</Button>
                     <Button variant="destructive" className="flex-1 rounded-xl h-14 font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Cancelled')}>Reject</Button>
                   </>
                 )}
+                {selectedOrderForView.status === 'Confirmed' && (
+                   <Button className="flex-1 rounded-xl h-14 bg-orange-500 text-white font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Preparing')}>Start Kitchen</Button>
+                )}
                 {selectedOrderForView.status === 'Preparing' && (
-                  <Button className="flex-1 rounded-xl h-14 bg-orange-500 text-white font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Delivered')}>Complete</Button>
+                  <Button className="flex-1 rounded-xl h-14 bg-purple-500 text-white font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Out for Delivery')}>Dispatch</Button>
+                )}
+                {selectedOrderForView.status === 'Out for Delivery' && (
+                  <Button className="flex-1 rounded-xl h-14 bg-green-500 text-white font-black uppercase text-[10px]" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Delivered')}>Complete</Button>
                 )}
                 <Button variant="outline" className="flex-1 rounded-xl h-14 font-black uppercase text-[10px]" onClick={() => setSelectedOrderForView(null)}>Close</Button>
               </DialogFooter>

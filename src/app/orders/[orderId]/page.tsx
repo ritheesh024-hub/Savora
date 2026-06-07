@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useMemo, useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -38,7 +37,9 @@ export default function OrderTrackingPage() {
 
   // Cancellation Timer Logic
   useEffect(() => {
-    if (!order?.createdAt || order.status !== 'Pending') {
+    // Cancellation is only possible if order is Pending or Confirmed
+    // and within 5 minutes of creation
+    if (!order?.createdAt || (order.status !== 'Pending' && order.status !== 'Confirmed')) {
       setCanCancel(false);
       return;
     }
@@ -61,14 +62,16 @@ export default function OrderTrackingPage() {
       return true;
     };
 
-    updateTimer();
+    const active = updateTimer();
+    if (!active) return;
+
     const interval = setInterval(() => {
       const active = updateTimer();
       if (!active) clearInterval(interval);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order]);
+  }, [order?.createdAt, order?.status]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -100,9 +103,10 @@ export default function OrderTrackingPage() {
 
   const statusMap: Record<string, number> = {
     'Pending': 1,
-    'Preparing': 2,
-    'Out for Delivery': 3,
-    'Delivered': 4,
+    'Confirmed': 2,
+    'Preparing': 3,
+    'Out for Delivery': 4,
+    'Delivered': 5,
     'Cancelled': 0
   };
 
@@ -110,9 +114,10 @@ export default function OrderTrackingPage() {
 
   const steps = [
     { id: 1, title: 'Order Placed', icon: PackageCheck, desc: 'We have received your order.' },
-    { id: 2, title: 'Preparing Food', icon: ChefHat, desc: 'Our chef is crafting your meal.' },
-    { id: 3, title: 'Out for Delivery', icon: Truck, desc: 'Our rider is on the way.' },
-    { id: 4, title: 'Delivered', icon: CheckCircle2, desc: 'Enjoy your delicious bites!' }
+    { id: 2, title: 'Confirmed', icon: CheckCircle2, desc: 'Your order has been accepted.' },
+    { id: 3, title: 'Preparing Food', icon: ChefHat, desc: 'Our chef is crafting your meal.' },
+    { id: 4, title: 'Out for Delivery', icon: Truck, desc: 'Our rider is on the way.' },
+    { id: 5, title: 'Delivered', icon: CheckCircle2, desc: 'Enjoy your delicious bites!' }
   ];
 
   if (loading) {
@@ -166,7 +171,7 @@ export default function OrderTrackingPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             {/* Cancellation Window Info */}
-            {order.status === 'Pending' && (
+            {(order.status === 'Pending' || order.status === 'Confirmed') && (
               <Card className={cn(
                 "rounded-[2rem] border-none shadow-xl overflow-hidden transition-all duration-500",
                 canCancel ? "bg-orange-50 border-orange-100" : "bg-zinc-50 opacity-60"
@@ -184,7 +189,7 @@ export default function OrderTrackingPage() {
                       <p className="text-xs font-medium text-muted-foreground mt-1 max-w-[240px]">
                         {canCancel 
                           ? "You can cancel your order within the 5-minute safety window." 
-                          : "The 5-minute cancellation period has expired."}
+                          : "The 5-minute cancellation period has expired or the order is in progress."}
                       </p>
                     </div>
                   </div>

@@ -1,20 +1,18 @@
-
-'use client';
-
+"use client"
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   ChefHat, 
   Clock, 
   CheckCircle2, 
-  ArrowRight,
   Timer,
   Package,
   Utensils,
   BellRing,
-  Settings2
+  Settings2,
+  Truck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,13 +22,13 @@ interface KitchenSystemProps {
 }
 
 export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) => {
-  // Filter for orders that need kitchen attention
+  // Filter for orders that need kitchen attention (Confirmed or Preparing)
   const kitchenOrders = orders.filter(o => 
-    o.status === 'Pending' || o.status === 'Preparing'
+    o.status === 'Confirmed' || o.status === 'Preparing'
   ).sort((a, b) => {
-    // Show Pending orders first, then by time
-    if (a.status === 'Pending' && b.status !== 'Pending') return -1;
-    if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+    // Show older Confirmed orders first, then Preparing
+    if (a.status === 'Confirmed' && b.status !== 'Confirmed') return -1;
+    if (a.status !== 'Confirmed' && b.status === 'Confirmed') return 1;
     return 0;
   });
 
@@ -49,8 +47,8 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
         <Card className="rounded-3xl border-none shadow-xl bg-primary text-white p-6">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-70">New Tickets</p>
-              <h3 className="text-4xl font-black font-headline">{kitchenOrders.filter(o => o.status === 'Pending').length}</h3>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Confirmed Tickets</p>
+              <h3 className="text-4xl font-black font-headline">{kitchenOrders.filter(o => o.status === 'Confirmed').length}</h3>
             </div>
             <BellRing className="w-8 h-8 opacity-20" />
           </div>
@@ -69,12 +67,12 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
               key={order.id} 
               className={cn(
                 "rounded-[2rem] border-none shadow-xl overflow-hidden bg-white dark:bg-zinc-900",
-                order.status === 'Pending' ? "ring-4 ring-primary ring-inset" : ""
+                order.status === 'Confirmed' ? "ring-4 ring-primary ring-inset" : ""
               )}
             >
               <div className={cn(
                 "p-4 flex justify-between items-center",
-                order.status === 'Pending' ? "bg-primary text-white" : "bg-orange-500 text-white"
+                order.status === 'Confirmed' ? "bg-primary text-white" : "bg-orange-500 text-white"
               )}>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
@@ -121,7 +119,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                     {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
                   </div>
                   
-                  {order.status === 'Pending' ? (
+                  {order.status === 'Confirmed' ? (
                     <Button 
                       onClick={() => onUpdateStatus(order.id, 'Preparing')}
                       className="rounded-xl h-12 bg-primary font-black uppercase text-[10px] tracking-widest gap-2"
@@ -130,10 +128,10 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                     </Button>
                   ) : (
                     <Button 
-                      onClick={() => onUpdateStatus(order.id, 'Delivered')}
-                      className="rounded-xl h-12 bg-green-500 font-black uppercase text-[10px] tracking-widest gap-2"
+                      onClick={() => onUpdateStatus(order.id, 'Out for Delivery')}
+                      className="rounded-xl h-12 bg-purple-500 font-black uppercase text-[10px] tracking-widest gap-2"
                     >
-                      <CheckCircle2 className="w-4 h-4" /> Ready for Pickup
+                      <Truck className="w-4 h-4" /> Dispatch
                     </Button>
                   )}
                 </div>

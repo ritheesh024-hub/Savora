@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "AdminProfile": {
@@ -13,132 +12,347 @@
         },
         "role": {
           "type": "string",
-          "enum": ["admin", "cashier", "kitchen"],
+          "enum": [
+            "admin",
+            "cashier",
+            "kitchen"
+          ],
           "description": "The user role defining workspace access"
         },
-        "name": { "type": "string" },
-        "phone": { "type": "string" },
-        "photoUrl": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "disabled"] },
-        "onlineStatus": { "type": "string", "enum": ["online", "offline", "busy"] },
-        "lastLoginAt": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" },
+        "name": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "photoUrl": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled"
+          ]
+        },
+        "onlineStatus": {
+          "type": "string",
+          "enum": [
+            "online",
+            "offline",
+            "busy"
+          ]
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
         "stats": {
           "type": "object",
           "properties": {
-            "ordersHandled": { "type": "number" },
-            "billsGenerated": { "type": "number" },
-            "kitchenUpdates": { "type": "number" }
+            "ordersHandled": {
+              "type": "number"
+            },
+            "billsGenerated": {
+              "type": "number"
+            },
+            "kitchenUpdates": {
+              "type": "number"
+            }
           }
         }
       },
-      "required": ["email", "role"]
+      "required": [
+        "email",
+        "role"
+      ]
     },
     "UserProfile": {
       "title": "User Profile",
       "description": "Customer profile for authenticated users",
       "type": "object",
       "properties": {
-        "uid": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "name": { "type": "string" },
-        "photoUrl": { "type": "string" },
-        "phone": { "type": "string", "description": "The verified mobile number" },
-        "address": { "type": "string" },
-        "lastOrderAt": { "type": "string", "format": "date-time" },
-        "orderCount": { "type": "number" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "uid": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "name": {
+          "type": "string"
+        },
+        "photoUrl": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The verified mobile number"
+        },
+        "address": {
+          "type": "string"
+        },
+        "lastOrderAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "orderCount": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       },
-      "required": ["uid", "email"]
+      "required": [
+        "uid",
+        "email"
+      ]
     },
     "Order": {
       "title": "Order",
       "description": "A customer order for Ezzy Bites food items",
       "type": "object",
       "properties": {
-        "orderId": { "type": "string" },
-        "userId": { "type": "string" },
-        "customerName": { "type": "string" },
-        "customerEmail": { "type": "string" },
-        "customerPhone": { "type": "string" },
-        "address": { "type": "string" },
-        "instructions": { "type": "string" },
-        "processedBy": { "type": "string", "description": "UID of the staff member who handled the order" },
+        "orderId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "customerName": {
+          "type": "string"
+        },
+        "customerEmail": {
+          "type": "string"
+        },
+        "customerPhone": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "instructions": {
+          "type": "string"
+        },
+        "processedBy": {
+          "type": "string",
+          "description": "UID of the staff member who handled the order"
+        },
         "items": {
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
-              "id": { "type": "string" },
-              "name": { "type": "string" },
-              "price": { "type": "number" },
-              "quantity": { "type": "number" },
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "price": {
+                "type": "number"
+              },
+              "quantity": {
+                "type": "number"
+              },
               "customization": {
                 "type": "object",
                 "properties": {
-                  "size": { "type": "string" },
-                  "sugar": { "type": "string" },
-                  "temp": { "type": "string" },
-                  "addons": { "type": "array", "items": { "type": "string" } }
+                  "size": {
+                    "type": "string"
+                  },
+                  "sugar": {
+                    "type": "string"
+                  },
+                  "temp": {
+                    "type": "string"
+                  },
+                  "addons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
           }
         },
-        "subtotal": { "type": "number" },
-        "discount": { "type": "number" },
-        "couponCode": { "type": "string" },
-        "deliveryFee": { "type": "number" },
-        "total": { "type": "number" },
-        "totalAmount": { "type": "number" },
-        "status": { "type": "string", "enum": ["Pending", "Preparing", "Out for Delivery", "Delivered", "Cancelled"] },
-        "cancelledAt": { "type": "string", "format": "date-time" },
-        "cancelledBy": { "type": "string", "enum": ["Customer", "Admin"] },
-        "paymentMethod": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "subtotal": {
+          "type": "number"
+        },
+        "discount": {
+          "type": "number"
+        },
+        "couponCode": {
+          "type": "string"
+        },
+        "deliveryFee": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        },
+        "totalAmount": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Confirmed",
+            "Preparing",
+            "Out for Delivery",
+            "Delivered",
+            "Cancelled"
+          ]
+        },
+        "cancelledAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "acceptedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cancelledBy": {
+          "type": "string",
+          "enum": [
+            "Customer",
+            "Admin"
+          ]
+        },
+        "paymentMethod": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       },
-      "required": ["userId", "customerName", "customerEmail", "items", "total", "status", "createdAt"]
+      "required": [
+        "userId",
+        "customerName",
+        "customerEmail",
+        "items",
+        "total",
+        "status",
+        "createdAt"
+      ]
     },
     "FoodItem": {
       "title": "Food Item",
       "description": "A menu item available for purchase at Ezzy Bites",
       "type": "object",
       "properties": {
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "price": { "type": "number" },
-        "discountPrice": { "type": "number" },
-        "category": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "isVeg": { "type": "boolean" },
-        "rating": { "type": "number" },
-        "isAvailable": { "type": "boolean" },
-        "isBestSeller": { "type": "boolean" },
-        "isFeatured": { "type": "boolean" },
-        "isCustomizable": { "type": "boolean" },
-        "spiceLevel": { "type": "string", "enum": ["None", "Mild", "Medium", "Hot", "Extra Hot"] },
-        "prepTime": { "type": "number", "description": "Minutes" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "discountPrice": {
+          "type": "number"
+        },
+        "category": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "isVeg": {
+          "type": "boolean"
+        },
+        "rating": {
+          "type": "number"
+        },
+        "isAvailable": {
+          "type": "boolean"
+        },
+        "isBestSeller": {
+          "type": "boolean"
+        },
+        "isFeatured": {
+          "type": "boolean"
+        },
+        "isCustomizable": {
+          "type": "boolean"
+        },
+        "spiceLevel": {
+          "type": "string",
+          "enum": [
+            "None",
+            "Mild",
+            "Medium",
+            "Hot",
+            "Extra Hot"
+          ]
+        },
+        "prepTime": {
+          "type": "number",
+          "description": "Minutes"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       },
-      "required": ["name", "price", "category", "imageUrl", "isAvailable"]
+      "required": [
+        "name",
+        "price",
+        "category",
+        "imageUrl",
+        "isAvailable"
+      ]
     },
     "Coupon": {
       "title": "Coupon Code",
       "description": "Discount codes available for customers",
       "type": "object",
       "properties": {
-        "code": { "type": "string" },
-        "discount": { "type": "number", "description": "Percentage discount" },
-        "isActive": { "type": "boolean" },
-        "expiryDate": { "type": "string", "format": "date" },
-        "minOrderValue": { "type": "number" },
-        "description": { "type": "string" }
+        "code": {
+          "type": "string"
+        },
+        "discount": {
+          "type": "number",
+          "description": "Percentage discount"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "expiryDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "minOrderValue": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string"
+        }
       },
-      "required": ["code", "discount", "isActive"]
+      "required": [
+        "code",
+        "discount",
+        "isActive"
+      ]
     }
   },
   "auth": {
-    "providers": ["password", "phone", "anonymous", "google.com"]
+    "providers": [
+      "password",
+      "phone",
+      "anonymous",
+      "google.com"
+    ]
   },
   "firestore": {
     "/admins/{userId}": {
@@ -162,11 +376,25 @@
       "description": "Dynamic promotional discount codes"
     },
     "/settings/{settingId}": {
-      "schema": { "type": "object", "properties": { "isOpen": { "type": "boolean" } } },
+      "schema": {
+        "type": "object",
+        "properties": {
+          "isOpen": {
+            "type": "boolean"
+          }
+        }
+      },
       "description": "Store operational settings"
     },
     "/otp_codes/{phone}": {
-      "schema": { "type": "object", "properties": { "otp": { "type": "string" } } },
+      "schema": {
+        "type": "object",
+        "properties": {
+          "otp": {
+            "type": "string"
+          }
+        }
+      },
       "description": "Temporary OTP codes for verification"
     }
   }

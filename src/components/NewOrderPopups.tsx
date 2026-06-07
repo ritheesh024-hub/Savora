@@ -1,6 +1,4 @@
-
-'use client';
-
+"use client"
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,7 +62,7 @@ export const NewOrderPopups = ({ pendingOrders, onViewDetails, onUpdateStatus }:
         <Card 
           key={order.id} 
           className={cn(
-            "pointer-events-auto rounded-[1.8rem] border-none shadow-3xl bg-white overflow-hidden animate-in slide-in-from-right duration-500",
+            "pointer-events-auto rounded-[1.8rem] border-none shadow-3xl bg-white dark:bg-zinc-900 overflow-hidden animate-in slide-in-from-right duration-500",
             index > 2 && "hidden"
           )}
         >
@@ -113,7 +111,7 @@ export const NewOrderPopups = ({ pendingOrders, onViewDetails, onUpdateStatus }:
             <div className="flex gap-2">
               <Button 
                 onClick={() => {
-                  onUpdateStatus(order.id, 'Preparing');
+                  onUpdateStatus(order.id, 'Confirmed');
                   removeNotification(order.id);
                 }}
                 className="flex-1 rounded-xl h-10 font-black text-[9px] uppercase bg-primary"
