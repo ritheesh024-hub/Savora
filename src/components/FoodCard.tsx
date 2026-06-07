@@ -45,8 +45,6 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
   };
 
   const handleQtyChange = (delta: number) => {
-    // If it's customizable, we don't just increment/decrement because each customization is unique.
-    // Instead, we let them add a new one or they can manage it in the cart drawer.
     if (item.isBeverage || item.isCustomizable) {
        if (delta > 0) setIsCustomizing(true);
        else toast({ title: "Manage in Cart", description: "Use the tray drawer to remove specific customizations." });
@@ -62,8 +60,8 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
   if (menuViewMode === 'small') {
     return (
       <>
-        <div className="group bg-white dark:bg-zinc-900 rounded-[2rem] shadow-soft hover:shadow-xl transition-all duration-500 flex flex-col h-full relative overflow-hidden border border-border/20">
-          <div className="relative aspect-square overflow-hidden bg-secondary/50">
+        <div className="group bg-white dark:bg-zinc-900 rounded-[1.5rem] md:rounded-[2rem] shadow-soft hover:shadow-xl transition-all duration-500 flex flex-col h-full relative overflow-hidden border border-border/20">
+          <div className="relative aspect-square overflow-hidden bg-secondary/30">
             <Image 
               src={item.imageUrl} 
               alt={item.name} 
@@ -72,39 +70,39 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
               unoptimized
             />
             {item.rating >= 4.7 && (
-               <div className="absolute top-3 left-3 z-10 glass px-2 py-1 rounded-lg flex items-center gap-1">
-                 <Star className="w-2.5 h-2.5 fill-primary text-primary" />
-                 <span className="text-[8px] font-black text-primary">{item.rating}</span>
+               <div className="absolute top-2 left-2 z-10 glass px-1.5 py-0.5 rounded-lg flex items-center gap-1">
+                 <Star className="w-2 h-2 fill-primary text-primary" />
+                 <span className="text-[7px] font-black text-primary">{item.rating}</span>
                </div>
             )}
             {!hideVegIndicator && (
-              <div className="absolute top-3 right-3 z-10">
+              <div className="absolute top-2 right-2 z-10">
                 <div className={cn(
-                  "w-4 h-4 bg-white/90 backdrop-blur rounded-md border flex items-center justify-center",
+                  "w-3 h-3 bg-white/90 backdrop-blur rounded-sm border flex items-center justify-center",
                   item.isVeg ? "border-green-500" : "border-red-500"
                 )}>
-                  <div className={cn("w-1.5 h-1.5 rounded-full", item.isVeg ? "bg-green-500" : "bg-red-500")} />
+                  <div className={cn("w-1 h-1 rounded-full", item.isVeg ? "bg-green-500" : "bg-red-500")} />
                 </div>
               </div>
             )}
           </div>
-          <div className="p-4 flex flex-col flex-1">
-            <h4 className="font-black text-xs md:text-sm line-clamp-1 mb-1 uppercase tracking-tight group-hover:text-primary transition-colors">{item.name}</h4>
+          <div className="p-3 md:p-4 flex flex-col flex-1">
+            <h4 className="font-black text-[10px] md:text-sm line-clamp-1 mb-1 uppercase tracking-tight group-hover:text-primary transition-colors">{item.name}</h4>
             <div className="mt-auto flex items-center justify-between">
-              <span className="text-sm md:text-base font-black text-primary italic">₹{item.price}</span>
+              <span className="text-xs md:text-base font-black text-primary italic">₹{item.price}</span>
               {cartItemCount > 0 && !item.isBeverage && !item.isCustomizable ? (
-                <div className="flex items-center gap-2 bg-orange-gradient text-white rounded-xl h-8 px-2 shadow-lg shadow-primary/20">
-                  <button onClick={() => handleQtyChange(-1)} className="hover:bg-white/20 rounded p-0.5"><Minus className="w-3 h-3" /></button>
-                  <span className="text-[10px] font-black w-3 text-center">{cartItemCount}</span>
-                  <button onClick={() => handleQtyChange(1)} className="hover:bg-white/20 rounded p-0.5"><Plus className="w-3 h-3" /></button>
+                <div className="flex items-center gap-1.5 bg-orange-gradient text-white rounded-lg h-7 px-1.5 shadow-lg shadow-primary/20">
+                  <button onClick={() => handleQtyChange(-1)} className="hover:bg-white/20 rounded p-0.5"><Minus className="w-2.5 h-2.5" /></button>
+                  <span className="text-[9px] font-black w-3 text-center">{cartItemCount}</span>
+                  <button onClick={() => handleQtyChange(1)} className="hover:bg-white/20 rounded p-0.5"><Plus className="w-2.5 h-2.5" /></button>
                 </div>
               ) : (
                 <Button 
                   size="icon" 
                   onClick={handleAddClick} 
-                  className="w-9 h-9 rounded-xl bg-orange-gradient text-white shadow-lg hover:scale-110 active:scale-95 transition-all border-none"
+                  className="w-7 h-7 md:w-9 md:h-9 rounded-lg md:rounded-xl bg-orange-gradient text-white shadow-lg hover:scale-110 active:scale-95 transition-all border-none"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                 </Button>
               )}
             </div>

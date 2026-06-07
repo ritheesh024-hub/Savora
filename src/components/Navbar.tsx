@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -103,13 +104,13 @@ export const Navbar = () => {
 
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 z-40 transition-all duration-500 px-4",
+      "fixed top-0 left-0 right-0 z-40 transition-all duration-500",
       scrolled 
-        ? "bg-white/40 dark:bg-black/40 backdrop-blur-3xl border-b border-white/10 py-1.5 shadow-xl" 
+        ? "bg-white/90 dark:bg-black/90 backdrop-blur-3xl border-b py-2 shadow-xl" 
         : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-3"
     )}>
-      <div className="container mx-auto">
-        <div className="h-12 md:h-16 flex items-center justify-between gap-4">
+      <div className="container mx-auto px-4">
+        <div className="h-10 md:h-16 flex items-center justify-between gap-4">
           <Link href="/">
             <Logo variant={scrolled ? 'dark' : 'light'} size="sm" className="shrink-0 scale-90 md:scale-100 origin-left" />
           </Link>
@@ -137,10 +138,10 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-1.5 md:gap-3">
+            <ThemeToggle className="hidden md:flex" />
+            
             {/* Desktop Only Actions */}
             <div className="hidden md:flex items-center gap-3">
-              <ThemeToggle />
-              
               {!userLoading && (
                 user ? (
                   isStaff && !isCustomer ? (
@@ -198,6 +199,14 @@ export const Navbar = () => {
               )}
             </div>
 
+            {/* Always Visible: Search Trigger (Mobile Only) */}
+            <Button variant="ghost" size="icon" onClick={() => router.push('/menu')} className={cn(
+              "md:hidden rounded-full w-9 h-9 transition-all",
+              scrolled ? "text-foreground" : "text-white"
+            )}>
+              <Search className="w-4.5 h-4.5" />
+            </Button>
+
             {/* Always Visible: Cart */}
             <CartDrawer>
               <Button variant="ghost" size="icon" className={cn(
@@ -224,7 +233,7 @@ export const Navbar = () => {
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 border-none bg-background flex flex-col z-50">
+                <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 border-none bg-background flex flex-col z-[60]">
                   <SheetHeader className="p-6 text-left border-b bg-secondary/10">
                     <SheetTitle className="sr-only">Main Menu</SheetTitle>
                     {user ? (
