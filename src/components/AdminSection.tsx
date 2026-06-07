@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +13,8 @@ import {
   MapPin, User, Settings, CheckCircle2,
   Users, UserPlus, Globe, Utensils,
   TicketPercent, BarChart3, Fingerprint,
-  LayoutGrid
+  LayoutGrid,
+  Settings2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -322,11 +324,20 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-4">
                     <h5 className="text-[10px] font-black uppercase opacity-40">Cart Items</h5>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {selectedOrderForView.items?.map((item: any, i: number) => (
-                        <div key={i} className="flex justify-between items-center text-xs font-bold">
-                          <span>{item.name} x{item.quantity}</span>
-                          <span className="text-primary">₹{item.price * item.quantity}</span>
+                        <div key={i} className="bg-secondary/20 dark:bg-zinc-800 p-3 rounded-xl space-y-1">
+                          <div className="flex justify-between items-center text-xs font-black">
+                            <span>{item.name} x{item.quantity}</span>
+                            <span className="text-primary">₹{item.price * item.quantity}</span>
+                          </div>
+                          {item.customization && (
+                            <div className="flex items-center gap-1 text-[8px] font-bold text-muted-foreground uppercase tracking-widest">
+                               <Settings2 className="w-2.5 h-2.5" />
+                               {item.customization.size} • {item.customization.temp} • Sugar: {item.customization.sugar}
+                               {item.customization.addons?.length > 0 && ` • +${item.customization.addons.join(', ')}`}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

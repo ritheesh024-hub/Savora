@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -12,7 +13,8 @@ import {
   Timer,
   Package,
   Utensils,
-  BellRing
+  BellRing,
+  Settings2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -88,18 +90,20 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-3">
                   {order.items?.map((item: any, i: number) => (
-                    <div key={i} className="flex justify-between items-center bg-secondary/30 dark:bg-zinc-800 p-3 rounded-xl">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-sm">{item.name}</span>
-                        {item.customization && (
-                          <span className="text-[9px] font-black uppercase text-primary">
-                            {item.customization.size} • {item.customization.temp}
-                          </span>
-                        )}
+                    <div key={i} className="flex flex-col bg-secondary/30 dark:bg-zinc-800 p-3 rounded-xl gap-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-black text-sm uppercase tracking-tight">{item.name}</span>
+                        <span className="w-8 h-8 rounded-full bg-white dark:bg-zinc-700 flex items-center justify-center font-black text-sm">
+                          x{item.quantity}
+                        </span>
                       </div>
-                      <span className="w-8 h-8 rounded-full bg-white dark:bg-zinc-700 flex items-center justify-center font-black text-sm">
-                        x{item.quantity}
-                      </span>
+                      {item.customization && (
+                        <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-primary tracking-widest mt-1">
+                          <Settings2 className="w-3 h-3" />
+                          {item.customization.size} • {item.customization.temp} • Sugar: {item.customization.sugar}
+                          {item.customization.addons?.length > 0 && ` • +${item.customization.addons.join(', ')}`}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

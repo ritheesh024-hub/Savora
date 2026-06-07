@@ -1,7 +1,8 @@
+
 "use client"
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Star, Plus, Minus, Clock, Coffee, Sparkles } from 'lucide-react';
+import { Star, Plus, Minus, Clock, Coffee, Sparkles, Settings2 } from 'lucide-react';
 import { FoodItem, useStore, BeverageOptions } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,11 +20,11 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
   const [isCustomizing, setIsCustomizing] = useState(false);
   
   const menuViewMode = forceViewMode || storeViewMode;
-  const hideVegIndicator = ['Tea', 'Coffee', 'Ice creams'].includes(item.category);
+  const hideVegIndicator = ['Tea', 'Coffee', 'Ice teas'].includes(item.category);
   const cartItemCount = cart.filter(i => i.id === item.id).reduce((acc, i) => acc + i.quantity, 0);
 
   const handleAddClick = () => {
-    if (item.isBeverage) {
+    if (item.isBeverage || item.isCustomizable) {
       setIsCustomizing(true);
     } else {
       addToCart(item);
@@ -44,6 +45,14 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
   };
 
   const handleQtyChange = (delta: number) => {
+    // If it's customizable, we don't just increment/decrement because each customization is unique.
+    // Instead, we let them add a new one or they can manage it in the cart drawer.
+    if (item.isBeverage || item.isCustomizable) {
+       if (delta > 0) setIsCustomizing(true);
+       else toast({ title: "Manage in Cart", description: "Use the tray drawer to remove specific customizations." });
+       return;
+    }
+    
     const targetItem = cart.find(i => i.id === item.id);
     if (targetItem) {
       updateQuantity(targetItem.cartId, delta);
@@ -83,7 +92,7 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
             <h4 className="font-black text-xs md:text-sm line-clamp-1 mb-1 uppercase tracking-tight group-hover:text-primary transition-colors">{item.name}</h4>
             <div className="mt-auto flex items-center justify-between">
               <span className="text-sm md:text-base font-black text-primary italic">₹{item.price}</span>
-              {cartItemCount > 0 && !item.isBeverage ? (
+              {cartItemCount > 0 && !item.isBeverage && !item.isCustomizable ? (
                 <div className="flex items-center gap-2 bg-orange-gradient text-white rounded-xl h-8 px-2 shadow-lg shadow-primary/20">
                   <button onClick={() => handleQtyChange(-1)} className="hover:bg-white/20 rounded p-0.5"><Minus className="w-3 h-3" /></button>
                   <span className="text-[10px] font-black w-3 text-center">{cartItemCount}</span>
@@ -101,7 +110,7 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
             </div>
           </div>
         </div>
-        {item.isBeverage && (
+        {(item.isBeverage || item.isCustomizable) && (
           <BeverageCustomizer 
             item={item} 
             isOpen={isCustomizing} 
@@ -153,7 +162,10 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
 
         <div className="p-8 flex flex-col flex-1">
           <div className="mb-6 space-y-3">
-            <h3 className="text-2xl font-black group-hover:text-primary transition-colors tracking-tight uppercase">{item.name}</h3>
+            <div className="flex items-start justify-between gap-4">
+              <h3 className="text-2xl font-black group-hover:text-primary transition-colors tracking-tight uppercase">{item.name}</h3>
+              {item.isCustomizable && <Settings2 className="w-5 h-5 text-primary shrink-0 mt-1" />}
+            </div>
             <p className="text-sm text-muted-foreground line-clamp-2 min-h-[3rem] leading-relaxed font-medium">
               {item.description}
             </p>
@@ -170,7 +182,7 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
               <span className="text-3xl font-black text-primary italic leading-none">₹{item.price}</span>
             </div>
 
-            {cartItemCount > 0 && !item.isBeverage ? (
+            {cartItemCount > 0 && !item.isBeverage && !item.isCustomizable ? (
               <div className="flex items-center gap-4 bg-orange-gradient text-white rounded-[1.5rem] h-14 px-5 shadow-2xl shadow-primary/30 animate-in zoom-in">
                 <button onClick={() => handleQtyChange(-1)} className="w-10 h-10 rounded-xl hover:bg-white/20 flex items-center justify-center"><Minus className="w-4 h-4" /></button>
                 <span className="text-xl font-black w-6 text-center">{cartItemCount}</span>
@@ -181,7 +193,7 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
                 onClick={handleAddClick}
                 className="rounded-[1.5rem] px-8 h-14 font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all shadow-2xl shadow-primary/30 bg-orange-gradient text-white border-none"
               >
-                Add to Tray
+                {item.isCustomizable || item.isBeverage ? 'Customize' : 'Add to Tray'}
                 <Plus className="ml-2 w-4 h-4" />
               </Button>
             )}
@@ -189,7 +201,7 @@ export const FoodCard = ({ item, forceViewMode }: FoodCardProps) => {
         </div>
       </div>
 
-      {item.isBeverage && (
+      {(item.isBeverage || item.isCustomizable) && (
         <BeverageCustomizer 
           item={item} 
           isOpen={isCustomizing} 

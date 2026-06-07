@@ -1,8 +1,9 @@
+
 "use client"
 import React, { useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useParams } from 'next/navigation';
-import { CheckCircle2, Clock, MapPin, Phone, MessageSquare, Truck, ChefHat, PackageCheck, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Clock, MapPin, Phone, MessageSquare, Truck, ChefHat, PackageCheck, Loader2, AlertCircle, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -137,12 +138,21 @@ export default function OrderTrackingPage() {
                 <h4 className="font-black text-lg uppercase tracking-widest mb-6">Summary</h4>
                 <div className="space-y-4">
                   {order.items?.map((item: any, i: number) => (
-                    <div key={i} className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-3">
-                        <span className="font-black text-primary">x{item.quantity}</span>
-                        <span className="font-bold">{item.name}</span>
+                    <div key={i} className="flex flex-col gap-1 border-b border-dashed pb-4 last:border-0 last:pb-0">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <span className="font-black text-primary">x{item.quantity}</span>
+                          <span className="font-bold">{item.name}</span>
+                        </div>
+                        <span className="font-bold">₹{item.price * item.quantity}</span>
                       </div>
-                      <span className="font-bold">₹{item.price * item.quantity}</span>
+                      {item.customization && (
+                        <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest pl-8">
+                          <Settings2 className="w-3 h-3" />
+                          {item.customization.size} • {item.customization.temp} • Sugar: {item.customization.sugar}
+                          {item.customization.addons?.length > 0 && ` • +${item.customization.addons.join(', ')}`}
+                        </div>
+                      )}
                     </div>
                   ))}
                   <div className="pt-4 border-t border-dashed mt-4 flex justify-between items-center">

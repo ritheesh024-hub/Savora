@@ -72,7 +72,16 @@
               "id": { "type": "string" },
               "name": { "type": "string" },
               "price": { "type": "number" },
-              "quantity": { "type": "number" }
+              "quantity": { "type": "number" },
+              "customization": {
+                "type": "object",
+                "properties": {
+                  "size": { "type": "string" },
+                  "sugar": { "type": "string" },
+                  "temp": { "type": "string" },
+                  "addons": { "type": "array", "items": { "type": "string" } }
+                }
+              }
             }
           }
         },
@@ -104,6 +113,7 @@
         "isAvailable": { "type": "boolean" },
         "isBestSeller": { "type": "boolean" },
         "isFeatured": { "type": "boolean" },
+        "isCustomizable": { "type": "boolean" },
         "spiceLevel": { "type": "string", "enum": ["None", "Mild", "Medium", "Hot", "Extra Hot"] },
         "prepTime": { "type": "number", "description": "Minutes" },
         "createdAt": { "type": "string", "format": "date-time" }

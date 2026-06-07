@@ -16,7 +16,8 @@ import {
   MoreVertical, X, Sparkles, Box,
   ArrowUpDown, Ban, Power,
   ChevronRight,
-  Layers
+  Layers,
+  Settings2
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -63,6 +64,7 @@ interface ProductFormData {
   isAvailable: boolean;
   isBestSeller: boolean;
   isFeatured: boolean;
+  isCustomizable: boolean;
   spiceLevel: 'None' | 'Mild' | 'Medium' | 'Hot' | 'Extra Hot';
   prepTime: number;
 }
@@ -78,6 +80,7 @@ const DEFAULT_FORM_DATA: ProductFormData = {
   isAvailable: true,
   isBestSeller: false,
   isFeatured: false,
+  isCustomizable: false,
   spiceLevel: 'None',
   prepTime: 20
 };
@@ -141,6 +144,7 @@ export const ProductManagement = () => {
         isAvailable: item.isAvailable ?? true,
         isBestSeller: item.isBestSeller ?? false,
         isFeatured: item.isFeatured ?? false,
+        isCustomizable: item.isCustomizable ?? false,
         spiceLevel: item.spiceLevel || 'None',
         prepTime: item.prepTime || 20
       });
@@ -270,7 +274,7 @@ export const ProductManagement = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Search products..." 
-              value={searchQuery} 
+              value={searchQuery || ''} 
               onChange={(e) => setSearchQuery(e.target.value)} 
               className="h-12 pl-12 rounded-xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" 
             />
@@ -369,6 +373,12 @@ export const ProductManagement = () => {
               <CardContent className="p-6 space-y-4">
                 <div className="space-y-1">
                   <h4 className="font-black text-sm uppercase truncate leading-none group-hover:text-primary transition-colors">{item.name}</h4>
+                  {item.isCustomizable && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <Settings2 className="w-3 h-3 text-primary" />
+                      <span className="text-[8px] font-black uppercase text-primary tracking-widest">Customizable</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-end justify-between border-t border-dashed pt-4">
@@ -443,16 +453,16 @@ export const ProductManagement = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Price (₹)</Label>
-                      <Input type="number" value={formData.price || 0} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                      <Input type="number" value={formData.price ?? 0} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Discount (₹)</Label>
-                      <Input type="number" value={formData.discountPrice || 0} onChange={e => setFormData({...formData, discountPrice: Number(e.target.value)})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                      <Input type="number" value={formData.discountPrice ?? 0} onChange={e => setFormData({...formData, discountPrice: Number(e.target.value)})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Prep Time (Mins)</Label>
-                    <Input type="number" value={formData.prepTime || 20} onChange={e => setFormData({...formData, prepTime: Number(e.target.value)})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                    <Input type="number" value={formData.prepTime ?? 20} onChange={e => setFormData({...formData, prepTime: Number(e.target.value)})} className="h-12 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
                   </div>
                 </div>
              </div>
@@ -479,10 +489,17 @@ export const ProductManagement = () => {
                    <div className="space-y-3">
                       <ToggleOption label="Bestseller Badge" checked={!!formData.isBestSeller} onChange={v => setFormData({...formData, isBestSeller: v})} icon={Flame} />
                       <div className="flex items-center justify-between p-3 bg-secondary/30 dark:bg-zinc-800 rounded-xl">
-                        <Label className="text-[11px] font-black uppercase">Veg Only</Label>
-                        <Switch checked={formData.isVeg} onCheckedChange={v => setFormData({...formData, isVeg: v})} />
+                        <div className="flex gap-3 items-center">
+                          <Settings2 className="w-4 h-4 text-primary" />
+                          <Label className="text-[11px] font-black uppercase">Customizable</Label>
+                        </div>
+                        <Switch checked={formData.isCustomizable} onCheckedChange={v => setFormData({...formData, isCustomizable: v})} />
                       </div>
                    </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-secondary/30 dark:bg-zinc-800 rounded-xl max-w-[200px]">
+                  <Label className="text-[11px] font-black uppercase">Veg Only</Label>
+                  <Switch checked={formData.isVeg} onCheckedChange={v => setFormData({...formData, isVeg: v})} />
                 </div>
              </div>
           </div>

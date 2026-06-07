@@ -23,6 +23,7 @@ export interface FoodItem {
   reviewCount?: number;
   isAvailable: boolean;
   isBeverage?: boolean;
+  isCustomizable?: boolean;
   isBestSeller?: boolean;
   isPopular?: boolean;
   isFeatured?: boolean;
