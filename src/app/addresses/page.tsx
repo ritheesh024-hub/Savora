@@ -41,19 +41,19 @@ export default function AddressesPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 pt-24 pb-12">
+      <main className="container mx-auto px-4 pt-16 pb-12">
         <div className="max-w-2xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
-                <MapPin className="w-6 h-6" />
+              <div className="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+                <MapPin className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-3xl font-black font-headline uppercase tracking-tighter">Saved <span className="text-primary italic">Addresses</span></h1>
-                <p className="text-muted-foreground text-sm font-medium">Manage your delivery locations.</p>
+                <h1 className="text-2xl font-black font-headline uppercase tracking-tighter">Saved <span className="text-primary italic">Addresses</span></h1>
+                <p className="text-muted-foreground text-xs font-medium">Manage your delivery locations.</p>
               </div>
             </div>
-            <Button className="rounded-full h-12 px-6 font-black uppercase text-[10px] tracking-widest gap-2 bg-primary">
+            <Button className="rounded-full h-11 px-6 font-black uppercase text-[9px] tracking-widest gap-2 bg-primary">
               <Plus className="w-4 h-4" /> Add New
             </Button>
           </div>
@@ -67,14 +67,14 @@ export default function AddressesPage() {
             ) : (
               addresses.map((addr) => (
                 <Card key={addr.id} className="rounded-3xl border-none shadow-xl bg-white dark:bg-zinc-900 group">
-                  <CardContent className="p-6 flex justify-between items-center">
+                  <CardContent className="p-5 flex justify-between items-center">
                     <div className="flex gap-4">
-                      <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-muted-foreground shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                      <div className="w-10 h-10 bg-secondary rounded-2xl flex items-center justify-center text-muted-foreground shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
                         {addr.type === 'Home' ? <Home className="w-5 h-5" /> : addr.type === 'Work' ? <Briefcase className="w-5 h-5" /> : <Building className="w-5 h-5" />}
                       </div>
                       <div>
-                        <h4 className="font-black text-lg">{addr.name || addr.type}</h4>
-                        <p className="text-xs text-muted-foreground font-medium leading-relaxed max-w-md">{addr.address}</p>
+                        <h4 className="font-black text-base">{addr.name || addr.type}</h4>
+                        <p className="text-[10px] text-muted-foreground font-medium leading-relaxed max-w-md">{addr.address}</p>
                       </div>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(addr.id)} className="text-muted-foreground hover:text-destructive rounded-full">

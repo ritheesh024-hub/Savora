@@ -65,24 +65,24 @@ export default function OrdersHistoryPage() {
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-zinc-950 pb-12">
       <Navbar />
       
-      <main className="container mx-auto px-4 pt-24 md:pt-32">
+      <main className="container mx-auto px-4 pt-20 md:pt-24">
         <div className="max-w-2xl mx-auto space-y-8">
           <div className="text-center space-y-4">
-            <div className="w-20 h-20 bg-primary/10 text-primary rounded-[2rem] flex items-center justify-center mx-auto shadow-soft">
-              <History className="w-10 h-10" />
+            <div className="w-16 h-16 bg-primary/10 text-primary rounded-[1.5rem] flex items-center justify-center mx-auto shadow-soft">
+              <History className="w-8 h-8" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tighter">My <span className="text-primary italic">Orders</span></h1>
-            <p className="text-muted-foreground font-medium">
+            <h1 className="text-3xl md:text-4xl font-black font-headline tracking-tighter">My <span className="text-primary italic">Orders</span></h1>
+            <p className="text-muted-foreground font-medium text-sm">
               {user ? `Welcome back, ${user.displayName?.split(' ')[0]}!` : 'Track your delicious history.'}
             </p>
           </div>
 
           {!user && !searchTriggered && (
-            <Card className="rounded-[2.5rem] border-none shadow-3xl p-8 md:p-12 bg-white dark:bg-zinc-900 animate-in zoom-in">
+            <Card className="rounded-[2rem] border-none shadow-3xl p-8 md:p-12 bg-white dark:bg-zinc-900 animate-in zoom-in">
               <div className="space-y-8">
                 <Button 
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="w-full h-16 rounded-2xl font-black text-lg bg-orange-gradient gap-3 shadow-2xl shadow-primary/20"
+                  className="w-full h-14 rounded-2xl font-black text-lg bg-orange-gradient gap-3 shadow-2xl shadow-primary/20"
                 >
                   <User className="w-5 h-5" /> Sign In for History
                 </Button>
@@ -105,11 +105,11 @@ export default function OrdersHistoryPage() {
                         setPhoneNumber(val);
                         setSearchTriggered(false);
                       }} 
-                      className="h-16 pl-24 rounded-2xl font-black text-lg bg-secondary/50 border-none" 
+                      className="h-14 pl-24 rounded-2xl font-black text-lg bg-secondary/50 border-none" 
                       placeholder="00000 00000"
                     />
                   </div>
-                  <Button type="submit" disabled={phoneNumber.length < 10} className="h-16 rounded-2xl px-10 font-black text-lg bg-primary text-white">
+                  <Button type="submit" disabled={phoneNumber.length < 10} className="h-14 rounded-2xl px-10 font-black text-lg bg-primary text-white">
                     Track
                   </Button>
                 </form>
@@ -120,7 +120,7 @@ export default function OrdersHistoryPage() {
           <div className="space-y-6">
             {loading ? (
               <div className="py-20 text-center space-y-4">
-                <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+                <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
                 <p className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Fetching your order ledger...</p>
               </div>
             ) : error ? (
@@ -134,17 +134,17 @@ export default function OrdersHistoryPage() {
               orders && orders.length > 0 ? (
                 orders.map((order: any) => (
                   <Link key={order.id} href={`/orders/${order.orderId}`}>
-                    <Card className="rounded-[2.5rem] border-none shadow-soft hover:shadow-2xl transition-all mb-6 group bg-white dark:bg-zinc-900 overflow-hidden active:scale-[0.98]">
-                      <CardContent className="p-8 flex flex-col md:flex-row justify-between items-center gap-8">
+                    <Card className="rounded-[2rem] border-none shadow-soft hover:shadow-2xl transition-all mb-6 group bg-white dark:bg-zinc-900 overflow-hidden active:scale-[0.98]">
+                      <CardContent className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex items-center gap-6 w-full md:w-auto">
-                          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
-                            <ShoppingBag className="w-8 h-8" />
+                          <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
+                            <ShoppingBag className="w-7 h-7" />
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h4 className="font-black text-xl tracking-tight">#{order.orderId}</h4>
+                            <div className="flex items-center gap-3 mb-1">
+                              <h4 className="font-black text-lg tracking-tight">#{order.orderId}</h4>
                               <Badge className={cn(
-                                "text-[9px] uppercase font-black px-3 py-1 rounded-lg border-none shadow-sm",
+                                "text-[8px] uppercase font-black px-2 py-0.5 rounded-lg border-none shadow-sm",
                                 order.status === 'Delivered' ? 'bg-green-500 text-white' : 
                                 order.status === 'Cancelled' ? 'bg-red-500 text-white' : 
                                 'bg-orange-500 text-white'
@@ -152,20 +152,20 @@ export default function OrdersHistoryPage() {
                                 {order.status}
                               </Badge>
                             </div>
-                            <p className="text-xs font-bold text-muted-foreground flex items-center gap-2">
-                              <Clock className="w-4 h-4" /> 
+                            <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-2">
+                              <Clock className="w-3.5 h-3.5" /> 
                               {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Syncing...'}
                             </p>
                           </div>
                         </div>
                         
-                        <div className="flex items-center justify-between w-full md:w-auto gap-10">
+                        <div className="flex items-center justify-between w-full md:w-auto gap-8">
                           <div className="text-right">
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Final Amount</p>
-                            <p className="text-3xl font-black text-primary italic">₹{order.total}</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-0.5">Final Amount</p>
+                            <p className="text-2xl font-black text-primary italic">₹{order.total}</p>
                           </div>
-                          <div className="w-12 h-12 rounded-full bg-secondary dark:bg-zinc-800 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
-                            <ChevronRight className="w-6 h-6" />
+                          <div className="w-10 h-10 rounded-full bg-secondary dark:bg-zinc-800 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
+                            <ChevronRight className="w-5 h-5" />
                           </div>
                         </div>
                       </CardContent>
@@ -173,16 +173,16 @@ export default function OrdersHistoryPage() {
                   </Link>
                 ))
               ) : (
-                <div className="py-24 text-center space-y-8 bg-white dark:bg-zinc-900 rounded-[3rem] shadow-sm">
-                  <div className="w-24 h-24 bg-secondary dark:bg-zinc-800 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner">
-                    <PackageX className="w-12 h-12 text-muted-foreground opacity-20" />
+                <div className="py-24 text-center space-y-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-sm">
+                  <div className="w-20 h-20 bg-secondary dark:bg-zinc-800 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner">
+                    <PackageX className="w-10 h-10 text-muted-foreground opacity-20" />
                   </div>
                   <div>
-                    <h3 className="text-3xl font-black mb-2 uppercase tracking-tighter">Your tray is <span className="text-primary italic">Empty</span></h3>
-                    <p className="text-muted-foreground font-medium">You haven't placed any orders yet. Let's start the fire!</p>
+                    <h3 className="text-2xl font-black mb-1 uppercase tracking-tighter">Your tray is <span className="text-primary italic">Empty</span></h3>
+                    <p className="text-muted-foreground text-sm font-medium">You haven't placed any orders yet. Let's start the fire!</p>
                   </div>
                   <Link href="/menu">
-                    <Button className="rounded-2xl h-16 px-10 font-black uppercase text-[10px] tracking-[0.2em] bg-orange-gradient">Start Selection</Button>
+                    <Button className="rounded-2xl h-14 px-10 font-black uppercase text-[10px] tracking-[0.2em] bg-orange-gradient">Start Selection</Button>
                   </Link>
                 </div>
               )

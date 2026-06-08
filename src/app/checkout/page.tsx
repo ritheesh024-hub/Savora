@@ -228,7 +228,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-secondary/10 pb-12 overflow-x-hidden">
       <Navbar />
-      <main className="container mx-auto px-4 pt-24 md:pt-32">
+      <main className="container mx-auto px-4 pt-20 md:pt-24">
         {/* Stepper */}
         <div className="max-w-xl mx-auto mb-10 md:mb-16 px-2">
           <div className="flex items-center justify-between relative">
@@ -423,7 +423,7 @@ export default function CheckoutPage() {
           </div>
 
           {step < 4 && (
-            <div className="space-y-6 sticky top-24 lg:top-28 h-fit">
+            <div className="space-y-6 sticky top-20 lg:top-24 h-fit">
               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden">
                 <CardHeader className="p-6 border-b bg-muted/5">
                   <p className="text-[10px] font-black uppercase tracking-widest text-primary">Promo Engine</p>

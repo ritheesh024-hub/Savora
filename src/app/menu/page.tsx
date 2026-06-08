@@ -67,14 +67,14 @@ function MenuContent() {
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-zinc-950">
       <Navbar />
       
-      <main className="container mx-auto px-3 md:px-8 py-4 pt-20 md:pt-32 max-w-7xl">
+      <main className="container mx-auto px-3 md:px-8 py-4 pt-16 md:pt-24 max-w-7xl">
         {/* COMPACT SEARCH */}
         <div className="max-w-2xl mx-auto mb-6">
           <div className="relative group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input 
               placeholder="Search premium bites..." 
-              className="h-14 pl-14 rounded-2xl border-none bg-white dark:bg-zinc-900 text-base font-bold shadow-sm focus:ring-2 focus:ring-primary/20"
+              className="h-12 pl-14 rounded-2xl border-none bg-white dark:bg-zinc-900 text-base font-bold shadow-sm focus:ring-2 focus:ring-primary/20"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -82,7 +82,7 @@ function MenuContent() {
         </div>
 
         {/* STICKY FILTER BAR */}
-        <div className="sticky top-[60px] md:top-20 z-40 -mx-3 px-3 py-3 bg-[#F8F9FA]/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b border-border/40 mb-4">
+        <div className="sticky top-[52px] md:top-14 z-40 -mx-3 px-3 py-3 bg-[#F8F9FA]/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b border-border/40 mb-4">
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide snap-x">
             {filterChips.map((chip, idx) => {
               const isActive = (chip.type === 'diet' && dietFilter === chip.value) || 

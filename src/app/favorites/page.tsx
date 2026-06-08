@@ -32,15 +32,15 @@ export default function FavoritesPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 pt-24 pb-12">
+      <main className="container mx-auto px-4 pt-16 pb-12">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-pink-100 rounded-2xl flex items-center justify-center text-pink-600">
-              <Heart className="w-6 h-6 fill-current" />
+            <div className="w-10 h-10 bg-pink-100 rounded-2xl flex items-center justify-center text-pink-600">
+              <Heart className="w-5 h-5 fill-current" />
             </div>
             <div>
-              <h1 className="text-3xl font-black font-headline uppercase tracking-tighter">My <span className="text-primary italic">Favorites</span></h1>
-              <p className="text-muted-foreground text-sm font-medium">Items you've bookmarked for quick ordering.</p>
+              <h1 className="text-2xl font-black font-headline uppercase tracking-tighter">My <span className="text-primary italic">Favorites</span></h1>
+              <p className="text-muted-foreground text-xs font-medium">Items you've bookmarked for quick ordering.</p>
             </div>
           </div>
 
@@ -66,7 +66,7 @@ export default function FavoritesPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {favorites.map((fav) => (
                 <FoodCard key={fav.id} item={fav.product} />
               ))}

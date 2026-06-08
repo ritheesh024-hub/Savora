@@ -27,21 +27,21 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 pt-24 pb-12">
+      <main className="container mx-auto px-4 pt-16 pb-12">
         <div className="max-w-2xl mx-auto space-y-8">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center">
-              <Settings className="w-6 h-6" />
+            <div className="w-10 h-10 bg-secondary rounded-2xl flex items-center justify-center">
+              <Settings className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-3xl font-black font-headline uppercase tracking-tighter">Account <span className="text-primary italic">Settings</span></h1>
-              <p className="text-muted-foreground text-sm font-medium">Customize your application experience.</p>
+              <h1 className="text-2xl font-black font-headline uppercase tracking-tighter">Account <span className="text-primary italic">Settings</span></h1>
+              <p className="text-muted-foreground text-xs font-medium">Customize your application experience.</p>
             </div>
           </div>
 
-          <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900">
+          <Card className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-zinc-900">
             <CardHeader className="px-8 pt-8">
-              <CardTitle className="text-sm font-black uppercase tracking-widest opacity-40">App Appearance</CardTitle>
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest opacity-40">App Appearance</CardTitle>
             </CardHeader>
             <CardContent className="px-8 pb-8 space-y-4">
               <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl">
@@ -49,7 +49,7 @@ export default function SettingsPage() {
                    <div className="w-10 h-10 bg-white dark:bg-zinc-800 rounded-xl flex items-center justify-center">
                      {isDarkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-indigo-500" />}
                    </div>
-                   <span className="font-bold text-sm">Dark Mode Experience</span>
+                   <span className="font-bold text-xs">Dark Mode Experience</span>
                  </div>
                  <Switch checked={isDarkMode} onCheckedChange={toggleDarkMode} />
               </div>
@@ -58,31 +58,31 @@ export default function SettingsPage() {
                    <div className="w-10 h-10 bg-white dark:bg-zinc-800 rounded-xl flex items-center justify-center">
                      <Volume2 className="w-5 h-5 text-blue-500" />
                    </div>
-                   <span className="font-bold text-sm">Haptic & Audio Feedback</span>
+                   <span className="font-bold text-xs">Haptic & Audio Feedback</span>
                  </div>
                  <Switch defaultChecked />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900">
+          <Card className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-zinc-900">
             <CardHeader className="px-8 pt-8">
-              <CardTitle className="text-sm font-black uppercase tracking-widest opacity-40">Privacy & Data</CardTitle>
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest opacity-40">Privacy & Data</CardTitle>
             </CardHeader>
             <CardContent className="px-8 pb-8 space-y-4">
               <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl">
                  <div className="flex items-center gap-4">
                    <div className="w-10 h-10 bg-white dark:bg-zinc-800 rounded-xl flex items-center justify-center"><Bell className="w-5 h-5 text-orange-500" /></div>
-                   <span className="font-bold text-sm">Push Notifications</span>
+                   <span className="font-bold text-xs">Push Notifications</span>
                  </div>
                  <Switch defaultChecked />
               </div>
               <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl opacity-50">
                  <div className="flex items-center gap-4">
                    <div className="w-10 h-10 bg-white dark:bg-zinc-800 rounded-xl flex items-center justify-center"><Lock className="w-5 h-5 text-green-500" /></div>
-                   <span className="font-bold text-sm">Two-Factor Authentication</span>
+                   <span className="font-bold text-xs">Two-Factor Authentication</span>
                  </div>
-                 <Badge variant="outline" className="text-[8px] uppercase font-black">Coming Soon</Badge>
+                 <Badge variant="outline" className="text-[7px] uppercase font-black">Coming Soon</Badge>
               </div>
             </CardContent>
           </Card>

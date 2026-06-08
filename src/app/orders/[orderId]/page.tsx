@@ -144,7 +144,7 @@ export default function OrderTrackingPage() {
     <div className="min-h-screen bg-secondary/10 pb-12 overflow-x-hidden">
       <Navbar />
       
-      <main className="container mx-auto px-4 py-12 max-w-4xl pt-24 md:pt-32">
+      <main className="container mx-auto px-4 py-12 max-w-4xl pt-20 md:pt-24">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           <div className="space-y-1">
             <Badge className="bg-primary/10 text-primary border-primary/20 mb-2 px-4 py-1.5 rounded-full font-black uppercase tracking-widest text-[9px]">

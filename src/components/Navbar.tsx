@@ -116,19 +116,19 @@ export const Navbar = () => {
     <nav className={cn(
       "fixed top-0 left-0 right-0 z-40 transition-all duration-500",
       scrolled 
-        ? "bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-2 shadow-2xl" 
-        : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-4"
+        ? "bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-1 shadow-2xl" 
+        : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-2"
     )}>
       <div className="container mx-auto px-4">
-        <div className="h-12 md:h-20 flex items-center justify-between gap-4">
+        <div className="h-12 md:h-14 flex items-center justify-between gap-4">
           <Link href="/" className="transition-transform active:scale-95">
-            <Logo variant={scrolled ? 'dark' : (isDarkMode ? 'dark' : 'light')} size="sm" className="shrink-0 scale-90 md:scale-110 origin-left" />
+            <Logo variant={scrolled ? 'dark' : (isDarkMode ? 'dark' : 'light')} size="sm" className="shrink-0 scale-90 md:scale-100 origin-left" />
           </Link>
 
-          <div className="flex-1 max-w-lg hidden md:block">
+          <div className="flex-1 max-w-md hidden md:block">
             <form onSubmit={(e) => { e.preventDefault(); router.push(`/menu?q=${navSearch}`); }} className="relative group">
               <Search className={cn(
-                "absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 transition-colors z-10",
+                "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10",
                 scrolled ? "text-muted-foreground" : "text-white/40"
               )} />
               <Input 
@@ -136,7 +136,7 @@ export const Navbar = () => {
                 onChange={(e) => setNavSearch(e.target.value)}
                 placeholder="Search premium bites..." 
                 className={cn(
-                  "w-full h-12 pl-12 pr-6 rounded-2xl border-none transition-all font-black text-xs uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
+                  "w-full h-10 pl-10 pr-4 rounded-xl border-none transition-all font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
                   scrolled 
                     ? "bg-secondary/60 focus:bg-white dark:bg-zinc-900 !text-foreground" 
                     : "bg-white/10 !text-white placeholder:text-white/40 focus:bg-white/20 backdrop-blur-xl"
@@ -146,17 +146,17 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <ThemeToggle className="hidden md:flex" />
+            <ThemeToggle className="hidden md:flex h-9 w-9" />
             
             <div className="hidden md:flex items-center gap-4">
               {!userLoading && (
                 user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="outline-none rounded-2xl ring-offset-background focus:ring-4 focus:ring-primary/20 transition-all active:scale-90 overflow-hidden shadow-lg">
-                        <Avatar className="h-11 w-11 rounded-2xl border-2 border-background">
+                      <button className="outline-none rounded-xl ring-offset-background focus:ring-4 focus:ring-primary/20 transition-all active:scale-90 overflow-hidden shadow-lg">
+                        <Avatar className="h-9 w-9 rounded-xl border-2 border-background">
                           <AvatarImage src={customerProfile?.photoUrl || user.photoURL || ''} alt={user.displayName || 'Member'} />
-                          <AvatarFallback className="bg-orange-gradient text-white font-black text-xs rounded-2xl">
+                          <AvatarFallback className="bg-orange-gradient text-white font-black text-[10px] rounded-xl">
                             {(customerProfile?.name || user.displayName || 'EB').slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -192,7 +192,7 @@ export const Navbar = () => {
                 ) : (
                   <Button 
                     onClick={() => setIsAuthModalOpen(true)}
-                    className="rounded-full px-8 h-12 font-black uppercase text-[10px] tracking-widest bg-orange-gradient text-white shadow-xl shadow-primary/20 transform hover:scale-105 transition-all"
+                    className="rounded-full px-6 h-10 font-black uppercase text-[9px] tracking-widest bg-orange-gradient text-white shadow-xl shadow-primary/20 transform hover:scale-105 transition-all"
                   >
                     Authorize
                   </Button>
@@ -202,12 +202,12 @@ export const Navbar = () => {
 
             <CartDrawer>
               <Button variant="ghost" size="icon" className={cn(
-                "rounded-full w-10 h-10 md:w-12 md:h-12 transition-all relative",
+                "rounded-full w-10 h-10 transition-all relative",
                 scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
               )}>
-                <ShoppingBag className="w-5 h-5 md:w-6 md:h-6" />
+                <ShoppingBag className="w-5 h-5" />
                 {cart.length > 0 && (
-                  <span className="absolute top-0 right-0 w-5 h-5 bg-primary text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
+                  <span className="absolute top-0 right-0 w-4.5 h-4.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
                     {cart.reduce((acc, i) => acc + i.quantity, 0)}
                   </span>
                 )}
@@ -221,7 +221,7 @@ export const Navbar = () => {
                     "rounded-full w-10 h-10 transition-transform active:scale-90",
                     scrolled ? "text-foreground" : (isDarkMode ? "text-foreground" : "text-white")
                   )}>
-                    <Menu className="w-6 h-6" />
+                    <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[320px] p-0 border-none bg-background flex flex-col z-[60] shadow-3xl">
