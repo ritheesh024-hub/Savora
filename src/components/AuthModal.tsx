@@ -10,8 +10,8 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Loader2, Info, Copy, Check } from 'lucide-react';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { Loader2, Copy, Check } from 'lucide-react';
+import { GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { useAuth, useFirestore } from '@/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -44,13 +44,20 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
     
     setLoading(true);
     setAuthError(null);
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    
+
     try {
+      // 1. Ensure Local Persistence
+      await setPersistence(auth, browserLocalPersistence);
+
+      // 2. Auth Provider Setup
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
+      // 3. Trigger Popup
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
+      // 4. Firestore User Provisioning
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
       
@@ -60,8 +67,9 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           email: user.email,
           name: user.displayName,
           photoUrl: user.photoURL,
-          rewardCoins: 50, // Welcome bonus
+          rewardCoins: 50, // Welcome bonus (50 coins = ₹5)
           orderCount: 0,
+          role: 'customer',
           createdAt: serverTimestamp(),
           lastLoginAt: serverTimestamp()
         });
@@ -73,13 +81,16 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       }
 
       toast({
-        title: "Welcome to Ezzy Bites!",
-        description: `Successfully signed in as ${user.displayName}.`,
+        title: "Authorized Successfully",
+        description: `Welcome to Ezzy Bites, ${user.displayName?.split(' ')[0]}.`,
       });
       
       if (onSuccess) onSuccess();
       onClose();
     } catch (error: any) {
+      console.error("Auth Error:", error);
+
+      // Handle Popup Specifics
       if (error.code === 'auth/popup-closed-by-user') {
         setLoading(false);
         return; 
@@ -94,8 +105,8 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       } else {
         toast({
           variant: "destructive",
-          title: "Sign In Failed",
-          description: error.message || "Failed to connect.",
+          title: "Authentication Failed",
+          description: error.message || "Failed to establish a secure connection.",
         });
       }
     } finally {
@@ -112,10 +123,10 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           </div>
           <div className="space-y-3">
             <DialogTitle className="text-3xl font-black font-headline tracking-tighter uppercase leading-none">
-              Welcome to <span className="text-primary italic">Ezzy Bites</span>
+              Sign In / <span className="text-primary italic">Sign Up</span>
             </DialogTitle>
             <DialogDescription className="text-sm font-medium text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
-              Sign in to track orders, save favorites, and enjoy faster checkout.
+              Securely access your account to track orders and save favorites.
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -163,20 +174,20 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           
           <div className="flex items-center gap-2 justify-center py-4">
             <span className="h-px bg-border flex-1" />
-            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground px-4">Secure Authentication</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground px-4">Secure Infrastructure</span>
             <span className="h-px bg-border flex-1" />
           </div>
           
           <div className="text-center">
             <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tight">
-              By continuing, you agree to our Terms and Conditions
+              By continuing, you agree to our Terms of Service
             </p>
           </div>
         </div>
 
         <DialogFooter className="mt-12">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 mx-auto">
-            Premium Fast Food-Tech
+            Ezzy Bites Premium
           </p>
         </DialogFooter>
       </DialogContent>

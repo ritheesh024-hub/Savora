@@ -5,7 +5,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import { 
   ShoppingBag, 
   Menu, 
-  X, 
   LogOut, 
   History, 
   ShieldCheck, 
@@ -22,10 +21,8 @@ import {
   MapPin,
   TicketPercent,
   Wallet,
-  Info,
   Settings,
-  Gift,
-  CheckCircle2
+  Gift
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
@@ -35,7 +32,7 @@ import { AuthModal } from './AuthModal';
 import { CartDrawer } from './CartDrawer';
 import { useStore } from '@/app/lib/store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Logo } from './Logo';
 import { EditProfileModal } from './EditProfileModal';
@@ -85,7 +82,6 @@ export const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close drawer on path change
   useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
@@ -120,7 +116,7 @@ export const Navbar = () => {
         : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-2"
     )}>
       <div className="container mx-auto px-4">
-        <div className="h-12 md:h-14 flex items-center justify-between gap-4">
+        <div className="h-10 md:h-12 flex items-center justify-between gap-4">
           <Link href="/" className="transition-transform active:scale-95">
             <Logo variant={scrolled ? 'dark' : (isDarkMode ? 'dark' : 'light')} size="sm" className="shrink-0 scale-90 md:scale-100 origin-left" />
           </Link>
@@ -136,7 +132,7 @@ export const Navbar = () => {
                 onChange={(e) => setNavSearch(e.target.value)}
                 placeholder="Search premium bites..." 
                 className={cn(
-                  "w-full h-10 pl-10 pr-4 rounded-xl border-none transition-all font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
+                  "w-full h-9 pl-10 pr-4 rounded-xl border-none transition-all font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
                   scrolled 
                     ? "bg-secondary/60 focus:bg-white dark:bg-zinc-900 !text-foreground" 
                     : "bg-white/10 !text-white placeholder:text-white/40 focus:bg-white/20 backdrop-blur-xl"
@@ -146,7 +142,7 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <ThemeToggle className="hidden md:flex h-9 w-9" />
+            <ThemeToggle className="hidden md:flex h-8 w-8" />
             
             <div className="hidden md:flex items-center gap-4">
               {!userLoading && (
@@ -154,7 +150,7 @@ export const Navbar = () => {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="outline-none rounded-xl ring-offset-background focus:ring-4 focus:ring-primary/20 transition-all active:scale-90 overflow-hidden shadow-lg">
-                        <Avatar className="h-9 w-9 rounded-xl border-2 border-background">
+                        <Avatar className="h-8 w-8 rounded-xl border-2 border-background">
                           <AvatarImage src={customerProfile?.photoUrl || user.photoURL || ''} alt={user.displayName || 'Member'} />
                           <AvatarFallback className="bg-orange-gradient text-white font-black text-[10px] rounded-xl">
                             {(customerProfile?.name || user.displayName || 'EB').slice(0, 2).toUpperCase()}
@@ -174,12 +170,12 @@ export const Navbar = () => {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setIsEditProfileOpen(true)} className="rounded-[1.5rem] py-4 px-5 font-black uppercase text-[10px] tracking-widest cursor-pointer hover:bg-primary/5 transition-all gap-4">
-                        <User className="w-5 h-5 text-blue-500" /> Identity Logic
+                        <User className="w-5 h-5 text-blue-500" /> Identity logic
                       </DropdownMenuItem>
                       {isStaff && (
                         <DropdownMenuItem asChild className="rounded-[1.5rem] py-4 px-5 font-black uppercase text-[10px] tracking-widest cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-950/20 text-orange-600 transition-all">
                           <Link href="/admin/dashboard" className="flex items-center gap-4">
-                            <ShieldCheck className="w-5 h-5" /> Staff Console
+                            <ShieldCheck className="w-5 h-5" /> Staff console
                           </Link>
                         </DropdownMenuItem>
                       )}
@@ -192,7 +188,7 @@ export const Navbar = () => {
                 ) : (
                   <Button 
                     onClick={() => setIsAuthModalOpen(true)}
-                    className="rounded-full px-6 h-10 font-black uppercase text-[9px] tracking-widest bg-orange-gradient text-white shadow-xl shadow-primary/20 transform hover:scale-105 transition-all"
+                    className="rounded-full px-5 h-9 font-black uppercase text-[9px] tracking-widest bg-orange-gradient text-white shadow-xl shadow-primary/20 transform hover:scale-105 transition-all"
                   >
                     Authorize
                   </Button>
@@ -202,12 +198,12 @@ export const Navbar = () => {
 
             <CartDrawer>
               <Button variant="ghost" size="icon" className={cn(
-                "rounded-full w-10 h-10 transition-all relative",
+                "rounded-full w-9 h-9 transition-all relative",
                 scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
               )}>
                 <ShoppingBag className="w-5 h-5" />
                 {cart.length > 0 && (
-                  <span className="absolute top-0 right-0 w-4.5 h-4.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
+                  <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
                     {cart.reduce((acc, i) => acc + i.quantity, 0)}
                   </span>
                 )}
@@ -218,7 +214,7 @@ export const Navbar = () => {
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className={cn(
-                    "rounded-full w-10 h-10 transition-transform active:scale-90",
+                    "rounded-full w-9 h-9 transition-transform active:scale-90",
                     scrolled ? "text-foreground" : (isDarkMode ? "text-foreground" : "text-white")
                   )}>
                     <Menu className="w-5 h-5" />
@@ -344,7 +340,7 @@ export const Navbar = () => {
                         onClick={() => { setIsAuthModalOpen(true); setIsMenuOpen(false); }}
                         className="w-full h-16 rounded-2xl bg-orange-gradient font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20 text-white"
                       >
-                        Claim Membership
+                        Authorize
                       </Button>
                     )}
                   </div>
