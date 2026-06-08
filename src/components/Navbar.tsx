@@ -170,7 +170,7 @@ export const Navbar = () => {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setIsEditProfileOpen(true)} className="rounded-[1.5rem] py-4 px-5 font-black uppercase text-[10px] tracking-widest cursor-pointer hover:bg-primary/5 transition-all gap-4">
-                        <User className="w-5 h-5 text-blue-500" /> Identity logic
+                        <User className="w-5 h-5 text-blue-500" /> Edit Profile
                       </DropdownMenuItem>
                       {isStaff && (
                         <DropdownMenuItem asChild className="rounded-[1.5rem] py-4 px-5 font-black uppercase text-[10px] tracking-widest cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-950/20 text-orange-600 transition-all">
@@ -181,7 +181,7 @@ export const Navbar = () => {
                       )}
                       <DropdownMenuSeparator className="opacity-10" />
                       <DropdownMenuItem onClick={handleLogout} className="rounded-[1.5rem] py-4 px-5 font-black uppercase text-[10px] tracking-widest text-destructive cursor-pointer hover:bg-destructive/5 transition-all flex items-center gap-4">
-                        <LogOut className="w-5 h-5" /> Terminate Session
+                        <LogOut className="w-5 h-5" /> Log out
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -190,7 +190,7 @@ export const Navbar = () => {
                     onClick={() => setIsAuthModalOpen(true)}
                     className="rounded-full px-5 h-9 font-black uppercase text-[9px] tracking-widest bg-orange-gradient text-white shadow-xl shadow-primary/20 transform hover:scale-105 transition-all"
                   >
-                    Authorize
+                    Login
                   </Button>
                 )
               )}
@@ -222,7 +222,7 @@ export const Navbar = () => {
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[320px] p-0 border-none bg-background flex flex-col z-[60] shadow-3xl">
                   <SheetHeader className="p-6 text-left border-b bg-secondary/20">
-                    <SheetTitle className="sr-only">Logic Control</SheetTitle>
+                    <SheetTitle className="sr-only">User Menu</SheetTitle>
                     {user ? (
                       <div 
                         onClick={() => { setIsMenuOpen(false); setIsEditProfileOpen(true); }}
@@ -239,7 +239,7 @@ export const Navbar = () => {
                             {customerProfile?.name?.split(' ')[0] || user.displayName?.split(' ')[0] || 'Member'}
                           </p>
                           <div className="flex items-center gap-1.5 text-primary/60">
-                            <span className="text-[8px] font-black uppercase tracking-widest">Update Identity</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest">Edit Profile</span>
                             <ChevronRight className="w-3 h-3" />
                           </div>
                         </div>
@@ -333,14 +333,14 @@ export const Navbar = () => {
                         onClick={handleLogout}
                         className="w-full h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest text-destructive hover:bg-destructive/5 gap-4 border-2 border-destructive/10"
                       >
-                        <LogOut className="w-5 h-5" /> End Secure Session
+                        <LogOut className="w-5 h-5" /> Log out
                       </Button>
                     ) : (
                       <Button 
                         onClick={() => { setIsAuthModalOpen(true); setIsMenuOpen(false); }}
                         className="w-full h-16 rounded-2xl bg-orange-gradient font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20 text-white"
                       >
-                        Authorize
+                        Login
                       </Button>
                     )}
                   </div>
