@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -16,9 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Camera, Loader2, Save, Phone, Mail, User, MapPin } from 'lucide-react';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, updateDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -28,6 +27,8 @@ interface EditProfileModalProps {
 export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => {
   const { user } = useUser();
   const db = useFirestore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   
@@ -75,6 +76,30 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
 
     loadProfile();
   }, [user, db, isOpen]);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast({ 
+          variant: "destructive", 
+          title: "File too large", 
+          description: "Please select an image smaller than 2MB." 
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, photoUrl: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = async () => {
     if (!user || !db) return;
@@ -129,18 +154,28 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
           <div className="p-8 space-y-8 overflow-y-auto scrollbar-hide flex-1">
             {/* Avatar Section */}
             <div className="flex flex-col items-center gap-4">
-              <div className="relative group">
+              <div 
+                className="relative group cursor-pointer" 
+                onClick={handleImageClick}
+              >
                 <Avatar className="w-32 h-32 rounded-[2.5rem] border-4 border-primary/20 shadow-2xl transition-transform group-hover:scale-105">
                   <AvatarImage src={formData.photoUrl} />
                   <AvatarFallback className="bg-primary/10 text-primary font-black text-3xl">
                     {formData.name.slice(0, 2).toUpperCase() || 'EB'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute bottom-0 right-0 p-2.5 bg-primary text-white rounded-2xl shadow-xl border-4 border-white dark:border-zinc-950 cursor-pointer hover:bg-primary/90 transition-colors">
+                <div className="absolute bottom-0 right-0 p-2.5 bg-primary text-white rounded-2xl shadow-xl border-4 border-white dark:border-zinc-950 hover:bg-primary/90 transition-colors">
                   <Camera className="w-5 h-5" />
                 </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleFileChange}
+                />
               </div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 text-center">Your public appearance</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 text-center">Tap to change photo</p>
             </div>
 
             <div className="space-y-6">
