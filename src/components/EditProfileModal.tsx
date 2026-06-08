@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Loader2, Save, X, Phone, Mail, User, MapPin } from 'lucide-react';
+import { Camera, Loader2, Save, Phone, Mail, User, MapPin } from 'lucide-react';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, updateDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -118,12 +118,6 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
               Personalize your account details
             </DialogDescription>
           </DialogHeader>
-          <button 
-            onClick={onClose}
-            className="absolute top-8 right-8 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors z-20"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {fetching ? (
