@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   ShoppingBag, 
   Menu, 
@@ -27,8 +26,7 @@ import {
   Info,
   Settings,
   Gift,
-  CheckCircle2,
-  Circle
+  CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
@@ -58,6 +56,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -71,6 +70,7 @@ export const Navbar = () => {
   const db = useFirestore();
   const { cart, isDarkMode, toggleDarkMode } = useStore();
   const router = useRouter();
+  const pathname = usePathname();
 
   const userDocRef = useMemo(() => user && db ? doc(db, 'users', user.uid) : null, [user, db]);
   const adminDocRef = useMemo(() => user && db ? doc(db, 'admins', user.uid) : null, [user, db]);
@@ -78,7 +78,6 @@ export const Navbar = () => {
   const { data: customerProfile } = useDoc(userDocRef);
   const { data: adminProfile } = useDoc(adminDocRef);
 
-  const isCustomer = !!customerProfile;
   const isStaff = !!adminProfile;
 
   useEffect(() => {
@@ -89,9 +88,15 @@ export const Navbar = () => {
     return () => handleScroll();
   }, []);
 
+  // Close sheet on route change
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
+
   const handleLogout = async () => {
     if (auth) {
       await auth.signOut();
+      toast({ title: "Logged Out", description: "Come back soon for more delicious bites!" });
       router.push('/');
     }
   };
@@ -101,6 +106,7 @@ export const Navbar = () => {
     try {
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, { foodPreference: pref });
+      toast({ title: "Preference Updated", description: `We'll highlight ${pref} options for you.` });
     } catch (e) {
       console.error(e);
     }
@@ -109,14 +115,14 @@ export const Navbar = () => {
   const menuItems = [
     { label: 'Home', href: '/', icon: Home },
     { label: 'Menu', href: '/menu', icon: Utensils },
-    { label: 'My Orders', href: '/orders', icon: History },
-    { label: 'Favorites', href: '#', icon: Heart },
-    { label: 'Saved Addresses', href: '#', icon: MapPin },
-    { label: 'Coupons & Offers', href: '#', icon: TicketPercent },
-    { label: 'Reward Points', href: '#', icon: Wallet, badge: customerProfile?.rewardCoins || 0 },
+    { label: 'My Orders', href: '/orders', icon: History, authRequired: true },
+    { label: 'Favorites', href: '/favorites', icon: Heart, authRequired: true },
+    { label: 'Saved Addresses', href: '/addresses', icon: MapPin, authRequired: true },
+    { label: 'Coupons & Offers', href: '/coupons', icon: TicketPercent },
+    { label: 'Reward Points', href: '/rewards', icon: Wallet, badge: customerProfile?.rewardCoins || 0, authRequired: true },
     { label: 'Contact Us', href: 'https://wa.me/918639366800', icon: Phone, isExternal: true },
-    { label: 'About EzzyBites', href: '#', icon: Info },
-    { label: 'Settings', href: '#', icon: Settings },
+    { label: 'About EzzyBites', href: '/about', icon: Info },
+    { label: 'Settings', href: '/settings', icon: Settings, authRequired: true },
   ];
 
   return (
@@ -290,7 +296,7 @@ export const Navbar = () => {
                                 <p className="text-[8px] font-black uppercase tracking-widest opacity-80 mb-1">Your Wallet</p>
                                 <h4 className="text-xl font-black italic">{customerProfile?.rewardCoins || 0} Coins</h4>
                               </div>
-                              <Link href="#" className="h-10 px-4 bg-white/20 backdrop-blur-md rounded-xl flex items-center gap-2 border border-white/20 hover:bg-white/30 transition-all">
+                              <Link href="/rewards" onClick={() => setIsMenuOpen(false)} className="h-10 px-4 bg-white/20 backdrop-blur-md rounded-xl flex items-center gap-2 border border-white/20 hover:bg-white/30 transition-all">
                                 <Gift className="w-3.5 h-3.5" />
                                 <span className="text-[9px] font-black uppercase">Redeem</span>
                               </Link>
@@ -307,30 +313,34 @@ export const Navbar = () => {
                     )}
 
                     {/* Navigation Items */}
-                    {menuItems.map((item) => (
-                      <Link 
-                        key={item.label} 
-                        href={item.href}
-                        target={item.isExternal ? '_blank' : undefined}
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center justify-between p-3.5 rounded-2xl hover:bg-primary/5 transition-all group"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-9 h-9 rounded-xl bg-secondary/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                            <item.icon className="w-4.5 h-4.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    {menuItems.map((item) => {
+                      if (item.authRequired && !user) return null;
+                      
+                      return (
+                        <Link 
+                          key={item.label} 
+                          href={item.href}
+                          target={item.isExternal ? '_blank' : undefined}
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center justify-between p-3.5 rounded-2xl hover:bg-primary/5 transition-all group"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-9 h-9 rounded-xl bg-secondary/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                              <item.icon className="w-4.5 h-4.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
+                            <span className="font-black text-[10px] uppercase tracking-widest text-foreground/80 group-hover:text-primary">
+                              {item.label}
+                            </span>
                           </div>
-                          <span className="font-black text-[10px] uppercase tracking-widest text-foreground/80 group-hover:text-primary">
-                            {item.label}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                           {item.badge !== undefined && (
-                             <Badge className="bg-primary/10 text-primary border-none text-[8px] h-5 px-2 font-black">{item.badge}</Badge>
-                           )}
-                           <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-primary transition-all group-hover:translate-x-1" />
-                        </div>
-                      </Link>
-                    ))}
+                          <div className="flex items-center gap-2">
+                             {item.badge !== undefined && (
+                               <Badge className="bg-primary/10 text-primary border-none text-[8px] h-5 px-2 font-black">{item.badge}</Badge>
+                             )}
+                             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-primary transition-all group-hover:translate-x-1" />
+                          </div>
+                        </Link>
+                      );
+                    })}
 
                     <div className="h-px bg-border my-4 mx-4" />
 

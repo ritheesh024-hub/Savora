@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
+import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,13 +21,18 @@ export default function OrdersHistoryPage() {
 
   const ordersQuery = useMemo(() => {
     if (!db) return null;
+    
+    // CASE 1: Logged-in user
     if (user) {
       return query(
         collection(db, 'orders'),
         where('userId', '==', user.uid),
-        limit(100)
+        orderBy('createdAt', 'desc'),
+        limit(50)
       );
     }
+    
+    // CASE 2: Guest Search (requires explicit trigger to avoid fetching all data)
     if (searchTriggered && phoneNumber.length === 10) {
       return query(
         collection(db, 'orders'),
@@ -35,6 +40,7 @@ export default function OrdersHistoryPage() {
         limit(50)
       );
     }
+    
     return null;
   }, [db, user, phoneNumber, searchTriggered]);
 
@@ -42,11 +48,8 @@ export default function OrdersHistoryPage() {
 
   const orders = useMemo(() => {
     if (!rawOrders) return [];
-    return [...rawOrders].sort((a, b) => {
-      const timeA = a.createdAt?.seconds || 0;
-      const timeB = b.createdAt?.seconds || 0;
-      return timeB - timeA;
-    });
+    // Sort secondary if needed (Firestore query handles most of it)
+    return rawOrders;
   }, [rawOrders]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -68,14 +71,14 @@ export default function OrdersHistoryPage() {
             <div className="w-20 h-20 bg-primary/10 text-primary rounded-[2rem] flex items-center justify-center mx-auto shadow-soft">
               <History className="w-10 h-10" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-headline font-black tracking-tighter">My <span className="text-primary italic">Orders</span></h1>
+            <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tighter">My <span className="text-primary italic">Orders</span></h1>
             <p className="text-muted-foreground font-medium">
-              {user ? `Welcome back, ${user.displayName?.split(' ')[0]}!` : 'Sign in to see your history.'}
+              {user ? `Welcome back, ${user.displayName?.split(' ')[0]}!` : 'Track your delicious history.'}
             </p>
           </div>
 
-          {!user && (
-            <Card className="rounded-[2.5rem] border-none shadow-3xl p-8 md:p-12 bg-white dark:bg-zinc-900">
+          {!user && !searchTriggered && (
+            <Card className="rounded-[2.5rem] border-none shadow-3xl p-8 md:p-12 bg-white dark:bg-zinc-900 animate-in zoom-in">
               <div className="space-y-8">
                 <Button 
                   onClick={() => setIsAuthModalOpen(true)}
@@ -107,7 +110,7 @@ export default function OrdersHistoryPage() {
                     />
                   </div>
                   <Button type="submit" disabled={phoneNumber.length < 10} className="h-16 rounded-2xl px-10 font-black text-lg bg-primary text-white">
-                    Find Orders
+                    Track
                   </Button>
                 </form>
               </div>
@@ -118,19 +121,20 @@ export default function OrdersHistoryPage() {
             {loading ? (
               <div className="py-20 text-center space-y-4">
                 <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-                <p className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Searching your tray history...</p>
+                <p className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Fetching your order ledger...</p>
               </div>
             ) : error ? (
               <div className="py-20 text-center space-y-4 bg-destructive/5 rounded-[2.5rem] border-2 border-dashed border-destructive/20 p-10">
                 <AlertCircle className="w-16 h-16 text-destructive mx-auto" />
                 <h3 className="text-2xl font-black text-destructive uppercase tracking-tighter">Sync Interrupted</h3>
-                <p className="text-sm font-medium text-muted-foreground">We couldn't retrieve your orders. Please try again.</p>
+                <p className="text-sm font-medium text-muted-foreground">Check your connection and try refreshing.</p>
+                <Button onClick={() => window.location.reload()} variant="outline" className="rounded-xl font-black uppercase text-[10px]">Retry Sync</Button>
               </div>
             ) : (user || searchTriggered) ? (
               orders && orders.length > 0 ? (
                 orders.map((order: any) => (
                   <Link key={order.id} href={`/orders/${order.orderId}`}>
-                    <Card className="rounded-[2.5rem] border-none shadow-soft hover:shadow-2xl transition-all mb-6 group bg-white dark:bg-zinc-900 overflow-hidden">
+                    <Card className="rounded-[2.5rem] border-none shadow-soft hover:shadow-2xl transition-all mb-6 group bg-white dark:bg-zinc-900 overflow-hidden active:scale-[0.98]">
                       <CardContent className="p-8 flex flex-col md:flex-row justify-between items-center gap-8">
                         <div className="flex items-center gap-6 w-full md:w-auto">
                           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
@@ -150,7 +154,7 @@ export default function OrdersHistoryPage() {
                             </div>
                             <p className="text-xs font-bold text-muted-foreground flex items-center gap-2">
                               <Clock className="w-4 h-4" /> 
-                              {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Processing'}
+                              {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Syncing...'}
                             </p>
                           </div>
                         </div>
@@ -169,16 +173,16 @@ export default function OrdersHistoryPage() {
                   </Link>
                 ))
               ) : (
-                <div className="py-24 text-center space-y-8">
+                <div className="py-24 text-center space-y-8 bg-white dark:bg-zinc-900 rounded-[3rem] shadow-sm">
                   <div className="w-24 h-24 bg-secondary dark:bg-zinc-800 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner">
                     <PackageX className="w-12 h-12 text-muted-foreground opacity-20" />
                   </div>
                   <div>
-                    <h3 className="text-3xl font-black mb-2 uppercase tracking-tighter">Tray is <span className="text-primary italic">Empty</span></h3>
-                    <p className="text-muted-foreground font-medium">You haven't placed any orders yet. Let's change that!</p>
+                    <h3 className="text-3xl font-black mb-2 uppercase tracking-tighter">Your tray is <span className="text-primary italic">Empty</span></h3>
+                    <p className="text-muted-foreground font-medium">You haven't placed any orders yet. Let's start the fire!</p>
                   </div>
                   <Link href="/menu">
-                    <Button className="rounded-2xl h-16 px-10 font-black uppercase text-[10px] tracking-[0.2em] bg-orange-gradient">Browse Menu</Button>
+                    <Button className="rounded-2xl h-16 px-10 font-black uppercase text-[10px] tracking-[0.2em] bg-orange-gradient">Start Selection</Button>
                   </Link>
                 </div>
               )

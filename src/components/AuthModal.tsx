@@ -60,14 +60,21 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           email: user.email,
           name: user.displayName,
           photoUrl: user.photoURL,
+          rewardCoins: 50, // Welcome bonus
+          orderCount: 0,
           createdAt: serverTimestamp(),
-          orderCount: 0
+          lastLoginAt: serverTimestamp()
         });
+      } else {
+        await setDoc(userRef, { 
+          lastLoginAt: serverTimestamp(),
+          photoUrl: user.photoURL || userSnap.data().photoUrl 
+        }, { merge: true });
       }
 
       toast({
-        title: "Welcome Back!",
-        description: `Signed in as ${user.displayName}.`,
+        title: "Welcome to Ezzy Bites!",
+        description: `Successfully signed in as ${user.displayName}.`,
       });
       
       if (onSuccess) onSuccess();

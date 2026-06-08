@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -17,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Camera, Loader2, Save, X, Phone, Mail, User, MapPin } from 'lucide-react';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -59,12 +58,13 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
             photoUrl: data.photoUrl || user.photoURL || ''
           });
         } else {
-          setFormData(prev => ({
-            ...prev,
+          setFormData({
             name: user.displayName || '',
             email: user.email || '',
+            phone: '',
+            address: '',
             photoUrl: user.photoURL || ''
-          }));
+          });
         }
       } catch (e) {
         console.error("Profile load failed", e);
@@ -82,14 +82,17 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
     setLoading(true);
     try {
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
+      const updateData = {
         name: formData.name,
         phone: formData.phone,
         address: formData.address,
-        photoUrl: formData.photoUrl
-      });
+        photoUrl: formData.photoUrl,
+        updatedAt: serverTimestamp()
+      };
       
-      toast({ title: "Profile Updated", description: "Your details have been synchronized." });
+      await setDoc(userRef, updateData, { merge: true });
+      
+      toast({ title: "Profile Updated", description: "Your details have been successfully saved." });
       onClose();
     } catch (error: any) {
       toast({ 
@@ -112,7 +115,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
               Edit <span className="italic opacity-80">Profile</span>
             </DialogTitle>
             <DialogDescription className="text-white/70 font-medium text-xs uppercase tracking-widest relative z-10">
-              Personalize your Ezzy Bites account
+              Personalize your account details
             </DialogDescription>
           </DialogHeader>
           <button 
@@ -126,7 +129,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
         {fetching ? (
           <div className="p-20 text-center space-y-4 flex-1">
             <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Fetching Credentials...</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Connecting to Cloud...</p>
           </div>
         ) : (
           <div className="p-8 space-y-8 overflow-y-auto scrollbar-hide flex-1">
@@ -143,7 +146,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
                   <Camera className="w-5 h-5" />
                 </div>
               </div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40">Tap to update photo</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 text-center">Your public appearance</p>
             </div>
 
             <div className="space-y-6">
@@ -173,7 +176,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60 flex items-center gap-2">
-                    <Mail className="w-3 h-3" /> Registered Email
+                    <Mail className="w-3 h-3" /> Email Address
                   </Label>
                   <Input 
                     value={formData.email} 
@@ -185,7 +188,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
 
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60 flex items-center gap-2">
-                  <MapPin className="w-3 h-3" /> Default Delivery Address
+                  <MapPin className="w-3 h-3" /> Delivery Address
                 </Label>
                 <Textarea 
                   value={formData.address} 
@@ -202,12 +205,12 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
           <Button 
             onClick={handleSave}
             disabled={loading || fetching}
-            className="w-full h-16 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20 gap-3"
+            className="w-full h-16 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/20 gap-3 bg-primary"
           >
             {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (
               <>
                 <Save className="w-5 h-5" />
-                Save Changes
+                Sync Changes
               </>
             )}
           </Button>
