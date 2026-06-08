@@ -13,7 +13,6 @@ import {
   Users, UserPlus, Globe, Utensils,
   TicketPercent, BarChart3, Fingerprint,
   LayoutGrid,
-  Settings2,
   Settings,
   Ban
 } from 'lucide-react';
@@ -66,7 +65,8 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       preparing: [] as any[],
       completed: [] as any[]
     };
-    realOrders?.forEach(o => {
+    if (!realOrders) return groups;
+    realOrders.forEach(o => {
       if (o.status === 'Pending') groups.pending.push(o);
       else if (o.status === 'Confirmed' || o.status === 'Preparing' || o.status === 'Out for Delivery') groups.preparing.push(o);
       else if (o.status === 'Delivered' || o.status === 'Cancelled') groups.completed.push(o);
@@ -261,7 +261,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                           <div className="flex justify-between items-center pt-3 border-t border-dashed">
                             {getStatusBadge(order)}
                             <span className="text-[8px] font-bold text-muted-foreground opacity-50 flex items-center gap-1 uppercase">
-                              <Clock className="w-3 h-3" />
+                              <Clock className="w-3.5 h-3.5" />
                               {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
                             </span>
                           </div>
