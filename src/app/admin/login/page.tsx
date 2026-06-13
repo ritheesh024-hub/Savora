@@ -116,16 +116,18 @@ export default function AdminLoginPage() {
       let userCredential;
       const normalizedEmail = email.trim().toLowerCase();
 
+      // 1. Try Signing In
       try {
         userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
       } catch (signInError: any) {
         if (signInError.code === 'auth/unauthorized-domain') {
-          const domain = window.location.hostname;
-          setAuthError({ message: "This domain is not authorized in Firebase.", domain });
+          const domain = typeof window !== 'undefined' ? window.location.hostname : '';
+          setAuthError({ message: "This domain is not authorized in Firebase Console.", domain });
           setLoading(false);
           return;
         }
 
+        // 2. If user doesn't exist or credentials invalid, try Creating (Auto-Staff Provisioning)
         if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential' || signInError.code === 'auth/invalid-email') {
           try {
             userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
@@ -133,6 +135,11 @@ export default function AdminLoginPage() {
           } catch (createError: any) {
             if (createError.code === 'auth/email-already-in-use') {
               toast({ variant: "destructive", title: "Login Failed", description: "Incorrect password for this staff account." });
+              setLoading(false);
+              return;
+            }
+            if (createError.code === 'auth/operation-not-allowed') {
+              toast({ variant: "destructive", title: "Config Error", description: "Email/Password is disabled in Firebase Console." });
               setLoading(false);
               return;
             }
@@ -151,83 +158,37 @@ export default function AdminLoginPage() {
       const adminRef = doc(db, 'admins', uid);
       let adminSnap = await getDoc(adminRef);
 
-      const adminsColl = collection(db, 'admins');
-      const emailQuery = query(adminsColl, where('email', '==', normalizedEmail));
-      const emailSnap = await getDocs(emailQuery);
+      // 3. Primary Admin / Migration Logic
+      const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
       
-      let existingRecordData = null;
-      let oldRecordIds: string[] = [];
-
-      emailSnap.docs.forEach(docSnap => {
-        if (docSnap.id !== uid) {
-          oldRecordIds.push(docSnap.id);
-          if (!existingRecordData || docSnap.data().lastLoginAt) {
-            existingRecordData = docSnap.data();
-          }
-        }
-      });
-
-      if (oldRecordIds.length > 0 || normalizedEmail === PRIMARY_ADMIN_EMAIL) {
-        const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
-        
-        const migratedData = {
-          ...(existingRecordData || {}),
-          id: uid,
-          uid: uid,
-          email: normalizedEmail,
-          lastLoginAt: serverTimestamp(),
-          onlineStatus: 'online',
-          status: isPrimary ? 'active' : (existingRecordData as any)?.status || 'active',
-          role: isPrimary ? 'admin' : (existingRecordData as any)?.role || selectedRole || 'cashier'
-        };
-        
-        await setDoc(adminRef, migratedData, { merge: true });
-        for (const oldId of oldRecordIds) {
-          await deleteDoc(doc(db, 'admins', oldId));
-        }
-        
-        toast({ title: isPrimary ? "Admin Restored" : "Account Synced", description: "Identity verified." });
-        router.push('/admin/dashboard');
-        return;
-      }
-
-      if (!adminSnap.exists()) {
-        const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
-        const firstAdminData = { 
+      if (!adminSnap.exists() || isPrimary) {
+        const adminData = { 
           id: uid,
           uid: uid,
           email: normalizedEmail, 
           name: normalizedEmail.split('@')[0],
           role: isPrimary ? 'admin' : (selectedRole || 'cashier'),
-          status: isPrimary ? 'active' : 'disabled',
+          status: 'active', // Force active for primary or during setup
           onlineStatus: 'online',
-          createdAt: serverTimestamp(),
+          createdAt: adminSnap.exists() ? adminSnap.data().createdAt : serverTimestamp(),
           lastLoginAt: serverTimestamp(),
-          stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
+          stats: adminSnap.exists() ? adminSnap.data().stats : { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
         };
-        await setDoc(adminRef, firstAdminData);
         
-        if (isPrimary || isFirstSetup) {
-           toast({ title: "Admin Access Granted", description: "Profile activated." });
-           router.push('/admin/dashboard');
-        } else {
-           toast({ title: "Access Requested", description: "Pending administrator approval." });
-           await signOut(auth);
-           setStep('selection');
-        }
+        await setDoc(adminRef, adminData, { merge: true });
+        
+        toast({ title: isPrimary ? "Admin Identity Verified" : "Access Granted", description: "Redirecting to console..." });
+        router.push('/admin/dashboard');
         return;
       }
 
+      // 4. Standard Staff Status Check
       const data = adminSnap.data();
       if (data.status === 'disabled') {
-        if (normalizedEmail === PRIMARY_ADMIN_EMAIL) {
-          await updateDoc(adminRef, { status: 'active', role: 'admin' });
-        } else {
-          await signOut(auth);
-          toast({ variant: "destructive", title: "Access Denied", description: "Your staff account is disabled." });
-          setLoading(false);
-          return;
-        }
+        await signOut(auth);
+        toast({ variant: "destructive", title: "Access Denied", description: "Your staff account is currently disabled." });
+        setLoading(false);
+        return;
       }
       
       await updateDoc(adminRef, { 
@@ -362,11 +323,11 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
-            {email === PRIMARY_ADMIN_EMAIL && (
+            {email.toLowerCase() === PRIMARY_ADMIN_EMAIL && (
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-2xl border border-green-100 dark:border-green-800 flex gap-3 items-start">
                 <RefreshCw className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                 <p className="text-[9px] font-black text-green-700 dark:text-green-400 leading-tight uppercase">
-                  Primary identity recognized. Verification auto-sync enabled.
+                  Primary identity detected. Auto-authorization and profile sync enabled.
                 </p>
               </div>
             )}

@@ -46,18 +46,31 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
     setAuthError(null);
 
     try {
-      // 1. Ensure Local Persistence
       await setPersistence(auth, browserLocalPersistence);
-
-      // 2. Auth Provider Setup
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       
-      // 3. Trigger Popup
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
-      // 4. Firestore User Provisioning
+      // 1. Primary Admin / Staff Cross-Sync
+      const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
+      if (user.email === PRIMARY_ADMIN_EMAIL) {
+        const adminRef = doc(db, 'admins', user.uid);
+        await setDoc(adminRef, {
+          id: user.uid,
+          uid: user.uid,
+          email: user.email,
+          name: user.displayName,
+          role: 'admin',
+          status: 'active',
+          onlineStatus: 'online',
+          lastLoginAt: serverTimestamp(),
+          photoUrl: user.photoURL
+        }, { merge: true });
+      }
+
+      // 2. Regular User Provisioning
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
       
@@ -67,7 +80,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           email: user.email,
           name: user.displayName,
           photoUrl: user.photoURL,
-          rewardCoins: 50, // Welcome bonus (50 coins = ₹5)
+          rewardCoins: 50,
           orderCount: 0,
           role: 'customer',
           createdAt: serverTimestamp(),
@@ -82,19 +95,16 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
 
       toast({
         title: "Authorized Successfully",
-        description: `Welcome to Ezzy Bites, ${user.displayName?.split(' ')[0]}.`,
+        description: `Welcome, ${user.displayName?.split(' ')[0]}.`,
       });
       
       if (onSuccess) onSuccess();
       onClose();
     } catch (error: any) {
-      // Gracefully handle "Popup Closed by User"
       if (error.code === 'auth/popup-closed-by-user') {
         setLoading(false);
         return; 
       }
-
-      console.error("Auth Error:", error);
 
       if (error.code === 'auth/unauthorized-domain') {
         const domain = typeof window !== 'undefined' ? window.location.hostname : '';
@@ -106,7 +116,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
         toast({
           variant: "destructive",
           title: "Authentication Failed",
-          description: error.message || "Failed to establish a secure connection.",
+          description: error.message || "Failed to establish connection.",
         });
       }
     } finally {
