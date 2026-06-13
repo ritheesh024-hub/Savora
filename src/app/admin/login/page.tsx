@@ -65,9 +65,6 @@ export default function AdminLoginPage() {
           const adminSnap = await getDoc(adminRef);
           if (adminSnap.exists() && adminSnap.data().status === 'active') {
             router.push('/admin/dashboard');
-          } else {
-            // If they are logged in as a normal user but trying to reach admin, 
-            // we don't automatically log them out unless they try to force login here.
           }
         } catch (e) {
           console.error("Error checking existing auth:", e);
@@ -108,12 +105,18 @@ export default function AdminLoginPage() {
             toast({ title: "Account Created", description: "Staff credentials initialized." });
           } catch (createError: any) {
             if (createError.code === 'auth/email-already-in-use') {
-              throw new Error("Incorrect password for this staff email.");
+              toast({ variant: "destructive", title: "Login Failed", description: "Incorrect password for this staff email." });
+              setLoading(false);
+              return;
             }
-            throw new Error(createError.message || "Failed to authenticate.");
+            toast({ variant: "destructive", title: "Login Failed", description: createError.message || "Failed to authenticate." });
+            setLoading(false);
+            return;
           }
         } else {
-          throw signInError;
+          toast({ variant: "destructive", title: "Login Failed", description: signInError.message || "Authentication failed." });
+          setLoading(false);
+          return;
         }
       }
 
@@ -185,7 +188,7 @@ export default function AdminLoginPage() {
            router.push('/admin/dashboard');
         } else {
            toast({ title: "Access Requested", description: "Pending administrator approval." });
-           await signOut(auth); // Sign out since they aren't approved yet
+           await signOut(auth);
            setStep('selection');
         }
         return;
@@ -197,7 +200,9 @@ export default function AdminLoginPage() {
           await updateDoc(adminRef, { status: 'active', role: 'admin' });
         } else {
           await signOut(auth);
-          throw new Error("Access Denied. Your staff account is disabled.");
+          toast({ variant: "destructive", title: "Access Denied", description: "Your staff account is disabled." });
+          setLoading(false);
+          return;
         }
       }
       
@@ -292,7 +297,7 @@ export default function AdminLoginPage() {
             </div>
           </div>
           <CardTitle className="text-2xl font-black font-headline uppercase tracking-tighter">
-            {selectedRole} Login
+            {selectedRole?.toUpperCase()} Login
           </CardTitle>
           <CardDescription className="font-bold text-[10px] uppercase tracking-widest opacity-60">
             Internal Staff Verification
