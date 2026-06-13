@@ -14,7 +14,10 @@ import {
   TicketPercent, BarChart3, Fingerprint,
   LayoutGrid,
   Settings,
-  Ban
+  Ban,
+  IndianRupee,
+  ShieldCheck,
+  ChevronRight
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -68,8 +71,8 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     if (!realOrders) return groups;
     realOrders.forEach(o => {
       if (o.status === 'Pending') groups.pending.push(o);
-      else if (o.status === 'Confirmed' || o.status === 'Preparing' || o.status === 'Out for Delivery') groups.preparing.push(o);
-      else if (o.status === 'Delivered' || o.status === 'Cancelled') groups.completed.push(o);
+      else if (['Confirmed', 'Preparing', 'Out for Delivery'].includes(o.status)) groups.preparing.push(o);
+      else if (['Delivered', 'Cancelled'].includes(o.status)) groups.completed.push(o);
     });
     return groups;
   }, [realOrders]);
@@ -109,14 +112,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     switch (status) {
       case 'Delivered': return <Badge className="bg-green-100 text-green-700 border-none px-3 font-black text-[9px] uppercase">Delivered</Badge>;
       case 'Cancelled': 
-        return (
-          <div className="flex flex-col items-end gap-1">
-            <Badge className="bg-red-100 text-red-700 border-none px-3 font-black text-[9px] uppercase">Cancelled</Badge>
-            {order.cancelledBy === 'Customer' && (
-              <span className="text-[7px] font-black text-red-500 uppercase tracking-tighter italic">By Customer</span>
-            )}
-          </div>
-        );
+        return <Badge className="bg-red-100 text-red-700 border-none px-3 font-black text-[9px] uppercase">Cancelled</Badge>;
       case 'Pending': return <Badge className="bg-blue-100 text-blue-700 border-none px-3 font-black text-[9px] uppercase">New</Badge>;
       case 'Confirmed': return <Badge className="bg-cyan-100 text-cyan-700 border-none px-3 font-black text-[9px] uppercase">Accepted</Badge>;
       case 'Preparing': return <Badge className="bg-orange-100 text-orange-700 border-none px-3 font-black text-[9px] uppercase">Cooking</Badge>;
@@ -127,9 +123,9 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
   const getOrderTypeBadge = (type: string) => {
     switch (type) {
-      case 'Online': return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 text-[7px] font-black uppercase px-1.5 py-0 gap-1"><Globe className="w-2 h-2" /> Online</Badge>;
-      case 'Dine-In': return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-100 text-[7px] font-black uppercase px-1.5 py-0 gap-1"><Utensils className="w-2 h-2" /> Dine-In</Badge>;
-      case 'Take Away': return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-100 text-[7px] font-black uppercase px-1.5 py-0 gap-1"><Package className="w-2 h-2" /> Take Away</Badge>;
+      case 'Online': return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 text-[7px] font-black uppercase px-1.5 py-0 gap-1"><Globe className="w-2.5 h-2.5" /> Online</Badge>;
+      case 'Dine-In': return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-100 text-[7px] font-black uppercase px-1.5 py-0 gap-1"><Utensils className="w-2.5 h-2.5" /> Dine-In</Badge>;
+      case 'Take Away': return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-100 text-[7px] font-black uppercase px-1.5 py-0 gap-1"><Package className="w-2.5 h-2.5" /> Take Away</Badge>;
       default: return <Badge variant="outline" className="text-[7px] font-black uppercase px-1.5 py-0">{type || 'Order'}</Badge>;
     }
   }
@@ -151,7 +147,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       <div className="container mx-auto px-4 pt-8">
         <Tabs defaultValue={availableTabs[0]} className="space-y-8">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
-            <TabsList className="bg-white dark:bg-zinc-900 p-1 rounded-full border w-full lg:w-fit flex shadow-sm overflow-x-auto scrollbar-hide">
+            <TabsList className="bg-white dark:bg-zinc-900 p-1.5 rounded-full border w-full lg:w-fit flex shadow-sm overflow-x-auto scrollbar-hide">
               {availableTabs.includes('overview') && (
                 <TabsTrigger value="overview" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
                   <BarChart3 className="w-3.5 h-3.5" /> Analytics
@@ -205,7 +201,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
             <Button 
               variant="outline" 
               size="sm" 
-              className={cn("rounded-xl h-10 gap-2 font-black uppercase text-[10px] tracking-widest", !isAdminMuted && "bg-primary text-white border-none")}
+              className={cn("rounded-xl h-10 gap-2 font-black uppercase text-[10px] tracking-widest transition-all", !isAdminMuted ? "bg-primary text-white border-none" : "bg-white dark:bg-zinc-800")}
               onClick={toggleAdminMute}
             >
               {isAdminMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -214,24 +210,24 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
           </div>
 
           {availableTabs.includes('overview') && (
-            <TabsContent value="overview">
+            <TabsContent value="overview" className="mt-0">
                <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />
             </TabsContent>
           )}
-          {availableTabs.includes('users') && <TabsContent value="users"><UserManagement /></TabsContent>}
-          {availableTabs.includes('billing') && <TabsContent value="billing"><BillingSystem products={dbMenu || []} orders={realOrders || []} /></TabsContent>}
-          {availableTabs.includes('kitchen') && <TabsContent value="kitchen"><KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} /></TabsContent>}
-          {availableTabs.includes('products') && <TabsContent value="products"><ProductManagement /></TabsContent>}
-          {availableTabs.includes('coupons') && <TabsContent value="coupons"><CouponManager /></TabsContent>}
-          {availableTabs.includes('staff') && <TabsContent value="staff"><StaffManagement /></TabsContent>}
-          {availableTabs.includes('settings') && <TabsContent value="settings"><StoreSettings /></TabsContent>}
+          {availableTabs.includes('users') && <TabsContent value="users" className="mt-0"><UserManagement /></TabsContent>}
+          {availableTabs.includes('billing') && <TabsContent value="billing" className="mt-0"><BillingSystem products={dbMenu || []} orders={realOrders || []} /></TabsContent>}
+          {availableTabs.includes('kitchen') && <TabsContent value="kitchen" className="mt-0"><KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} /></TabsContent>}
+          {availableTabs.includes('products') && <TabsContent value="products" className="mt-0"><ProductManagement /></TabsContent>}
+          {availableTabs.includes('coupons') && <TabsContent value="coupons" className="mt-0"><CouponManager /></TabsContent>}
+          {availableTabs.includes('staff') && <TabsContent value="staff" className="mt-0"><StaffManagement /></TabsContent>}
+          {availableTabs.includes('settings') && <TabsContent value="settings" className="mt-0"><StoreSettings /></TabsContent>}
 
-          <TabsContent value="orders">
+          <TabsContent value="orders" className="mt-0">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {[
                 { id: 'pending', label: 'Incoming', icon: BellRing, color: 'text-primary' },
-                { id: 'preparing', label: 'Live Kitchen', icon: ChefHat, color: 'text-orange-500' },
-                { id: 'completed', label: 'Archive', icon: Package, color: 'text-muted-foreground' }
+                { id: 'preparing', label: 'In Progress', icon: ChefHat, color: 'text-orange-500' },
+                { id: 'completed', label: 'Resolved', icon: Package, color: 'text-muted-foreground' }
               ].map((group) => (
                 <div key={group.id} className="space-y-4">
                   <div className="flex items-center justify-between px-3">
@@ -341,7 +337,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-primary"><MapPin className="w-5 h-5" /></div>
                         <div>
                           <p className="text-[9px] font-black uppercase opacity-40">Destination</p>
-                          <p className="text-[11px] font-medium leading-relaxed italic">"{selectedOrderForView.address || 'Table Service'}"</p>
+                          <p className="text-[11px] font-medium leading-relaxed italic">"{selectedOrderForView.address || 'In-Store Pickup'}"</p>
                         </div>
                       </div>
                     </div>

@@ -80,10 +80,10 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
   const db = useFirestore();
   const [filterType, setFilterType] = useState<FilterType>('today');
   const [activeDetail, setActiveDetail] = useState<DetailType>(null);
-  const [isMounted, setIsMounted] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    setMounted(true);
   }, []);
 
   const usersQuery = useMemo(() => db ? query(collection(db, 'users')) : null, [db]);
@@ -156,7 +156,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
     toast({ title: "Report Exported" });
   };
 
-  if (!isMounted) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
+  if (!mounted) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -167,7 +167,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
               key={type}
               onClick={() => setFilterType(type as FilterType)}
               className={cn(
-                "px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all shrink-0",
+                "px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all shrink-0",
                 filterType === type ? "bg-white dark:bg-zinc-700 text-primary shadow-sm" : "text-muted-foreground hover:bg-white/40"
               )}
             >
@@ -177,40 +177,40 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={cn(
-                "px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 shrink-0",
+                "px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 shrink-0",
                 filterType.includes('Month') ? "bg-white dark:bg-zinc-700 text-primary shadow-sm" : "text-muted-foreground"
               )}>
                 History <ChevronDown className="w-3 h-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="rounded-2xl p-2">
+            <DropdownMenuContent className="rounded-2xl p-2 shadow-3xl">
               <DropdownMenuItem onClick={() => setFilterType('currentMonth')} className="rounded-xl font-black uppercase text-[8px] py-2.5">Current Month</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setFilterType('lastMonth')} className="rounded-xl font-black uppercase text-[8px] py-2.5">Last Month</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
         <div className="flex items-center gap-2 w-full lg:w-auto">
-          <Button variant="outline" size="icon" onClick={() => window.location.reload()} className="rounded-full h-10 w-10">
-            <RefreshCw className="w-4 h-4" />
+          <Button variant="outline" size="icon" onClick={() => window.location.reload()} className="rounded-full h-10 w-10 border-muted">
+            <RefreshCw className="w-4 h-4 text-muted-foreground" />
           </Button>
-          <Button onClick={() => handleDownloadReport('revenue')} className="flex-1 lg:w-auto h-10 px-8 rounded-full font-black text-[9px] uppercase bg-primary text-white shadow-lg">
+          <Button onClick={() => handleDownloadReport('revenue')} className="flex-1 lg:w-auto h-10 px-8 rounded-full font-black text-[9px] uppercase bg-primary text-white shadow-lg shadow-primary/20">
             <Download className="w-4 h-4 mr-2" /> Export CSV
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard label="Revenue" value={`₹${metrics.revenue}`} icon={IndianRupee} color="text-primary bg-primary/10" onClick={() => setActiveDetail('revenue')} />
-        <MetricCard label="Orders" value={metrics.total} icon={ShoppingBag} color="text-blue-600 bg-blue-50" onClick={() => setActiveDetail('orders')} />
+        <MetricCard label="Gross Revenue" value={`₹${metrics.revenue}`} icon={IndianRupee} color="text-primary bg-primary/10" onClick={() => setActiveDetail('revenue')} />
+        <MetricCard label="Total Orders" value={metrics.total} icon={ShoppingBag} color="text-blue-600 bg-blue-50" onClick={() => setActiveDetail('orders')} />
         <MetricCard label="Kitchen Load" value={metrics.pending} icon={Clock} color="text-orange-500 bg-orange-50" onClick={() => setActiveDetail('kitchen')} />
-        <MetricCard label="Customers" value={metrics.totalRegisteredUsers} icon={Users} color="text-purple-600 bg-purple-50" onClick={() => setActiveDetail('customers')} />
+        <MetricCard label="Customers Base" value={metrics.totalRegisteredUsers} icon={Users} color="text-purple-600 bg-purple-50" onClick={() => setActiveDetail('customers')} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 overflow-hidden">
           <CardHeader className="px-0 pb-8 flex flex-row items-center justify-between">
             <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter">Business Velocity</CardTitle>
-            <Badge variant="outline" className="text-[8px] font-black uppercase text-primary border-primary/20">Live</Badge>
+            <Badge variant="outline" className="text-[8px] font-black uppercase text-primary border-primary/20 px-3 py-1">Live</Badge>
           </CardHeader>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -238,10 +238,10 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8">
           <CardHeader className="px-0 pb-8"><CardTitle className="text-xl font-black font-headline uppercase tracking-tighter">Fulfillment</CardTitle></CardHeader>
-          <div className="h-[250px] flex flex-col items-center">
+          <div className="h-[250px] flex flex-col items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={[{ name: 'Done', value: metrics.completed }, { name: 'Void', value: metrics.cancelled }].filter(i => i.value > 0)} innerRadius={55} outerRadius={80} dataKey="value">
+                <Pie data={[{ name: 'Done', value: metrics.completed || 1 }, { name: 'Void', value: metrics.cancelled }].filter(i => i.value > 0)} innerRadius={55} outerRadius={80} dataKey="value">
                   <Cell fill="#22c55e" /><Cell fill="#ef4444" />
                 </Pie>
               </PieChart>
@@ -249,7 +249,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
             <div className="w-full space-y-3 mt-6">
               <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                 <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500" /><span className="opacity-50">Success Rate</span></div>
-                <span>{metrics.total > 0 ? Math.round((metrics.completed / metrics.total) * 100) : 0}%</span>
+                <span>{metrics.total > 0 ? Math.round((metrics.completed / metrics.total) * 100) : 100}%</span>
               </div>
             </div>
           </div>
@@ -260,10 +260,10 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
         <DialogContent className="max-w-4xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950 max-h-[85vh] flex flex-col">
           <div className="p-8 border-b bg-white dark:bg-zinc-900 flex justify-between items-center shrink-0">
              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white"><BarChart3 className="w-5 h-5" /></div>
+                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg"><BarChart3 className="w-5 h-5" /></div>
                 <DialogTitle className="text-2xl font-black font-headline uppercase tracking-tighter">{activeDetail?.toUpperCase()} BREAKDOWN</DialogTitle>
              </div>
-             <Button variant="ghost" size="icon" onClick={() => setActiveDetail(null)} className="rounded-full"><XCircle className="w-5 h-5" /></Button>
+             <Button variant="ghost" size="icon" onClick={() => setActiveDetail(null)} className="rounded-full hover:bg-secondary"><XCircle className="w-6 h-6 text-muted-foreground" /></Button>
           </div>
           <div className="flex-1 overflow-y-auto p-8 scrollbar-hide">
             {activeDetail === 'revenue' && <RevenueDetail metrics={metrics} onExport={() => handleDownloadReport('revenue')} />}
@@ -278,9 +278,9 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 };
 
 const MetricCard = ({ label, value, icon: Icon, color, onClick }: any) => (
-  <Card onClick={onClick} className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 hover:scale-[1.02] transition-all cursor-pointer group active:scale-95">
+  <Card onClick={onClick} className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 hover:scale-[1.02] transition-all cursor-pointer group active:scale-95 border-b-4 border-b-transparent hover:border-b-primary">
     <div className="flex justify-between items-start mb-6">
-      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all", color)}><Icon className="w-7 h-7" /></div>
+      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-sm", color)}><Icon className="w-7 h-7" /></div>
       <ArrowUpRight className="w-5 h-5 text-muted-foreground opacity-20 group-hover:opacity-100 transition-all" />
     </div>
     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">{label}</p>
@@ -290,18 +290,18 @@ const MetricCard = ({ label, value, icon: Icon, color, onClick }: any) => (
 
 const RevenueDetail = ({ metrics, onExport }: any) => (
   <div className="space-y-8">
-    <Card className="rounded-[2rem] p-8 border-none bg-secondary/20 dark:bg-zinc-900 shadow-sm">
-       <h4 className="text-[11px] font-black uppercase mb-6 flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Top Products by Revenue</h4>
+    <Card className="rounded-[2rem] p-8 border-none bg-secondary/20 dark:bg-zinc-900 shadow-inner">
+       <h4 className="text-[11px] font-black uppercase mb-6 flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Top Performers by Revenue</h4>
        <div className="space-y-3">
          {metrics.itemStats.slice(0, 5).map((item: any, i: number) => (
-           <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-2xl">
-             <span className="font-black text-[10px] uppercase truncate">{item.name}</span>
-             <span className="font-black text-primary italic">₹{item.revenue}</span>
+           <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm">
+             <span className="font-black text-[11px] uppercase truncate flex-1 pr-4">{item.name}</span>
+             <span className="font-black text-primary italic whitespace-nowrap">₹{item.revenue}</span>
            </div>
          ))}
        </div>
     </Card>
-    <div className="flex justify-end gap-3 pt-4"><Button className="rounded-xl h-12 px-6 font-black uppercase text-[10px] bg-primary text-white" onClick={onExport}><Download className="w-4 h-4 mr-2" /> Download Log</Button></div>
+    <div className="flex justify-end gap-3 pt-4"><Button className="rounded-xl h-12 px-6 font-black uppercase text-[10px] bg-primary text-white shadow-xl shadow-primary/20" onClick={onExport}><Download className="w-4 h-4 mr-2" /> Download Log</Button></div>
   </div>
 );
 
@@ -316,25 +316,28 @@ const OrdersDetail = ({ orders, onExport }: any) => {
     <div className="space-y-8">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {Object.entries(counts).map(([label, val]: any) => (
-          <div key={label} className="p-5 rounded-3xl bg-secondary/20 dark:bg-zinc-900 text-center">
+          <div key={label} className="p-6 rounded-[2rem] bg-secondary/20 dark:bg-zinc-900 text-center shadow-inner">
              <p className="text-[9px] font-black uppercase opacity-50 mb-1">{label}</p>
              <p className="text-2xl font-black">{val}</p>
           </div>
         ))}
       </div>
-      <div className="flex justify-end pt-4"><Button className="rounded-xl h-12 px-6 font-black uppercase text-[10px] bg-primary text-white" onClick={onExport}><Download className="w-4 h-4 mr-2" /> Export History</Button></div>
+      <div className="flex justify-end pt-4"><Button className="rounded-xl h-12 px-6 font-black uppercase text-[10px] bg-primary text-white shadow-xl shadow-primary/20" onClick={onExport}><Download className="w-4 h-4 mr-2" /> Export History</Button></div>
     </div>
   );
 };
 
 const KitchenDetail = ({ orders }: any) => (
   <div className="space-y-6">
-    <h4 className="text-[11px] font-black uppercase flex items-center gap-2 mb-6"><Zap className="w-4 h-4 text-orange-500" /> Active Preparation Feed</h4>
+    <h4 className="text-[11px] font-black uppercase flex items-center gap-2 mb-6"><Zap className="w-4 h-4 text-orange-500" /> Active Operational Feed</h4>
     <div className="space-y-3">
       {orders.filter((o: any) => ['Pending', 'Confirmed', 'Preparing'].includes(o.status)).slice(0, 10).map((o: any) => (
-        <div key={o.id} className="flex items-center justify-between p-4 bg-secondary/20 dark:bg-zinc-900 rounded-2xl">
-          <div><p className="font-black text-[11px] uppercase">{o.items?.map((i: any) => i.name).join(', ')}</p><p className="text-[8px] font-bold opacity-40 uppercase">Ticket #{o.orderId.slice(-4)}</p></div>
-          <Badge className="font-black text-[8px] uppercase bg-primary text-white border-none">{o.status}</Badge>
+        <div key={o.id} className="flex items-center justify-between p-4 bg-secondary/20 dark:bg-zinc-900 rounded-2xl shadow-inner border border-white/5">
+          <div className="flex-1 truncate pr-4">
+             <p className="font-black text-[11px] uppercase truncate">{o.items?.map((i: any) => i.name).join(', ')}</p>
+             <p className="text-[8px] font-bold opacity-40 uppercase">Ticket #{o.orderId}</p>
+          </div>
+          <Badge className="font-black text-[8px] uppercase bg-primary text-white border-none shadow-sm px-3">{o.status}</Badge>
         </div>
       ))}
     </div>
@@ -343,16 +346,24 @@ const KitchenDetail = ({ orders }: any) => (
 
 const CustomersDetail = ({ users, onExport }: any) => (
   <div className="space-y-8">
-    <Card className="rounded-[2.5rem] p-0 border-none bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
+    <Card className="rounded-[2.5rem] p-0 border-none bg-white dark:bg-zinc-900 shadow-xl overflow-hidden border border-border/40">
        <table className="w-full">
-         <thead className="bg-secondary/20 border-b"><tr className="text-[9px] font-black uppercase text-left"><th className="p-6">Customer</th><th className="p-6 text-right">Activity</th></tr></thead>
+         <thead className="bg-secondary/20 border-b"><tr className="text-[9px] font-black uppercase text-left"><th className="p-6">Customer</th><th className="p-6 text-right">Engagement</th></tr></thead>
          <tbody className="divide-y">
-           {users.slice(0, 5).map((u: any, i: number) => (
-             <tr key={i}><td className="p-6 font-black text-xs uppercase">{u.name || 'Anonymous'}</td><td className="p-6 text-right font-black text-[10px] text-primary">{u.orderCount || 0} Orders</td></tr>
+           {(users || []).slice(0, 8).map((u: any, i: number) => (
+             <tr key={i} className="hover:bg-secondary/5 transition-colors">
+               <td className="p-6">
+                  <div className="flex flex-col">
+                    <span className="font-black text-xs uppercase">{u.name || 'Anonymous'}</span>
+                    <span className="text-[9px] font-medium opacity-40">{u.email}</span>
+                  </div>
+               </td>
+               <td className="p-6 text-right font-black text-[10px] text-primary italic">{u.orderCount || 0} Orders</td>
+             </tr>
            ))}
          </tbody>
        </table>
     </Card>
-    <div className="flex justify-end pt-4"><Button className="rounded-xl h-12 px-6 font-black uppercase text-[10px] bg-primary text-white" onClick={onExport}><Download className="w-4 h-4 mr-2" /> Export Audit</Button></div>
+    <div className="flex justify-end pt-4"><Button className="rounded-xl h-12 px-6 font-black uppercase text-[10px] bg-primary text-white shadow-xl shadow-primary/20" onClick={onExport}><Download className="w-4 h-4 mr-2" /> Export Audit</Button></div>
   </div>
 );
