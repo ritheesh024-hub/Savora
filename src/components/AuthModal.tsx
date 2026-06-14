@@ -11,8 +11,8 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Copy, Check } from 'lucide-react';
-import { GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { Loader2, Copy, Check, ShieldAlert } from 'lucide-react';
+import { GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, signOut } from 'firebase/auth';
 import { useAuth, useFirestore } from '@/firebase';
 import { doc, setDoc, getDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -27,7 +27,7 @@ interface AuthModalProps {
 
 export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
   const [loading, setLoading] = useState(false);
-  const [authError, setAuthError] = useState<{ message: string; domain?: string } | null>(null);
+  const [authError, setAuthError] = useState<{ message: string; domain?: string; isRestricted?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
   
   const auth = useAuth();
@@ -54,26 +54,20 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
-      // 1. Primary Admin / Staff Cross-Sync
       const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
-      const isPrimaryAdmin = user.email === PRIMARY_ADMIN_EMAIL;
-
-      if (isPrimaryAdmin) {
-        const adminRef = doc(db, 'admins', user.uid);
-        await setDoc(adminRef, {
-          id: user.uid,
-          uid: user.uid,
-          email: user.email,
-          name: user.displayName,
-          role: 'admin',
-          status: 'active',
-          onlineStatus: 'online',
-          lastLoginAt: serverTimestamp(),
-          photoUrl: user.photoURL
-        }, { merge: true });
+      
+      // RESTRICTION: Block primary admin from customer side
+      if (user.email === PRIMARY_ADMIN_EMAIL) {
+        await signOut(auth);
+        setAuthError({
+          message: "This is a restricted Admin account. Access is limited to the Staff Console for system integrity.",
+          isRestricted: true
+        });
+        setLoading(false);
+        return;
       }
 
-      // 2. Regular User Provisioning
+      // 1. Regular User Provisioning
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
       
@@ -96,13 +90,13 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
         }, { merge: true });
       }
 
-      // 3. Log Login Event
+      // 2. Log Login Event
       try {
         await addDoc(collection(db, 'login_events'), {
           uid: user.uid,
           email: user.email,
           name: user.displayName || 'Member',
-          role: isPrimaryAdmin ? 'admin' : 'customer',
+          role: 'customer',
           timestamp: serverTimestamp(),
           platform: 'Web Client',
           userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
@@ -161,7 +155,10 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
 
         {authError && (
           <Alert variant="destructive" className="mt-6 border-none bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-400 rounded-2xl">
-            <AlertTitle className="font-black text-[10px] uppercase mb-2 tracking-widest">Setup Required</AlertTitle>
+            {authError.isRestricted ? <ShieldAlert className="h-5 w-5" /> : null}
+            <AlertTitle className="font-black text-[10px] uppercase mb-2 tracking-widest">
+              {authError.isRestricted ? "Access Restricted" : "Setup Required"}
+            </AlertTitle>
             <AlertDescription className="text-[11px] font-medium leading-relaxed">
               {authError.message}
               {authError.domain && (
@@ -175,6 +172,13 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
                   >
                     {copied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                   </Button>
+                </div>
+              )}
+              {authError.isRestricted && (
+                <div className="mt-4">
+                   <Button variant="outline" className="w-full h-10 rounded-xl font-black uppercase text-[8px] tracking-widest border-red-200 text-red-700 bg-white hover:bg-red-50" onClick={() => window.location.href = '/admin/login'}>
+                     Go to Staff Console
+                   </Button>
                 </div>
               )}
             </AlertDescription>

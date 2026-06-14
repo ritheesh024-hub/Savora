@@ -98,7 +98,8 @@ export default function AdminLoginPage() {
       const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
       let uid = '';
 
-      // 1. Authenticate
+      // 1. Authenticate with Email & Password
+      // This path is exclusively for staff. Regular users are blocked here and from using this email in User portal.
       try {
         const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
         uid = userCredential.user.uid;
@@ -111,7 +112,6 @@ export default function AdminLoginPage() {
              toast({ title: "Identity Established", description: "Master admin account synchronized." });
            } catch (createError: any) {
              if (createError.code === 'auth/email-already-in-use') {
-                // Wrong password if email exists
                 toast({ variant: "destructive", title: "Auth Failed", description: "Incorrect password for this staff email." });
                 setLoading(false);
                 return;
@@ -123,10 +123,11 @@ export default function AdminLoginPage() {
         }
       }
 
-      // 2. Synchronize Firestore Admin Record
+      // 2. FORCE SYNC: Synchronize Firestore Admin Record
       const adminRef = doc(db, 'admins', uid);
       
       if (isPrimary) {
+        // Absolute role enforcement for the primary ID
         const adminData = { 
           id: uid,
           uid: uid,
@@ -186,8 +187,8 @@ export default function AdminLoginPage() {
         return;
       }
 
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-        message = "Incorrect password for this staff account.";
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+        message = "Incorrect credentials for this staff account.";
       }
 
       toast({ variant: "destructive", title: "Authentication Failed", description: message });
@@ -260,7 +261,7 @@ export default function AdminLoginPage() {
                 <div className="mt-2 p-3 bg-white/50 rounded-xl flex items-center justify-between border border-red-100">
                   <code className="text-[9px] font-mono break-all">{authError.domain}</code>
                   <button onClick={() => handleCopyDomain(authError.domain!)} className="p-1.5 hover:bg-white rounded-lg transition-colors">
-                    {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
+                    {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                   </button>
                 </div>
               </AlertDescription>

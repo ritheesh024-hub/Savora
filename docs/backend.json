@@ -3,7 +3,7 @@
   "entities": {
     "AdminProfile": {
       "title": "Admin Profile",
-      "description": "Details for administrative users authorized to access the Ezzy Bites dashboard",
+      "description": "Restricted administrative records. Primary Admin (sunnyritheesh@gmail.com) has exclusive access to platform-wide configuration.",
       "type": "object",
       "properties": {
         "email": {
@@ -74,7 +74,7 @@
     },
     "UserProfile": {
       "title": "User Profile",
-      "description": "Customer profile for authenticated users",
+      "description": "Customer profile for authenticated users. Note: Restricted admin emails are blocked from creating customer profiles.",
       "type": "object",
       "properties": {
         "uid": {
