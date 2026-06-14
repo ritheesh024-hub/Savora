@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,8 +7,6 @@ import {
   createUserWithEmailAndPassword, 
   signOut, 
   sendPasswordResetEmail,
-  GoogleAuthProvider,
-  signInWithPopup,
   setPersistence,
   browserLocalPersistence
 } from 'firebase/auth';
@@ -91,74 +88,13 @@ export default function AdminLoginPage() {
     }
   };
 
-  const handleGoogleAuth = async () => {
-    if (!auth || !db) return;
-    setLoading(true);
-
-    try {
-      await setPersistence(auth, browserLocalPersistence);
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      
-      const result = await signInWithPopup(auth, provider);
-      const googleUser = result.user;
-      const normalizedEmail = googleUser.email?.toLowerCase() || '';
-
-      if (normalizedEmail === PRIMARY_ADMIN_EMAIL) {
-        const adminRef = doc(db, 'admins', googleUser.uid);
-        await setDoc(adminRef, {
-          id: googleUser.uid,
-          uid: googleUser.uid,
-          email: normalizedEmail,
-          name: "Master Admin",
-          role: 'admin',
-          status: 'active',
-          onlineStatus: 'online',
-          lastLoginAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-        
-        await logStaffLogin(googleUser.uid, normalizedEmail, 'admin');
-        toast({ title: "Identity Verified", description: "Master Access Synchronized." });
-        router.push('/admin/dashboard');
-        return;
-      }
-
-      const adminRef = doc(db, 'admins', googleUser.uid);
-      const adminSnap = await getDoc(adminRef);
-
-      if (adminSnap.exists()) {
-        const data = adminSnap.data();
-        if (data.status === 'disabled') {
-          await signOut(auth);
-          toast({ variant: "destructive", title: "Access Blocked", description: "Your staff account is currently inactive." });
-          setLoading(false);
-          return;
-        }
-        await setDoc(adminRef, { lastLoginAt: serverTimestamp(), onlineStatus: 'online' }, { merge: true });
-        await logStaffLogin(googleUser.uid, normalizedEmail, data.role || 'staff');
-        router.push('/admin/dashboard');
-      } else {
-        await signOut(auth);
-        toast({ 
-          variant: "destructive", 
-          title: "Access Denied", 
-          description: "Unauthorized credentials." 
-        });
-      }
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Auth Failed", description: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth || !db) return;
 
     setLoading(true);
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const normalizedEmail = email.trim().toLowerCase();
       const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
       let uid = '';
@@ -167,7 +103,8 @@ export default function AdminLoginPage() {
         const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
         uid = userCredential.user.uid;
       } catch (signInError: any) {
-        if (isPrimary && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
+        // If Master Admin attempt fails due to missing account, try to create it
+        if (isPrimary && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential' || signInError.code === 'auth/invalid-email')) {
            try {
              const createCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
              uid = createCredential.user.uid;
@@ -220,7 +157,7 @@ export default function AdminLoginPage() {
 
     } catch (error: any) {
       let message = error.message || "An unexpected error occurred.";
-      if (error.code === 'auth/invalid-credential') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
         message = "Verify your credentials and try again.";
       }
       toast({ variant: "destructive", title: "Authentication Failed", description: message });
@@ -273,7 +210,7 @@ export default function AdminLoginPage() {
             </div>
           </div>
           <CardTitle className="text-2xl font-black font-headline uppercase tracking-tighter">{selectedRole?.toUpperCase()} Login</CardTitle>
-          <CardDescription className="font-bold text-[10px] uppercase tracking-widest opacity-60">Identity Verification</CardDescription>
+          <CardDescription className="font-bold text-[10px] uppercase tracking-widest opacity-60">Credential Verification</CardDescription>
         </CardHeader>
 
         <form onSubmit={handleAuth}>
@@ -296,7 +233,13 @@ export default function AdminLoginPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Password</Label>
-                <button type="button" onClick={() => email && sendPasswordResetEmail(auth!, email).then(() => toast({ title: "Reset Sent" }))} className="text-[9px] font-black text-primary uppercase hover:underline">Forgot?</button>
+                <button type="button" onClick={() => {
+                  if (auth && email) {
+                    sendPasswordResetEmail(auth, email).then(() => toast({ title: "Reset Sent", description: "Check your email." }));
+                  } else {
+                    toast({ variant: "destructive", title: "Email Required", description: "Enter your email to reset password." });
+                  }
+                }} className="text-[9px] font-black text-primary uppercase hover:underline">Forgot?</button>
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -317,27 +260,6 @@ export default function AdminLoginPage() {
                 </button>
               </div>
             </div>
-
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-dashed" /></div>
-              <div className="relative flex justify-center text-[8px] font-black uppercase tracking-widest"><span className="bg-card px-2 opacity-30">Multi-Login Options</span></div>
-            </div>
-
-            <Button 
-              type="button" 
-              onClick={handleGoogleAuth} 
-              disabled={loading}
-              variant="outline" 
-              className="w-full h-14 rounded-xl border-2 font-black uppercase text-[9px] tracking-widest gap-3 hover:bg-secondary/50"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c1.61-1.48 2.53-3.66 2.53-6.09z" />
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.16H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.84l3.66-2.75z" />
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.16l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-              Identity Sync via Google
-            </Button>
           </CardContent>
           
           <CardFooter className="pb-10 pt-4 px-8">
