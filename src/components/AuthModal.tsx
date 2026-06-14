@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -18,6 +17,7 @@ import { doc, setDoc, getDoc, serverTimestamp, collection, addDoc } from 'fireba
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Logo } from './Logo';
+import { useAnalytics } from '@/hooks/use-analytics';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -32,6 +32,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
   
   const auth = useAuth();
   const db = useFirestore();
+  const { trackLogin, trackSignup } = useAnalytics();
 
   const handleCopyDomain = (domain: string) => {
     navigator.clipboard.writeText(domain);
@@ -83,11 +84,13 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           createdAt: serverTimestamp(),
           lastLoginAt: serverTimestamp()
         });
+        trackSignup('google');
       } else {
         await setDoc(userRef, { 
           lastLoginAt: serverTimestamp(),
           photoUrl: user.photoURL || userSnap.data().photoUrl 
         }, { merge: true });
+        trackLogin('google');
       }
 
       // 2. Log Login Event

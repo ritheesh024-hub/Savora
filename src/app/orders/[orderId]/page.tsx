@@ -16,6 +16,7 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
+import { useAnalytics } from '@/hooks/use-analytics';
 
 export default function OrderTrackingPage() {
   const params = useParams();
@@ -23,6 +24,7 @@ export default function OrderTrackingPage() {
   const db = useFirestore();
   const { user } = useUser();
   const router = useRouter();
+  const { trackOrderCancelled } = useAnalytics();
 
   const orderRef = useMemo(() => {
     if (!db || !orderId) return null;
@@ -86,6 +88,7 @@ export default function OrderTrackingPage() {
         cancelledAt: serverTimestamp(),
         cancelledBy: 'Customer'
       });
+      trackOrderCancelled(orderId);
       toast({ title: "Order Cancelled Successfully 🚀" });
     } catch (e: any) {
       toast({ variant: "destructive", title: "Cancellation Failed", description: e.message });

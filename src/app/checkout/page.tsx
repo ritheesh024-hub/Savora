@@ -33,11 +33,13 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
 import { AuthModal } from '@/components/AuthModal';
+import { useAnalytics } from '@/hooks/use-analytics';
 
 export default function CheckoutPage() {
   const { cart, getTotal, clearCart, removeFromCart } = useStore();
   const db = useFirestore();
   const { user, loading: userLoading } = useUser();
+  const { trackCheckoutStarted, trackOrderPlaced } = useAnalytics();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -61,6 +63,12 @@ export default function CheckoutPage() {
     // Correct way to generate dynamic values to avoid hydration mismatch
     setOrderId(`EB-${Math.floor(10000 + Math.random() * 90000)}`);
   }, []);
+
+  useEffect(() => {
+    if (cart.length > 0 && step === 1) {
+      trackCheckoutStarted(cart, getTotal());
+    }
+  }, [cart, step, trackCheckoutStarted, getTotal]);
 
   useEffect(() => {
     if (user && db) {
@@ -165,6 +173,7 @@ export default function CheckoutPage() {
         name: item.name,
         price: item.price,
         quantity: item.quantity,
+        category: item.category,
         customization: item.customization || null
       })),
       subtotal: Number(subtotal),
@@ -192,6 +201,7 @@ export default function CheckoutPage() {
           orderCount: increment(1)
         }, { merge: true });
 
+        trackOrderPlaced(orderData);
         clearCart();
         setStep(4);
         toast({ title: "Order Placed Successfully! 🚀" });

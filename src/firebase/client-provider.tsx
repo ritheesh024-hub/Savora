@@ -6,6 +6,7 @@ import { FirebaseProvider } from './provider';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
+import { Analytics } from 'firebase/analytics';
 import { useStore } from '@/app/lib/store';
 
 export function FirebaseClientProvider({ children }: { children: ReactNode }) {
@@ -30,6 +31,7 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
       app={services.app as FirebaseApp} 
       db={services.db as Firestore} 
       auth={services.auth as Auth}
+      analytics={services.analytics as Analytics}
     >
       {children}
     </FirebaseProvider>

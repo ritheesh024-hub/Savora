@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Star, Plus, Minus } from 'lucide-react';
 import { FoodItem, useStore, BeverageOptions } from '@/app/lib/store';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { BeverageCustomizer } from './BeverageCustomizer';
+import { useAnalytics } from '@/hooks/use-analytics';
 
 interface FoodCardProps {
   item: FoodItem;
@@ -16,8 +17,14 @@ interface FoodCardProps {
 export const FoodCard = ({ item }: FoodCardProps) => {
   const { cart, addToCart, updateQuantity } = useStore();
   const [isCustomizing, setIsCustomizing] = useState(false);
+  const { trackProductView, trackAddToCart } = useAnalytics();
   
   const cartItemCount = cart.filter(i => i.id === item.id).reduce((acc, i) => acc + i.quantity, 0);
+
+  // Track product view on mount
+  useEffect(() => {
+    trackProductView(item);
+  }, [item, trackProductView]);
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -25,12 +32,14 @@ export const FoodCard = ({ item }: FoodCardProps) => {
       setIsCustomizing(true);
     } else {
       addToCart(item);
+      trackAddToCart(item);
       toast({ title: "Added to Tray", description: `${item.name} ready.` });
     }
   };
 
   const handleCustomizationConfirm = (options: BeverageOptions) => {
     addToCart(item, options);
+    trackAddToCart(item);
     setIsCustomizing(false);
     toast({ title: "Custom Order Added", description: `${item.name} (${options.size}) added.` });
   };
@@ -40,6 +49,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
     const targetItem = cart.find(i => i.id === item.id);
     if (targetItem) {
       updateQuantity(targetItem.cartId, delta);
+      if (delta > 0) trackAddToCart(item);
     } else if (delta > 0) {
       handleAddClick(e);
     }

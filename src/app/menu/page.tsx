@@ -11,6 +11,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { FoodItem } from '@/app/lib/store';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/app/lib/menu-data';
+import { useAnalytics } from '@/hooks/use-analytics';
 
 function MenuContent() {
   const searchParams = useSearchParams();
@@ -21,10 +22,18 @@ function MenuContent() {
   const [activeCategory, setActiveCategory] = useState('All');
   
   const db = useFirestore();
+  const { trackMenuView, trackSearch, trackCategoryView } = useAnalytics();
 
   useEffect(() => {
-    if (urlQuery) setSearchQuery(urlQuery);
-  }, [urlQuery]);
+    trackMenuView();
+  }, [trackMenuView]);
+
+  useEffect(() => {
+    if (urlQuery) {
+      setSearchQuery(urlQuery);
+      trackSearch(urlQuery);
+    }
+  }, [urlQuery, trackSearch]);
 
   const productsQuery = useMemo(() => {
     if (!db) return null;
@@ -59,8 +68,17 @@ function MenuContent() {
     if (chip.type === 'diet') {
       setDietFilter(dietFilter === chip.value ? 'all' : chip.value);
     } else {
-      setActiveCategory(chip.value === 'all' ? 'All' : chip.value);
+      const category = chip.value === 'all' ? 'All' : chip.value;
+      setActiveCategory(category);
+      if (category !== 'All') {
+        trackCategoryView(category);
+      }
     }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery) trackSearch(searchQuery);
   };
 
   return (
@@ -70,7 +88,7 @@ function MenuContent() {
       <main className="container mx-auto px-3 md:px-8 py-4 pt-16 md:pt-24 max-w-7xl">
         {/* COMPACT SEARCH */}
         <div className="max-w-2xl mx-auto mb-6">
-          <div className="relative group">
+          <form onSubmit={handleSearchSubmit} className="relative group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input 
               placeholder="Search premium bites..." 
@@ -78,7 +96,7 @@ function MenuContent() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
+          </form>
         </div>
 
         {/* STICKY FILTER BAR */}
