@@ -57,7 +57,7 @@ export default function Home() {
       
       <main className="flex-1">
         {/* COMPACT HERO SECTION */}
-        <section className="relative md:min-h-[70vh] min-h-[40vh] flex items-center md:pt-16 pt-10 md:pb-16 pb-4 overflow-hidden bg-black">
+        <section className="relative md:min-h-[70vh] min-h-[35vh] flex items-center md:pt-16 pt-10 md:pb-16 pb-4 overflow-hidden bg-black">
           <div className="absolute inset-0 z-0">
             <Image 
               src={heroBg}
@@ -110,7 +110,7 @@ export default function Home() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search dishes, burgers, momos..." 
-                  className="w-full h-12 pl-14 rounded-2xl bg-secondary/50 border-none font-bold text-base focus:ring-2 focus:ring-primary/20 !text-foreground shadow-inner"
+                  className="w-full h-11 pl-14 rounded-2xl bg-secondary/50 border-none font-bold text-base focus:ring-2 focus:ring-primary/20 !text-foreground shadow-inner"
                 />
               </form>
               <div className="px-1">
