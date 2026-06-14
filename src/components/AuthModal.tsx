@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -35,10 +36,12 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
   const { trackLogin, trackSignup } = useAnalytics();
 
   const handleCopyDomain = (domain: string) => {
-    navigator.clipboard.writeText(domain);
-    setCopied(true);
-    toast({ title: "Domain Copied", description: "Paste this into Firebase Authorized Domains." });
-    setTimeout(() => setCopied(false), 2000);
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(domain);
+      setCopied(true);
+      toast({ title: "Domain Copied", description: "Update Firebase Authorized Domains." });
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -55,7 +58,6 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
-      // RESTRICTION: Block primary admin from customer portal
       const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
       
       if (user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL) {
@@ -68,7 +70,6 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
         return;
       }
 
-      // 1. Regular User Provisioning
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
       
@@ -93,7 +94,6 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
         trackLogin('google');
       }
 
-      // 2. Log Login Event
       try {
         await addDoc(collection(db, 'login_events'), {
           uid: user.uid,
@@ -101,8 +101,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           name: user.displayName || 'Member',
           role: 'customer',
           timestamp: serverTimestamp(),
-          platform: 'Web Client',
-          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+          platform: 'Web Client'
         });
       } catch (logErr) {
         console.warn("Audit logging failed", logErr);
@@ -110,7 +109,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
 
       toast({
         title: "Authorized Successfully",
-        description: `Welcome back, ${user.displayName?.split(' ')[0] || 'Member'}.`,
+        description: `Welcome, ${user.displayName?.split(' ')[0] || 'Member'}.`,
       });
       
       if (onSuccess) onSuccess();
@@ -124,14 +123,14 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       if (error.code === 'auth/unauthorized-domain') {
         const domain = typeof window !== 'undefined' ? window.location.hostname : '';
         setAuthError({
-          message: "Authorization required. Please add this domain to Firebase.",
+          message: "Domain not authorized. Please update Firebase Console settings.",
           domain
         });
       } else {
         toast({
           variant: "destructive",
           title: "Authentication Failed",
-          description: error.message || "Failed to establish connection.",
+          description: error.message || "Connection refused.",
         });
       }
     } finally {
@@ -158,7 +157,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
 
         {authError && (
           <Alert variant="destructive" className="mt-6 border-none bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-400 rounded-2xl">
-            <AlertCircle className="h-5 w-5" />
+            <ShieldAlert className="h-5 w-5" />
             <AlertTitle className="font-black text-[10px] uppercase mb-2 tracking-widest">
               {authError.isRestricted ? "Access Restricted" : "Setup Required"}
             </AlertTitle>
@@ -180,7 +179,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
               {authError.isRestricted && (
                 <div className="mt-4">
                    <Button variant="outline" className="w-full h-10 rounded-xl font-black uppercase text-[8px] tracking-widest border-red-200 text-red-700 bg-white hover:bg-red-50" onClick={() => window.location.href = '/admin/login'}>
-                     Go to Staff Console
+                     Go to Staff Hub
                    </Button>
                 </div>
               )}
@@ -209,20 +208,20 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           
           <div className="flex items-center gap-2 justify-center py-4">
             <span className="h-px bg-border flex-1" />
-            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground px-4">Secure Infrastructure</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground px-4">Authorized Access Only</span>
             <span className="h-px bg-border flex-1" />
           </div>
           
           <div className="text-center">
             <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tight">
-              By continuing, you agree to our Terms of Service
+              Secure infrastructure powered by Ezzy Bites
             </p>
           </div>
         </div>
 
         <DialogFooter className="mt-12">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 mx-auto">
-            Ezzy Bites Premium
+            Ezzy Bites Premium Food-Tech
           </p>
         </DialogFooter>
       </DialogContent>

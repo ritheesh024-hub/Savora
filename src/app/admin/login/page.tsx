@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -20,12 +21,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { 
   ShoppingBag, Lock, Mail, Loader2, ArrowRight, 
   ShieldCheck, Receipt, ChefHat, 
-  ChevronLeft, AlertCircle, Copy, Check,
-  Eye, EyeOff, Globe
+  ChevronLeft, Eye, EyeOff
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { doc, setDoc, getDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
 type LoginStep = 'selection' | 'auth';
@@ -39,15 +38,12 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [systemChecked, setSystemChecked] = useState(false);
-  const [authError, setAuthError] = useState<{ message: string; domain?: string } | null>(null);
-  const [copied, setCopied] = useState(false);
   
   const auth = useAuth();
   const db = useFirestore();
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
 
-  // MASTER ADMIN CONSTANT
   const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
 
   useEffect(() => {
@@ -88,8 +84,7 @@ export default function AdminLoginPage() {
         name: userEmail === PRIMARY_ADMIN_EMAIL ? "Master Admin" : (userEmail.split('@')[0]),
         role,
         timestamp: serverTimestamp(),
-        platform: 'Staff Hub',
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+        platform: 'Staff Hub'
       });
     } catch (logErr) {
       console.warn("Audit logging failed", logErr);
@@ -99,7 +94,6 @@ export default function AdminLoginPage() {
   const handleGoogleAuth = async () => {
     if (!auth || !db) return;
     setLoading(true);
-    setAuthError(null);
 
     try {
       await setPersistence(auth, browserLocalPersistence);
@@ -110,7 +104,6 @@ export default function AdminLoginPage() {
       const googleUser = result.user;
       const normalizedEmail = googleUser.email?.toLowerCase() || '';
 
-      // 1. MASTER ADMIN SYNC
       if (normalizedEmail === PRIMARY_ADMIN_EMAIL) {
         const adminRef = doc(db, 'admins', googleUser.uid);
         await setDoc(adminRef, {
@@ -126,12 +119,11 @@ export default function AdminLoginPage() {
         }, { merge: true });
         
         await logStaffLogin(googleUser.uid, normalizedEmail, 'admin');
-        toast({ title: "Master Sync Complete", description: "Identity verified via Google." });
+        toast({ title: "Identity Verified", description: "Master Access Synchronized." });
         router.push('/admin/dashboard');
         return;
       }
 
-      // 2. CHECK REGISTRY FOR OTHER STAFF
       const adminRef = doc(db, 'admins', googleUser.uid);
       const adminSnap = await getDoc(adminRef);
 
@@ -151,7 +143,7 @@ export default function AdminLoginPage() {
         toast({ 
           variant: "destructive", 
           title: "Access Denied", 
-          description: "This account is not in the Ezzy Bites Staff Registry." 
+          description: "Unauthorized credentials." 
         });
       }
     } catch (error: any) {
@@ -163,8 +155,6 @@ export default function AdminLoginPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAuthError(null);
-    
     if (!auth || !db) return;
 
     setLoading(true);
@@ -173,23 +163,21 @@ export default function AdminLoginPage() {
       const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
       let uid = '';
 
-      // 1. ATTEMPT AUTHENTICATION
       try {
         const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
         uid = userCredential.user.uid;
       } catch (signInError: any) {
-        // AUTO-PROVISION MASTER ADMIN ON FIRST RUN
         if (isPrimary && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
            try {
              const createCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
              uid = createCredential.user.uid;
-             toast({ title: "Identity Established", description: "Master admin account initialized." });
+             toast({ title: "Master Setup Complete", description: "Identity registry initialized." });
            } catch (createError: any) {
              if (createError.code === 'auth/email-already-in-use') {
                 toast({ 
                   variant: "destructive", 
                   title: "Auth Failed", 
-                  description: "Incorrect password for the Master Admin account." 
+                  description: "Incorrect password for Master Admin." 
                 });
                 setLoading(false);
                 return;
@@ -201,7 +189,6 @@ export default function AdminLoginPage() {
         }
       }
 
-      // 2. SYNCHRONIZE FIRESTORE ROLE
       const adminRef = doc(db, 'admins', uid);
       
       if (isPrimary) {
@@ -217,7 +204,6 @@ export default function AdminLoginPage() {
           updatedAt: serverTimestamp()
         };
         await setDoc(adminRef, adminData, { merge: true });
-        toast({ title: "Access Granted", description: "Master Console synchronized." });
       } else {
         const adminSnap = await getDoc(adminRef);
         if (!adminSnap.exists() || adminSnap.data().status === 'disabled') {
@@ -233,10 +219,9 @@ export default function AdminLoginPage() {
       router.push('/admin/dashboard');
 
     } catch (error: any) {
-      console.error('Auth Error:', error);
       let message = error.message || "An unexpected error occurred.";
       if (error.code === 'auth/invalid-credential') {
-        message = "Incorrect password for this staff email.";
+        message = "Verify your credentials and try again.";
       }
       toast({ variant: "destructive", title: "Authentication Failed", description: message });
     } finally {
