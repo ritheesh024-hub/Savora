@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
-import { getAnalytics, Analytics, isSupported } from 'firebase/analytics';
+import { getAnalytics, Analytics } from 'firebase/analytics';
 import { firebaseConfig } from './config';
 
 /**
@@ -28,12 +28,14 @@ export function initializeFirebase(): {
     const db = getFirestore(app);
     const auth = getAuth(app);
     
+    // Initialize Analytics synchronously on the client
     let analytics: Analytics | null = null;
     if (typeof window !== 'undefined') {
-      // Analytics is initialized asynchronously but we don't want to block
-      isSupported().then(supported => {
-        if (supported) analytics = getAnalytics(app);
-      }).catch(err => console.warn("Analytics not supported", err));
+      try {
+        analytics = getAnalytics(app);
+      } catch (e) {
+        console.warn("Firebase Analytics could not be initialized in this environment:", e);
+      }
     }
 
     return { app, db, auth, analytics };

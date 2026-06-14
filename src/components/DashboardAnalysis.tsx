@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -34,7 +33,8 @@ import {
   XCircle,
   ShieldCheck,
   Eye,
-  History
+  History,
+  Activity
 } from 'lucide-react';
 import {
   XAxis,
@@ -56,7 +56,7 @@ import {
   subMonths, 
   format 
 } from 'date-fns';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
@@ -70,6 +70,7 @@ type DetailType = 'revenue' | 'orders' | 'kitchen' | 'customers' | 'activity' | 
 
 export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnalysisProps) => {
   const db = useFirestore();
+  const { analytics } = useFirebase();
   const [filterType, setFilterType] = useState<FilterType>('today');
   const [activeDetail, setActiveDetail] = useState<DetailType>(null);
   const [mounted, setMounted] = useState(false);
@@ -180,13 +181,23 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className="flex items-center gap-2 w-full lg:w-auto">
-          <Button variant="outline" size="icon" onClick={() => window.location.reload()} className="rounded-full h-10 w-10 border-muted">
-            <RefreshCw className="w-4 h-4 text-muted-foreground" />
-          </Button>
-          <Button onClick={() => handleDownloadReport('revenue')} className="flex-1 lg:w-auto h-10 px-8 rounded-full font-black text-[9px] uppercase bg-primary text-white shadow-lg shadow-primary/20">
-            <Download className="w-4 h-4 mr-2" /> Export CSV
-          </Button>
+        
+        <div className="flex items-center gap-4">
+          <div className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-full border text-[9px] font-black uppercase tracking-widest",
+            analytics ? "border-green-100 bg-green-50 text-green-600" : "border-red-100 bg-red-50 text-red-600"
+          )}>
+            <Activity className={cn("w-3 h-3", analytics && "animate-pulse")} />
+            {analytics ? "Telemetry Active" : "Analytics Idle"}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => window.location.reload()} className="rounded-full h-10 w-10 border-muted">
+              <RefreshCw className="w-4 h-4 text-muted-foreground" />
+            </Button>
+            <Button onClick={() => handleDownloadReport('revenue')} className="lg:w-auto h-10 px-8 rounded-full font-black text-[9px] uppercase bg-primary text-white shadow-lg shadow-primary/20">
+              <Download className="w-4 h-4 mr-2" /> Export CSV
+            </Button>
+          </div>
         </div>
       </div>
 
