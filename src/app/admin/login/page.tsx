@@ -2,7 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
+  setPersistence,
+  browserLocalPersistence
+} from 'firebase/auth';
 import { useAuth, useUser, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +21,7 @@ import {
   ShoppingBag, Lock, Mail, Loader2, ArrowRight, 
   ShieldCheck, Receipt, ChefHat, 
   ChevronLeft, AlertCircle, Copy, Check,
-  Eye, EyeOff
+  Eye, EyeOff, Globe
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { doc, setDoc, getDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
@@ -84,6 +93,92 @@ export default function AdminLoginPage() {
     }
   };
 
+  const logStaffLogin = async (uid: string, userEmail: string, role: string) => {
+    if (!db) return;
+    try {
+      await addDoc(collection(db, 'login_events'), {
+        uid,
+        email: userEmail,
+        name: userEmail === PRIMARY_ADMIN_EMAIL ? "Master Admin" : (userEmail.split('@')[0]),
+        role,
+        timestamp: serverTimestamp(),
+        platform: 'Staff Hub',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+      });
+    } catch (logErr) {
+      console.warn("Audit logging failed", logErr);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    if (!auth || !db) return;
+    setLoading(true);
+    setAuthError(null);
+
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
+      const result = await signInWithPopup(auth, provider);
+      const googleUser = result.user;
+      const normalizedEmail = googleUser.email?.toLowerCase() || '';
+
+      // 1. Check if Primary Admin
+      if (normalizedEmail === PRIMARY_ADMIN_EMAIL) {
+        const adminRef = doc(db, 'admins', googleUser.uid);
+        await setDoc(adminRef, {
+          id: googleUser.uid,
+          uid: googleUser.uid,
+          email: normalizedEmail,
+          name: googleUser.displayName || "Master Admin",
+          role: 'admin',
+          status: 'active',
+          onlineStatus: 'online',
+          lastLoginAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        
+        await logStaffLogin(googleUser.uid, normalizedEmail, 'admin');
+        toast({ title: "Master Access Granted", description: "Identity verified via Google." });
+        router.push('/admin/dashboard');
+        return;
+      }
+
+      // 2. Check if existing staff in Firestore
+      // Since Google UID might differ from staff-placeholder-ID, we search by email
+      // For MVP simplicity, we check if a record exists with this UID or try to find by email if needed
+      const adminRef = doc(db, 'admins', googleUser.uid);
+      const adminSnap = await getDoc(adminRef);
+
+      if (adminSnap.exists()) {
+        const data = adminSnap.data();
+        if (data.status === 'disabled') {
+          await signOut(auth);
+          toast({ variant: "destructive", title: "Access Blocked", description: "Your account is currently inactive." });
+          setLoading(false);
+          return;
+        }
+        await setDoc(adminRef, { lastLoginAt: serverTimestamp(), onlineStatus: 'online' }, { merge: true });
+        await logStaffLogin(googleUser.uid, normalizedEmail, data.role || 'staff');
+        router.push('/admin/dashboard');
+      } else {
+        // Staff must be invited first (record must exist)
+        await signOut(auth);
+        toast({ 
+          variant: "destructive", 
+          title: "Access Denied", 
+          description: "This Google account is not registered in the Ezzy Bites Staff Registry." 
+        });
+      }
+    } catch (error: any) {
+      console.error('Google Staff Auth Error:', error);
+      toast({ variant: "destructive", title: "Auth Failed", description: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -107,17 +202,15 @@ export default function AdminLoginPage() {
         // Master Admin Auto-Provision Path
         if (isPrimary && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
            try {
-             // Attempt to create the master account if it doesn't exist
              const createCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
              uid = createCredential.user.uid;
              toast({ title: "Identity Established", description: "Master admin account synchronized." });
            } catch (createError: any) {
              if (createError.code === 'auth/email-already-in-use') {
-                // If creation fails because it exists, and sign-in failed, the password MUST be wrong.
                 toast({ 
                   variant: "destructive", 
                   title: "Auth Failed", 
-                  description: "Incorrect password for this staff account. Please use 'Forgot?' to reset." 
+                  description: "Incorrect password for this staff account." 
                 });
                 setLoading(false);
                 return;
@@ -133,7 +226,6 @@ export default function AdminLoginPage() {
       const adminRef = doc(db, 'admins', uid);
       
       if (isPrimary) {
-        // Absolute role enforcement for the primary ID
         const adminData = { 
           id: uid,
           uid: uid,
@@ -164,39 +256,21 @@ export default function AdminLoginPage() {
         await setDoc(adminRef, { lastLoginAt: serverTimestamp(), onlineStatus: 'online' }, { merge: true });
       }
 
-      // 3. Log Login Event
-      try {
-        await addDoc(collection(db, 'login_events'), {
-          uid,
-          email: normalizedEmail,
-          name: isPrimary ? "Master Admin" : (normalizedEmail.split('@')[0]),
-          role: isPrimary ? 'admin' : (selectedRole || 'staff'),
-          timestamp: serverTimestamp(),
-          platform: 'Admin Dashboard',
-          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
-        });
-      } catch (logErr) {
-        console.warn("Audit logging failed", logErr);
-      }
-
+      await logStaffLogin(uid, normalizedEmail, isPrimary ? 'admin' : (selectedRole || 'staff'));
       router.push('/admin/dashboard');
 
     } catch (error: any) {
       console.error('Auth Error:', error);
-      
       let message = error.message || "An unexpected error occurred.";
-      
       if (error.code === 'auth/unauthorized-domain') {
         const domain = typeof window !== 'undefined' ? window.location.hostname : '';
         setAuthError({ message: "This domain is not authorized in Firebase.", domain });
         setLoading(false);
         return;
       }
-
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
         message = "Incorrect credentials for this staff account.";
       }
-
       toast({ variant: "destructive", title: "Authentication Failed", description: message });
     } finally {
       setLoading(false);
@@ -241,7 +315,7 @@ export default function AdminLoginPage() {
       <Card className="w-full max-w-md rounded-[2.5rem] border shadow-2xl bg-card overflow-hidden">
         <div className={cn("h-2 w-full", selectedRole === 'admin' ? "bg-primary" : selectedRole === 'cashier' ? "bg-blue-600" : "bg-orange-500")} />
         
-        <CardHeader className="space-y-2 text-center pb-8 pt-10 relative">
+        <CardHeader className="space-y-2 text-center pb-6 pt-10 relative">
           <button onClick={() => setStep('selection')} className="absolute left-6 top-8 text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 text-[10px] font-black uppercase">
             <ChevronLeft className="w-3 h-3" /> Back
           </button>
@@ -276,7 +350,7 @@ export default function AdminLoginPage() {
         )}
 
         <form onSubmit={handleAuth}>
-          <CardContent className="space-y-6 px-8">
+          <CardContent className="space-y-5 px-8">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Staff Email</Label>
               <div className="relative">
@@ -288,7 +362,7 @@ export default function AdminLoginPage() {
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
                   required 
-                  disabled={selectedRole === 'admin'} 
+                  disabled={selectedRole === 'admin' && loading} 
                 />
               </div>
             </div>
@@ -304,7 +378,7 @@ export default function AdminLoginPage() {
                   className="h-14 pl-12 pr-12 rounded-xl bg-secondary/20" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
-                  required 
+                  required={!loading} 
                   minLength={6} 
                 />
                 <button 
@@ -316,9 +390,30 @@ export default function AdminLoginPage() {
                 </button>
               </div>
             </div>
+
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-dashed" /></div>
+              <div className="relative flex justify-center text-[8px] font-black uppercase tracking-widest"><span className="bg-card px-2 opacity-30">Multi-Login Options</span></div>
+            </div>
+
+            <Button 
+              type="button" 
+              onClick={handleGoogleAuth} 
+              disabled={loading}
+              variant="outline" 
+              className="w-full h-14 rounded-xl border-2 font-black uppercase text-[9px] tracking-widest gap-3 hover:bg-secondary/50"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c1.61-1.48 2.53-3.66 2.53-6.09z" />
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.16H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.84l3.66-2.75z" />
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.16l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              Identity Sync via Google
+            </Button>
           </CardContent>
           
-          <CardFooter className="pb-12 pt-6 px-8">
+          <CardFooter className="pb-10 pt-4 px-8">
             <Button type="submit" className={cn("w-full h-16 rounded-2xl font-black text-lg shadow-xl text-white", selectedRole === 'admin' ? "bg-primary" : selectedRole === 'cashier' ? "bg-blue-600" : "bg-orange-500")} disabled={loading}>
               {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <div className="flex items-center gap-3"><span>Enter Hub</span><ArrowRight className="w-5 h-5" /></div>}
             </Button>
