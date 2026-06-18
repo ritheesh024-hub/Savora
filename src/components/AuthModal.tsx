@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -188,8 +187,8 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
                     <p className="text-[8px] font-black uppercase tracking-widest opacity-60 mb-2">Instructions for Admin:</p>
                     <ol className="list-decimal list-inside space-y-1 text-[8px] uppercase font-bold tracking-tight">
                       <li>Open Firebase Console</li>
-                      <li>Go to Build > Authentication > Settings</li>
-                      <li>Add the domain above to "Authorized domains"</li>
+                      <li>Go to Build &gt; Authentication &gt; Settings</li>
+                      <li>Add the domain above to &quot;Authorized domains&quot;</li>
                     </ol>
                   </div>
                 </div>
