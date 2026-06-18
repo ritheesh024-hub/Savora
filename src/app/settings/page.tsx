@@ -8,6 +8,7 @@ import { Settings, Bell, Lock, Shield, Eye, Loader2, Moon, Sun, Volume2 } from '
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useStore } from '@/app/lib/store';
 import { toast } from '@/hooks/use-toast';
 
