@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Star, Plus, Minus } from 'lucide-react';
+import { Star, Plus, Minus, Heart } from 'lucide-react';
 import { FoodItem, useStore, BeverageOptions } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,10 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { BeverageCustomizer } from './BeverageCustomizer';
 import { useAnalytics } from '@/hooks/use-analytics';
+import { useUser, useFirestore, useDoc } from '@/firebase';
+import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { AuthModal } from './AuthModal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FoodCardProps {
   item: FoodItem;
@@ -16,15 +20,49 @@ interface FoodCardProps {
 
 export const FoodCard = ({ item }: FoodCardProps) => {
   const { cart, addToCart, updateQuantity } = useStore();
+  const { user } = useUser();
+  const db = useFirestore();
   const [isCustomizing, setIsCustomizing] = useState(false);
-  const { trackProductView, trackAddToCart } = useAnalytics();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const { trackProductView, trackAddToCart, trackEvent } = useAnalytics();
   
   const cartItemCount = cart.filter(i => i.id === item.id).reduce((acc, i) => acc + i.quantity, 0);
 
-  // Track product view on mount
+  // Favorites logic
+  const favDocId = user ? `${user.uid}_${item.id}` : null;
+  const favRef = (db && favDocId) ? doc(db, 'favorites', favDocId) : null;
+  const { data: favoriteData } = useDoc<any>(favRef);
+  const isFavorited = !!favoriteData;
+
   useEffect(() => {
     trackProductView(item);
   }, [item, trackProductView]);
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (!db || !favRef) return;
+
+    if (isFavorited) {
+      await deleteDoc(favRef);
+      trackEvent('remove_from_wishlist', { item_id: item.id, item_name: item.name });
+    } else {
+      await setDoc(favRef, {
+        userId: user.uid,
+        productId: item.id,
+        product: item,
+        createdAt: serverTimestamp()
+      });
+      trackEvent('add_to_wishlist', { item_id: item.id, item_name: item.name });
+      toast({ title: "Saved to Favorites", description: `${item.name} bookmarked.` });
+    }
+  };
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -58,7 +96,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
   return (
     <>
       <div className="group bg-white dark:bg-zinc-900 rounded-[1.2rem] md:rounded-[1.5rem] border border-border/40 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full relative">
-        {/* IMAGE SECTION - Optimized aspect ratio for mobile */}
+        {/* IMAGE SECTION */}
         <div className="relative aspect-video md:aspect-[4/3] w-full overflow-hidden bg-secondary/30">
           <Image 
             src={item.imageUrl} 
@@ -82,6 +120,16 @@ export const FoodCard = ({ item }: FoodCardProps) => {
               {item.rating || '4.5'}
             </Badge>
           </div>
+
+          {/* FAVORITE TOGGLE */}
+          <button 
+            onClick={toggleFavorite}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-black/90 backdrop-blur flex items-center justify-center shadow-lg transform active:scale-75 transition-all z-10"
+          >
+            <motion.div animate={isFavorited ? { scale: [1, 1.2, 1] } : {}}>
+              <Heart className={cn("w-4 h-4 transition-colors", isFavorited ? "fill-primary text-primary" : "text-muted-foreground")} />
+            </motion.div>
+          </button>
 
           {item.isFeatured && (
             <div className="absolute bottom-0 left-0 right-0 bg-primary/90 py-0.5 text-[6px] md:text-[7px] font-black text-white text-center uppercase tracking-widest">
@@ -129,6 +177,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
       {(item.isBeverage || item.isCustomizable) && (
         <BeverageCustomizer item={item} isOpen={isCustomizing} onClose={() => setIsCustomizing(false)} onConfirm={handleCustomizationConfirm} />
       )}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </>
   );
 };
