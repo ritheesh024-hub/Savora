@@ -13,9 +13,14 @@ import {
   BellRing,
   Settings2,
   Truck,
-  AlertCircle
+  AlertCircle,
+  Hash,
+  Activity,
+  Flame,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface KitchenSystemProps {
   orders: any[];
@@ -23,90 +28,115 @@ interface KitchenSystemProps {
 }
 
 export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) => {
-  // Filter for orders that need kitchen attention (Confirmed or Preparing)
   const kitchenOrders = orders.filter(o => 
     o.status === 'Confirmed' || o.status === 'Preparing'
   ).sort((a, b) => {
-    // Show older Confirmed orders first, then Preparing
     if (a.status === 'Confirmed' && b.status !== 'Confirmed') return -1;
     if (a.status !== 'Confirmed' && b.status === 'Confirmed') return 1;
     return 0;
   });
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="rounded-3xl border-none shadow-xl bg-orange-500 text-white p-6 relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
-             <ChefHat className="w-24 h-24" />
-          </div>
-          <div className="flex justify-between items-start relative z-10">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Active Cooking</p>
-              <h3 className="text-4xl font-black font-headline">{kitchenOrders.filter(o => o.status === 'Preparing').length}</h3>
-            </div>
-            <ChefHat className="w-8 h-8 opacity-20" />
-          </div>
+    <div className="space-y-10 animate-in fade-in duration-700">
+      {/* KITCHEN HEADS-UP DISPLAY (HUD) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <Card className="rounded-[2.5rem] border-none shadow-xl bg-orange-gradient text-white p-10 relative overflow-hidden group">
+           <div className="absolute -right-6 -bottom-6 opacity-10 group-hover:scale-125 transition-transform duration-1000">
+             <Flame className="w-40 h-40" />
+           </div>
+           <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+              <div className="flex items-center gap-4 bg-white/20 w-fit px-4 py-1.5 rounded-full border border-white/20 backdrop-blur-md">
+                 <ChefHat className="w-4 h-4" />
+                 <span className="text-[10px] font-black uppercase tracking-widest">Active Stations</span>
+              </div>
+              <div>
+                <h3 className="text-6xl font-black font-headline tracking-tighter italic leading-none">{kitchenOrders.filter(o => o.status === 'Preparing').length}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] mt-2 opacity-70 italic">Cooking In-Progress</p>
+              </div>
+           </div>
         </Card>
-        <Card className="rounded-3xl border-none shadow-xl bg-primary text-white p-6 relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
-             <BellRing className="w-24 h-24" />
-          </div>
-          <div className="flex justify-between items-start relative z-10">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-70">New Tickets</p>
-              <h3 className="text-4xl font-black font-headline">{kitchenOrders.filter(o => o.status === 'Confirmed').length}</h3>
-            </div>
-            <BellRing className="w-8 h-8 opacity-20" />
-          </div>
+
+        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-10 relative overflow-hidden border border-primary/10">
+           <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+              <div className="flex items-center gap-4 bg-primary/10 text-primary w-fit px-4 py-1.5 rounded-full border border-primary/10">
+                 <BellRing className="w-4 h-4 animate-bounce" />
+                 <span className="text-[10px] font-black uppercase tracking-widest">Incoming Tickets</span>
+              </div>
+              <div>
+                <h3 className="text-6xl font-black font-headline tracking-tighter italic leading-none text-primary">{kitchenOrders.filter(o => o.status === 'Confirmed').length}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] mt-2 opacity-40 italic">Awaiting Prep Start</p>
+              </div>
+           </div>
+        </Card>
+
+        <Card className="rounded-[2.5rem] border-none shadow-xl bg-zinc-900 text-white p-10 relative overflow-hidden">
+           <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+              <div className="flex items-center gap-4 bg-white/10 w-fit px-4 py-1.5 rounded-full border border-white/10">
+                 <Activity className="w-4 h-4 text-green-400" />
+                 <span className="text-[10px] font-black uppercase tracking-widest">Fleet Efficiency</span>
+              </div>
+              <div>
+                <h3 className="text-6xl font-black font-headline tracking-tighter italic leading-none text-green-400">98%</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] mt-2 opacity-40 italic">On-Time Accuracy</p>
+              </div>
+           </div>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {/* KITCHEN GRID / KDS BOARD */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {kitchenOrders.length === 0 ? (
-          <div className="col-span-full py-32 text-center bg-white dark:bg-zinc-900 rounded-[3rem] border-2 border-dashed border-muted">
-            <ChefHat className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-20" />
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Kitchen Queue Clear</p>
+          <div className="col-span-full py-48 text-center bg-white dark:bg-zinc-900 rounded-[4rem] border-2 border-dashed border-muted flex flex-col items-center justify-center gap-6">
+            <div className="w-24 h-24 bg-secondary/50 rounded-[3rem] flex items-center justify-center">
+              <ChefHat className="w-12 h-12 text-muted-foreground opacity-10" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-2xl font-black uppercase tracking-tighter">Board Clear</h3>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40 italic">All dishes provisioned & dispatched</p>
+            </div>
           </div>
         ) : (
           kitchenOrders.map((order) => (
             <Card 
               key={order.id} 
               className={cn(
-                "rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white dark:bg-zinc-900 transition-all",
-                order.status === 'Confirmed' ? "ring-4 ring-primary ring-inset" : "ring-1 ring-border"
+                "rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-all duration-500",
+                order.status === 'Confirmed' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20"
               )}
             >
               <div className={cn(
-                "p-5 flex justify-between items-center",
-                order.status === 'Confirmed' ? "bg-primary text-white" : "bg-orange-500 text-white"
+                "p-8 flex justify-between items-center",
+                order.status === 'Confirmed' ? "bg-primary text-white" : "bg-orange-gradient text-white"
               )}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    {order.orderType === 'Dine-In' ? <Utensils className="w-5 h-5" /> : <Package className="w-5 h-5" />}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-xl border border-white/20">
+                    {order.orderType === 'Dine-In' ? <Utensils className="w-6 h-6" /> : <Package className="w-6 h-6" />}
                   </div>
-                  <h4 className="font-black text-sm uppercase tracking-tight">#{order.orderId}</h4>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Manifest ID</p>
+                    <h4 className="font-black text-xl uppercase tracking-tighter leading-none italic">#{order.orderId}</h4>
+                  </div>
                 </div>
-                <Badge className="bg-white/20 border-none font-black text-[9px] uppercase px-3 py-1">
-                  {order.orderType || 'Online'}
+                <Badge className="bg-white/20 border-none font-black text-[9px] uppercase px-4 py-1.5 rounded-full tracking-widest">
+                  {order.orderType || 'Standard'}
                 </Badge>
               </div>
 
-              <CardContent className="p-8 space-y-6">
-                <div className="space-y-3">
+              <CardContent className="p-10 space-y-10">
+                <div className="space-y-4">
                   {order.items?.map((item: any, i: number) => (
-                    <div key={i} className="flex flex-col bg-secondary/30 dark:bg-zinc-800 p-4 rounded-2xl gap-2 group hover:bg-secondary/50 transition-colors">
+                    <div key={i} className="flex flex-col bg-zinc-50 dark:bg-zinc-800 p-6 rounded-[2rem] gap-3 group hover:bg-white dark:hover:bg-zinc-700 transition-all shadow-sm border border-transparent hover:border-primary/10">
                       <div className="flex justify-between items-center">
-                        <span className="font-black text-sm uppercase tracking-tight flex-1 truncate pr-2">{item.name}</span>
-                        <span className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-700 flex items-center justify-center font-black text-sm shadow-sm">
+                        <span className="font-black text-lg uppercase tracking-tight flex-1 truncate pr-4">{item.name}</span>
+                        <span className="w-12 h-12 rounded-[1.2rem] bg-primary text-white flex items-center justify-center font-black text-base shadow-xl">
                           x{item.quantity}
                         </span>
                       </div>
                       {item.customization && (
-                        <div className="flex items-center gap-1.5 text-[8px] font-black uppercase text-primary tracking-widest">
-                          <Settings2 className="w-3 h-3" />
-                          {item.customization.size} • {item.customization.temp} • Sugar: {item.customization.sugar}
-                          {item.customization.addons?.length > 0 && ` • Extras: ${item.customization.addons.join(', ')}`}
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-zinc-200">
+                           <Badge variant="outline" className="text-[8px] font-black uppercase text-primary border-primary/20 bg-primary/5 px-2">{item.customization.size}</Badge>
+                           <Badge variant="outline" className="text-[8px] font-black uppercase px-2">{item.customization.temp}</Badge>
+                           <Badge variant="outline" className="text-[8px] font-black uppercase px-2">Sugar: {item.customization.sugar}</Badge>
                         </div>
                       )}
                     </div>
@@ -114,34 +144,37 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                 </div>
 
                 {order.instructions && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800 flex gap-3">
-                    <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-[2rem] border-2 border-dashed border-blue-200 dark:border-blue-800 flex gap-4 animate-pulse">
+                    <AlertCircle className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] font-black uppercase text-blue-600 mb-1">Chef Note</p>
-                      <p className="text-[11px] font-bold italic leading-relaxed text-blue-900 dark:text-blue-300">"{order.instructions}"</p>
+                      <p className="text-[10px] font-black uppercase text-blue-600 mb-1 tracking-widest">Special Handling</p>
+                      <p className="text-xs font-bold italic leading-relaxed text-blue-900 dark:text-blue-300">"{order.instructions}"</p>
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-6 border-t border-dashed">
-                  <div className="flex items-center gap-2 text-[10px] font-black uppercase opacity-40">
-                    <Timer className="w-3.5 h-3.5" />
-                    {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                <div className="flex items-center justify-between pt-8 border-t border-dashed">
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Ticker Created</p>
+                    <div className="flex items-center gap-2 text-xs font-black uppercase">
+                       <Timer className="w-4 h-4 text-primary" />
+                       {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'hh:mm a') : 'Now'}
+                    </div>
                   </div>
                   
                   {order.status === 'Confirmed' ? (
                     <Button 
                       onClick={() => onUpdateStatus(order.id, 'Preparing')}
-                      className="rounded-xl h-12 px-6 bg-primary font-black uppercase text-[10px] tracking-widest gap-2 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                      className="rounded-[1.5rem] h-16 px-10 bg-primary font-black uppercase text-[11px] tracking-widest gap-3 shadow-2xl shadow-primary/30 transition-all hover:scale-[1.05] active:scale-95"
                     >
-                      <ChefHat className="w-4 h-4" /> Start Cooking
+                      <ChefHat className="w-5 h-5" /> Start Cooking
                     </Button>
                   ) : (
                     <Button 
                       onClick={() => onUpdateStatus(order.id, 'Out for Delivery')}
-                      className="rounded-xl h-12 px-6 bg-purple-500 font-black uppercase text-[10px] tracking-widest gap-2 shadow-lg shadow-purple-500/20 transition-all hover:scale-105 active:scale-95"
+                      className="rounded-[1.5rem] h-16 px-10 bg-violet-600 font-black uppercase text-[11px] tracking-widest gap-3 shadow-2xl shadow-violet-500/30 transition-all hover:scale-[1.05] active:scale-95 text-white"
                     >
-                      <Truck className="w-4 h-4" /> Dispatch
+                      <Truck className="w-5 h-5" /> Dispatch
                     </Button>
                   )}
                 </div>
