@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -15,7 +16,9 @@ import {
   Activity,
   ArrowUpRight,
   ShieldCheck,
-  Heart
+  Heart,
+  MessageSquare,
+  Star
 } from 'lucide-react';
 import {
   XAxis,
@@ -56,8 +59,8 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
   const securityQuery = useMemo(() => db ? query(collection(db, 'login_events'), orderBy('timestamp', 'desc'), limit(15)) : null, [db]);
   const { data: securityLogs = [], loading: logsLoading } = useCollection<any>(securityQuery);
 
-  const favsQuery = useMemo(() => db ? query(collection(db, 'favorites')) : null, [db]);
-  const { data: allFavorites = [] } = useCollection<any>(favsQuery);
+  const reviewsQuery = useMemo(() => db ? query(collection(db, 'reviews')) : null, [db]);
+  const { data: allReviews = [] } = useCollection<any>(reviewsQuery);
 
   const metrics = useMemo(() => {
     const delivered = orders.filter(o => o.status === 'Delivered');
@@ -84,21 +87,15 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
     const chartData = Object.entries(chartMap).map(([name, val]) => ({ name, val }));
 
-    // Popular Favorites
-    const productFavCounts: Record<string, number> = {};
-    allFavorites.forEach(f => {
-      productFavCounts[f.productId] = (productFavCounts[f.productId] || 0) + 1;
-    });
-
     return { 
       todayRev, 
       totalRev, 
       status, 
       chartData, 
       avgOrder: delivered.length ? Math.round(totalRev / delivered.length) : 0,
-      favCounts: productFavCounts
+      avgRating: allReviews.length ? (allReviews.reduce((acc, r) => acc + r.rating, 0) / allReviews.length).toFixed(1) : '0.0'
     };
-  }, [orders, allFavorites]);
+  }, [orders, allReviews]);
 
   if (!mounted) return (
     <div className="h-[600px] flex flex-col items-center justify-center gap-4">
@@ -113,7 +110,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard label="Gross Today" value={`₹${metrics.todayRev}`} icon={IndianRupee} trend="+12%" color="text-emerald-500" bg="bg-emerald-50" />
         <KPICard label="Active Tickets" value={metrics.status.active} icon={Zap} trend="Live" color="text-orange-500" bg="bg-orange-50" />
-        <KPICard label="Registered Users" value={allUsers.length} icon={Users} trend="+3 New" color="text-blue-500" bg="bg-blue-50" />
+        <KPICard label="Customer Pulse" value={metrics.avgRating} icon={Star} trend={`${allReviews.length} Reviews`} color="text-yellow-500" bg="bg-yellow-50" />
         <KPICard label="Avg. Ticket" value={`₹${metrics.avgOrder}`} icon={CreditCard} trend="Stable" color="text-primary" bg="bg-primary/5" />
       </div>
 
@@ -224,14 +221,14 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
           
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {products.slice(0, 6).map((item, i) => {
-              const favCount = metrics.favCounts[item.id] || 0;
+              const rating = item.reviewCount ? (item.ratingSum / item.reviewCount).toFixed(1) : '0.0';
               return (
                 <div key={i} className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-[2rem] flex flex-col justify-between h-40 hover:bg-white dark:hover:bg-zinc-800 transition-all border border-transparent hover:border-primary/20 group hover:shadow-2xl">
                    <div className="flex justify-between items-start">
                       <span className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center font-black text-[10px] shadow-lg shadow-primary/20 rotate-3">#{i+1}</span>
                       <div className="text-right flex flex-col items-end">
-                         <div className="flex items-center gap-1 text-[8px] font-black text-primary uppercase">
-                           <Heart className="w-2 h-2 fill-primary" /> {favCount}
+                         <div className="flex items-center gap-1 text-[8px] font-black text-yellow-600 uppercase">
+                           <Star className="w-2 h-2 fill-current" /> {rating}
                          </div>
                          <p className="text-sm font-black text-primary italic leading-none mt-1">₹{item.price}</p>
                       </div>
@@ -240,10 +237,10 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                       <h5 className="font-black text-xs uppercase truncate group-hover:text-primary transition-colors tracking-tight">{item.name}</h5>
                       <div className="flex items-center gap-3 mt-1">
                         <div className="flex items-center gap-1 text-[8px] font-black uppercase opacity-40">
-                           <Activity className="w-3 h-3" />
-                           High Intent
+                           <MessageSquare className="w-3 h-3" />
+                           {item.reviewCount || 0} Reviews
                         </div>
-                        <Badge className="bg-emerald-50 text-emerald-600 border-none text-[6px] font-black px-1.5 py-0">Bestseller</Badge>
+                        <Badge className="bg-emerald-50 text-emerald-600 border-none text-[6px] font-black px-1.5 py-0">Healthy Volume</Badge>
                       </div>
                    </div>
                 </div>

@@ -1,7 +1,8 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Star, Plus, Minus, Heart } from 'lucide-react';
+import { Star, Plus, Minus, Heart, Eye } from 'lucide-react';
 import { FoodItem, useStore, BeverageOptions } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ import { useAnalytics } from '@/hooks/use-analytics';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { AuthModal } from './AuthModal';
+import { ProductDetails } from './ProductDetails';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface FoodCardProps {
@@ -23,6 +25,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
   const { user } = useUser();
   const db = useFirestore();
   const [isCustomizing, setIsCustomizing] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { trackProductView, trackAddToCart, trackEvent } = useAnalytics();
   
@@ -66,6 +69,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (item.isBeverage || item.isCustomizable) {
       setIsCustomizing(true);
     } else {
@@ -84,6 +88,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
 
   const handleQtyChange = (delta: number, e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     const targetItem = cart.find(i => i.id === item.id);
     if (targetItem) {
       updateQuantity(targetItem.cartId, delta);
@@ -93,9 +98,16 @@ export const FoodCard = ({ item }: FoodCardProps) => {
     }
   };
 
+  const displayRating = item.reviewCount 
+    ? (item.ratingSum / item.reviewCount).toFixed(1) 
+    : (item.rating || '4.5');
+
   return (
     <>
-      <div className="group bg-white dark:bg-zinc-900 rounded-[1.2rem] md:rounded-[1.5rem] border border-border/40 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full relative">
+      <div 
+        onClick={() => setIsDetailsOpen(true)}
+        className="group bg-white dark:bg-zinc-900 rounded-[1.2rem] md:rounded-[1.5rem] border border-border/40 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full relative cursor-pointer"
+      >
         {/* IMAGE SECTION */}
         <div className="relative aspect-video md:aspect-[4/3] w-full overflow-hidden bg-secondary/30">
           <Image 
@@ -117,7 +129,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
             
             <Badge className="bg-white/90 dark:bg-black/90 text-foreground border-none font-black px-1 py-0.5 rounded-sm md:rounded-md flex items-center gap-1 text-[7px] md:text-[8px] shadow-sm">
               <Star className="w-1.5 h-1.5 md:w-2 md:h-2 fill-primary text-primary" />
-              {item.rating || '4.5'}
+              {displayRating}
             </Badge>
           </div>
 
@@ -130,6 +142,12 @@ export const FoodCard = ({ item }: FoodCardProps) => {
               <Heart className={cn("w-4 h-4 transition-colors", isFavorited ? "fill-primary text-primary" : "text-muted-foreground")} />
             </motion.div>
           </button>
+
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+             <Button variant="outline" className="bg-white/10 backdrop-blur-md border-white/20 text-white font-black uppercase text-[8px] rounded-xl h-8 pointer-events-none">
+               <Eye className="w-3 h-3 mr-2" /> Details
+             </Button>
+          </div>
 
           {item.isFeatured && (
             <div className="absolute bottom-0 left-0 right-0 bg-primary/90 py-0.5 text-[6px] md:text-[7px] font-black text-white text-center uppercase tracking-widest">
@@ -177,6 +195,17 @@ export const FoodCard = ({ item }: FoodCardProps) => {
       {(item.isBeverage || item.isCustomizable) && (
         <BeverageCustomizer item={item} isOpen={isCustomizing} onClose={() => setIsCustomizing(false)} onConfirm={handleCustomizationConfirm} />
       )}
+      
+      <ProductDetails 
+        item={item} 
+        isOpen={isDetailsOpen} 
+        onClose={() => setIsDetailsOpen(false)} 
+        onAddToCart={() => {
+           setIsDetailsOpen(false);
+           handleAddClick({ preventDefault: () => {}, stopPropagation: () => {} } as any);
+        }}
+      />
+      
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </>
   );

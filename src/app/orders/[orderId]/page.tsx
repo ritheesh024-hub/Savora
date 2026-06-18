@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useMemo, useState, useEffect, use } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -6,7 +7,7 @@ import {
   CheckCircle2, MapPin, Phone, MessageSquare, 
   Truck, ChefHat, PackageCheck, Loader2, 
   AlertCircle, Ban, Clock, ShoppingBag,
-  ArrowLeft, Info, HelpCircle
+  ArrowLeft, Info, HelpCircle, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ReviewForm } from '@/components/ReviewForm';
 
 export default function OrderTrackingPage({ params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = use(params);
@@ -37,6 +39,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [canCancel, setCanCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   // Cancellation Timer Logic (5 Minute Window)
   useEffect(() => {
@@ -157,6 +160,11 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
+             {order.status === 'Delivered' && !order.isReviewed && (
+                <Button onClick={() => setIsReviewOpen(true)} className="flex-1 md:flex-none rounded-full h-14 px-8 gap-2 font-black uppercase text-[10px] tracking-widest bg-orange-gradient shadow-xl shadow-primary/20">
+                   <Star className="w-4 h-4 fill-current" /> Rate items
+                </Button>
+             )}
              <Button variant="outline" className="flex-1 md:flex-none rounded-full h-14 px-8 gap-2 font-black uppercase text-[10px] tracking-widest border-2" onClick={() => window.open('tel:8639366800')}>
                 <Phone className="w-4 h-4" /> Call Station
              </Button>
@@ -344,6 +352,15 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
           </div>
         </div>
       </main>
+
+      <ReviewForm 
+        order={order} 
+        isOpen={isReviewOpen} 
+        onClose={() => setIsReviewOpen(false)} 
+        onSuccess={() => {
+           // Success handle...
+        }}
+      />
       <WhatsAppButton />
     </div>
   );

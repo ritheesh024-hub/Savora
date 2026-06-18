@@ -20,6 +20,7 @@ export interface FoodItem {
   imageUrl: string;
   isVeg: boolean;
   rating: number;
+  ratingSum?: number; // Aggregated total of all ratings
   reviewCount?: number;
   isAvailable: boolean;
   isBeverage?: boolean;

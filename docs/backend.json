@@ -167,26 +167,6 @@
               },
               "quantity": {
                 "type": "number"
-              },
-              "customization": {
-                "type": "object",
-                "properties": {
-                  "size": {
-                    "type": "string"
-                  },
-                  "sugar": {
-                    "type": "string"
-                  },
-                  "temp": {
-                    "type": "string"
-                  },
-                  "addons": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                }
               }
             }
           }
@@ -197,16 +177,7 @@
         "discount": {
           "type": "number"
         },
-        "couponCode": {
-          "type": "string"
-        },
-        "deliveryFee": {
-          "type": "number"
-        },
         "total": {
-          "type": "number"
-        },
-        "totalAmount": {
           "type": "number"
         },
         "status": {
@@ -220,23 +191,9 @@
             "Cancelled"
           ]
         },
-        "cancelledAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "acceptedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "cancelledBy": {
-          "type": "string",
-          "enum": [
-            "Customer",
-            "Admin"
-          ]
-        },
-        "paymentMethod": {
-          "type": "string"
+        "isReviewed": {
+          "type": "boolean",
+          "description": "Whether the user has reviewed this order"
         },
         "createdAt": {
           "type": "string",
@@ -245,12 +202,9 @@
       },
       "required": [
         "userId",
-        "customerName",
-        "customerEmail",
         "items",
         "total",
-        "status",
-        "createdAt"
+        "status"
       ]
     },
     "FoodItem": {
@@ -267,111 +221,52 @@
         "price": {
           "type": "number"
         },
-        "discountPrice": {
-          "type": "number"
-        },
         "category": {
           "type": "string"
         },
         "imageUrl": {
           "type": "string"
         },
-        "isVeg": {
-          "type": "boolean"
-        },
         "rating": {
+          "type": "number"
+        },
+        "reviewCount": {
           "type": "number"
         },
         "isAvailable": {
           "type": "boolean"
-        },
-        "isBestSeller": {
-          "type": "boolean"
-        },
-        "isFeatured": {
-          "type": "boolean"
-        },
-        "isCustomizable": {
-          "type": "boolean"
-        },
-        "spiceLevel": {
-          "type": "string",
-          "enum": [
-            "None",
-            "Mild",
-            "Medium",
-            "Hot",
-            "Extra Hot"
-          ]
-        },
-        "prepTime": {
-          "type": "number",
-          "description": "Minutes"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
         }
-      },
-      "required": [
-        "name",
-        "price",
-        "category",
-        "imageUrl",
-        "isAvailable"
-      ]
-    },
-    "Coupon": {
-      "title": "Coupon Code",
-      "description": "Discount codes available for customers",
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string"
-        },
-        "discount": {
-          "type": "number",
-          "description": "Percentage discount"
-        },
-        "isActive": {
-          "type": "boolean"
-        },
-        "expiryDate": {
-          "type": "string",
-          "format": "date"
-        },
-        "minOrderValue": {
-          "type": "number"
-        },
-        "description": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "code",
-        "discount",
-        "isActive"
-      ]
-    },
-    "LoginEvent": {
-      "title": "Login Event",
-      "description": "Log of successful user and admin logins",
-      "type": "object",
-      "properties": {
-        "uid": { "type": "string" },
-        "email": { "type": "string" },
-        "name": { "type": "string" },
-        "role": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" },
-        "platform": { "type": "string" }
       }
+    },
+    "Review": {
+      "title": "Review",
+      "description": "User feedback for a food item or order experience",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
+        "comment": { "type": "string" },
+        "photos": { "type": "array", "items": { "type": "string" } },
+        "isHidden": { "type": "boolean" },
+        "isFeatured": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "orderId",
+        "productId",
+        "userId",
+        "rating"
+      ]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "phone",
-      "anonymous",
       "google.com"
     ]
   },
@@ -390,37 +285,11 @@
     },
     "/products/{productId}": {
       "schema": "#/backend/entities/FoodItem",
-      "description": "Collection of dynamic menu items (products)"
+      "description": "Collection of dynamic menu items"
     },
-    "/coupons/{code}": {
-      "schema": "#/backend/entities/Coupon",
-      "description": "Dynamic promotional discount codes"
-    },
-    "/settings/{settingId}": {
-      "schema": {
-        "type": "object",
-        "properties": {
-          "isOpen": {
-            "type": "boolean"
-          }
-        }
-      },
-      "description": "Store operational settings"
-    },
-    "/otp_codes/{phone}": {
-      "schema": {
-        "type": "object",
-        "properties": {
-          "otp": {
-            "type": "string"
-          }
-        }
-      },
-      "description": "Temporary OTP codes for verification"
-    },
-    "/login_events/{eventId}": {
-      "schema": "#/backend/entities/LoginEvent",
-      "description": "Audit logs for authentication events"
+    "/reviews/{reviewId}": {
+      "schema": "#/backend/entities/Review",
+      "description": "Public and audited user reviews"
     }
   }
 }

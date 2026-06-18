@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -17,7 +18,8 @@ import {
   Layers,
   Ban,
   Bell,
-  Megaphone
+  Megaphone,
+  MessageSquare
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -33,6 +35,7 @@ import { CouponManager } from './CouponManager';
 import { UserManagement } from './UserManagement';
 import { ProductManagement } from './ProductManagement';
 import { AdminNotificationManager } from './AdminNotificationManager';
+import { ReviewManager } from './ReviewManager';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { StaffRole } from '@/app/admin/dashboard/page';
@@ -141,7 +144,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const availableTabs = useMemo(() => {
     if (activeView === 'kitchen') return ['kitchen'];
     if (activeView === 'cashier') return ['overview', 'billing', 'orders'];
-    return ['overview', 'users', 'billing', 'orders', 'products', 'coupons', 'notifications', 'staff', 'settings'];
+    return ['overview', 'users', 'billing', 'orders', 'products', 'reviews', 'coupons', 'notifications', 'staff', 'settings'];
   }, [activeView]);
 
   return (
@@ -177,6 +180,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                       </div>
                     )}
                     {tab === 'products' && <Layers className="w-4 h-4" />}
+                    {tab === 'reviews' && <MessageSquare className="w-4 h-4" />}
                     {tab === 'coupons' && <TicketPercent className="w-4 h-4" />}
                     {tab === 'notifications' && <Megaphone className="w-4 h-4" />}
                     {tab === 'staff' && <Fingerprint className="w-4 h-4" />}
@@ -220,6 +224,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   {tab === 'billing' && <BillingSystem products={dbMenu || []} orders={realOrders || []} />}
                   {tab === 'kitchen' && <KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} />}
                   {tab === 'products' && <ProductManagement />}
+                  {tab === 'reviews' && <ReviewManager />}
                   {tab === 'coupons' && <CouponManager />}
                   {tab === 'notifications' && <AdminNotificationManager />}
                   {tab === 'staff' && <StaffManagement />}
