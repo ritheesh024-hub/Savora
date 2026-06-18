@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { 
   CheckCircle2, MapPin, Phone, MessageSquare, 
   Truck, ChefHat, PackageCheck, Loader2, 
-  AlertCircle, Settings2, Ban, Clock 
+  AlertCircle, Ban, Clock, ShoppingBag,
+  ArrowLeft, Info, HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
 import { useAnalytics } from '@/hooks/use-analytics';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function OrderTrackingPage({ params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = use(params);
@@ -36,16 +38,15 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   const [canCancel, setCanCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
-  // Cancellation Timer Logic (Production Grade)
+  // Cancellation Timer Logic (5 Minute Window)
   useEffect(() => {
     if (!order?.createdAt || (order.status !== 'Pending' && order.status !== 'Confirmed')) {
       setCanCancel(false);
       return;
     }
 
-    // Handle both Firestore timestamp and JS Date
     const createdAt = order.createdAt.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
-    const expiryTime = createdAt.getTime() + 5 * 60 * 1000; // 5 minute window
+    const expiryTime = createdAt.getTime() + 5 * 60 * 1000;
 
     const updateTimer = () => {
       const now = new Date().getTime();
@@ -75,11 +76,6 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
 
   const handleCancelOrder = async () => {
     if (!db || !order || !canCancel || !user) return;
-    if (order.userId !== user.uid) {
-      toast({ variant: "destructive", title: "Action Denied", description: "You can only cancel your own orders." });
-      return;
-    }
-
     setCancelling(true);
     try {
       await updateDoc(doc(db, 'orders', orderId), {
@@ -88,9 +84,9 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
         cancelledBy: 'Customer'
       });
       trackOrderCancelled(orderId);
-      toast({ title: "Order Cancelled Successfully 🚀" });
+      toast({ title: "Order Cancelled", description: "Your order has been revoked as requested." });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Cancellation Failed", description: e.message });
+      toast({ variant: "destructive", title: "Cancellation Failed", description: "The window might have closed. Contact support." });
     } finally {
       setCancelling(false);
     }
@@ -108,21 +104,18 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   const statusLevel = order ? statusMap[order.status] || 1 : 1;
 
   const steps = [
-    { id: 1, title: 'Order Placed', icon: PackageCheck, desc: 'We have received your order.' },
-    { id: 2, title: 'Accepted', icon: CheckCircle2, desc: 'Your order has been accepted by the kitchen.' },
-    { id: 3, title: 'Preparing Food', icon: ChefHat, desc: 'Our chef is crafting your gourmet meal.' },
-    { id: 4, title: 'Out for Delivery', icon: Truck, desc: 'Our delivery partner is on the way.' },
-    { id: 5, title: 'Delivered', icon: CheckCircle2, desc: 'Order received. Enjoy your bites!' }
+    { id: 1, title: 'Order Placed', icon: PackageCheck, desc: 'We have received your request.' },
+    { id: 2, title: 'Accepted', icon: CheckCircle2, desc: 'Kitchen is reviewing your items.' },
+    { id: 3, title: 'Preparing Food', icon: ChefHat, desc: 'Chef is crafting your gourmet bites.' },
+    { id: 4, title: 'Out for Delivery', icon: Truck, desc: 'Our rider is heading to your sanctuary.' },
+    { id: 5, title: 'Delivered', icon: CheckCircle2, desc: 'Bites received. Enjoy your meal!' }
   ];
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <div className="relative mb-8">
-           <div className="w-24 h-24 bg-primary/10 rounded-[3rem] animate-pulse" />
-           <Loader2 className="w-10 h-10 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-        </div>
-        <p className="font-black uppercase tracking-[0.3em] text-[10px] text-muted-foreground animate-pulse">Establishing Live Tracking...</p>
+        <Loader2 className="w-12 h-12 animate-spin text-primary mb-6" />
+        <p className="font-black uppercase tracking-[0.3em] text-[10px] text-muted-foreground animate-pulse">Syncing Live Status...</p>
       </div>
     );
   }
@@ -130,72 +123,68 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   if (error || !order) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
-           <AlertCircle className="w-10 h-10 text-destructive" />
-        </div>
-        <h2 className="text-3xl font-black uppercase tracking-tighter">Order Not Found</h2>
-        <p className="text-muted-foreground mt-2 mb-10 max-w-xs">We couldn't locate an order with ID: <span className="font-mono text-primary font-bold">{orderId}</span></p>
+        <AlertCircle className="w-16 h-16 text-destructive mb-6" />
+        <h2 className="text-2xl font-black uppercase tracking-tighter">Order Not Found</h2>
+        <p className="text-muted-foreground mt-2 mb-8 text-sm">We couldn't locate this order in our live registry.</p>
         <Link href="/">
-          <Button className="rounded-full px-12 h-14 font-black uppercase text-[10px] tracking-widest bg-primary">Back to Home</Button>
+          <Button className="rounded-full px-10 h-14 font-black uppercase text-[10px] tracking-widest bg-primary">Back to Home</Button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-secondary/10 pb-12 overflow-x-hidden">
+    <div className="min-h-screen bg-secondary/5 pb-20">
       <Navbar />
       
-      <main className="container mx-auto px-4 py-12 max-w-4xl pt-20 md:pt-24">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+      <main className="container mx-auto px-4 pt-24 max-w-5xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div className="space-y-1">
-            <Badge className="bg-primary/10 text-primary border-primary/20 mb-2 px-4 py-1.5 rounded-full font-black uppercase tracking-widest text-[9px]">
-              Live Feed • {order.orderType || 'Online'}
-            </Badge>
-            <h1 className="text-3xl md:text-5xl font-headline font-black uppercase tracking-tighter">ID: <span className="text-primary italic">#{order.orderId}</span></h1>
+            <div className="flex items-center gap-3 mb-2">
+               <Link href="/orders">
+                 <button className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+                   <ArrowLeft className="w-4 h-4" />
+                 </button>
+               </Link>
+               <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-1 rounded-full font-black uppercase text-[9px] tracking-widest">
+                #{order.orderId}
+              </Badge>
+            </div>
+            <h1 className="text-3xl md:text-5xl font-black font-headline uppercase tracking-tighter">Live <span className="text-primary italic">Tracking.</span></h1>
             <p className="text-xs font-bold text-muted-foreground flex items-center gap-2">
               <Clock className="w-3.5 h-3.5" /> 
-              Placed on {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : 'Just now'}
+              Placed on {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString([], { hour: '2-digit', minute: '2-digit', hour12: true, day: 'numeric', month: 'short' }) : 'Syncing...'}
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <Button variant="outline" className="flex-1 md:flex-none rounded-full h-14 px-8 gap-2 font-black uppercase text-[10px] tracking-widest border-2" onClick={() => window.open('https://wa.me/918639366800', '_blank')}>
-              <MessageSquare className="w-4 h-4" /> Chat Support
-            </Button>
+             <Button variant="outline" className="flex-1 md:flex-none rounded-full h-14 px-8 gap-2 font-black uppercase text-[10px] tracking-widest border-2" onClick={() => window.open('tel:8639366800')}>
+                <Phone className="w-4 h-4" /> Call Station
+             </Button>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            {/* Cancellation Safety Window */}
-            {(order.status === 'Pending' || order.status === 'Confirmed') && (
-              <Card className={cn(
-                "rounded-[2.5rem] border-none shadow-xl overflow-hidden transition-all duration-500",
-                canCancel ? "bg-orange-50 border-orange-100" : "bg-zinc-50/50 opacity-80"
-              )}>
-                <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="flex items-start gap-4">
-                    <div className={cn(
-                      "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0",
-                      canCancel ? "bg-orange-100 text-orange-600" : "bg-zinc-200 text-zinc-400"
-                    )}>
-                      <Ban className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-black uppercase text-[10px] tracking-widest mb-1">Safety Cancellation Window</h4>
-                      <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-                        {canCancel 
-                          ? "You can revoke this order within the next few minutes if needed." 
-                          : "The safety window has expired. Our kitchen is now processing your ingredients."}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {canCancel ? (
-                    <div className="flex flex-col items-center md:items-end gap-3 w-full md:w-auto">
-                      <div className="flex items-center gap-2 text-orange-600 font-black text-sm bg-white px-4 py-2 rounded-xl shadow-sm border border-orange-100">
-                        <Clock className="w-4 h-4 animate-spin-slow" />
-                        {timeLeft !== null && formatTime(timeLeft)}
+            {/* CANCELLATION BOX */}
+            <AnimatePresence>
+              {canCancel && order.status !== 'Cancelled' && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  <Card className="rounded-[2.5rem] border-none shadow-xl bg-orange-50 overflow-hidden">
+                    <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center shrink-0 text-orange-600">
+                          <Clock className="w-6 h-6 animate-pulse" />
+                        </div>
+                        <div>
+                          <h4 className="font-black uppercase text-[10px] tracking-widest mb-1">Safety Window Active</h4>
+                          <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                            You can revoke this order for the next <span className="text-orange-600 font-bold">{formatTime(timeLeft || 0)}</span>.
+                          </p>
+                        </div>
                       </div>
                       <Button 
                         onClick={handleCancelOrder} 
@@ -205,40 +194,33 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
                       >
                         {cancelling ? <Loader2 className="animate-spin" /> : 'Cancel Order'}
                       </Button>
-                    </div>
-                  ) : (
-                    <Badge variant="secondary" className="px-5 py-2.5 rounded-xl text-[9px] font-black uppercase opacity-60 bg-zinc-200">
-                      Window Closed
-                    </Badge>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
+            {/* TIMELINE CARD */}
             <Card className="rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900">
               <CardContent className="p-8 md:p-12">
                 {order.status === 'Cancelled' ? (
-                   <div className="text-center py-12">
-                      <div className="w-24 h-24 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
-                        <Ban className="w-10 h-10" />
-                      </div>
-                      <h4 className="text-3xl font-black font-headline uppercase tracking-tighter mb-2">Order <span className="text-destructive italic">Revoked</span></h4>
-                      <p className="text-muted-foreground font-medium text-sm">
-                        {order.cancelledBy === 'Customer' 
-                          ? "This order was cancelled from your dashboard." 
-                          : "This order was declined by our operational team."}
+                  <div className="text-center py-12 space-y-6">
+                    <div className="w-24 h-24 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                      <Ban className="w-10 h-10" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-3xl font-black font-headline uppercase tracking-tighter">Order <span className="text-rose-500 italic">Revoked</span></h4>
+                      <p className="text-muted-foreground text-sm font-medium">This transaction has been terminated from the hub.</p>
+                    </div>
+                    {order.cancelledAt && (
+                      <p className="text-[9px] font-black uppercase opacity-40 tracking-widest pt-4">
+                        Timestamp: {order.cancelledAt.toDate ? order.cancelledAt.toDate().toLocaleString() : 'Recent'}
                       </p>
-                      {order.cancelledAt && (
-                        <div className="mt-8 pt-8 border-t border-dashed">
-                           <p className="text-[9px] font-black uppercase opacity-40 tracking-widest">
-                             Timestamp: {order.cancelledAt.toDate ? order.cancelledAt.toDate().toLocaleString() : new Date(order.cancelledAt).toLocaleString()}
-                           </p>
-                        </div>
-                      )}
-                   </div>
+                    )}
+                  </div>
                 ) : (
-                  <div className="relative space-y-12">
-                    <div className="absolute left-6 top-6 w-1 h-[calc(100%-48px)] bg-muted/40 z-0" />
+                  <div className="relative space-y-10">
+                    <div className="absolute left-6 top-6 w-0.5 h-[calc(100%-48px)] bg-muted/40 z-0" />
                     {steps.map((step, idx) => {
                       const Icon = step.icon;
                       const isActive = statusLevel >= step.id;
@@ -251,7 +233,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
                         )}>
                           <div className={cn(
                             "w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all shrink-0 border-4 border-white dark:border-zinc-900",
-                            isActive ? 'bg-primary text-white scale-110 shadow-primary/30' : 'bg-muted text-muted-foreground'
+                            isActive ? 'bg-primary text-white scale-110' : 'bg-muted text-muted-foreground'
                           )}>
                             <Icon className="w-6 h-6" />
                           </div>
@@ -262,9 +244,9 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
                             )}>{step.title}</h4>
                             <p className="text-xs md:text-sm font-medium text-muted-foreground mt-1">{step.desc}</p>
                             {isCurrent && (
-                              <div className="mt-4 flex gap-3 items-center bg-primary/5 w-fit px-3 py-1.5 rounded-full border border-primary/10">
-                                <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
-                                <span className="text-[9px] font-black uppercase tracking-widest text-primary">Active Status</span>
+                              <div className="mt-4 flex gap-2 items-center bg-primary/10 w-fit px-3 py-1 rounded-full border border-primary/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+                                <span className="text-[8px] font-black uppercase tracking-widest text-primary">Live Status</span>
                               </div>
                             )}
                           </div>
@@ -276,34 +258,35 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
               </CardContent>
             </Card>
 
-            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900">
-              <CardContent className="p-8">
-                <h4 className="font-black text-xs uppercase tracking-[0.3em] text-muted-foreground mb-8">Manifest Breakdown</h4>
+            {/* BREAKDOWN CARD */}
+            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8">
+              <CardContent className="p-0 space-y-8">
+                <div className="flex items-center gap-3 border-b border-dashed pb-6">
+                   <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-primary"><ShoppingBag className="w-5 h-5" /></div>
+                   <h4 className="font-black text-xs uppercase tracking-[0.3em] text-muted-foreground">Order Manifest</h4>
+                </div>
                 <div className="space-y-6">
                   {order.items?.map((item: any, i: number) => (
-                    <div key={i} className="flex flex-col gap-2 border-b border-dashed border-muted pb-6 last:border-0 last:pb-0">
+                    <div key={i} className="flex flex-col gap-3 pb-6 border-b border-zinc-50 dark:border-zinc-800 last:border-0 last:pb-0">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center font-black text-sm text-primary">x{item.quantity}</div>
+                          <div className="w-10 h-10 bg-secondary/50 rounded-xl flex items-center justify-center font-black text-sm text-primary">x{item.quantity}</div>
                           <span className="font-black text-base uppercase tracking-tight">{item.name}</span>
                         </div>
                         <span className="font-black text-lg italic">₹{item.price * item.quantity}</span>
                       </div>
                       {item.customization && (
                         <div className="flex flex-wrap items-center gap-2 pl-14">
-                           <Badge variant="outline" className="text-[8px] font-black uppercase border-primary/20 text-primary bg-primary/5">{item.customization.size}</Badge>
-                           <Badge variant="outline" className="text-[8px] font-black uppercase">{item.customization.temp}</Badge>
-                           <Badge variant="outline" className="text-[8px] font-black uppercase">Sugar: {item.customization.sugar}</Badge>
-                           {item.customization.addons?.length > 0 && (
-                             <Badge variant="outline" className="text-[8px] font-black uppercase bg-secondary">Extras: {item.customization.addons.join(', ')}</Badge>
-                           )}
+                           <Badge variant="outline" className="text-[7px] font-black uppercase bg-secondary/30">{item.customization.size}</Badge>
+                           <Badge variant="outline" className="text-[7px] font-black uppercase">{item.customization.temp}</Badge>
+                           <Badge variant="outline" className="text-[7px] font-black uppercase">Sugar: {item.customization.sugar}</Badge>
                         </div>
                       )}
                     </div>
                   ))}
-                  <div className="pt-8 border-t-4 border-double border-muted mt-6 flex justify-between items-end">
-                    <span className="font-black text-xs uppercase tracking-widest opacity-40 mb-1">Settlement Total</span>
-                    <span className="text-3xl md:text-5xl font-headline font-black text-primary italic leading-none">₹{order.total}</span>
+                  <div className="pt-6 flex justify-between items-end">
+                    <span className="font-black text-xs uppercase tracking-widest opacity-40 mb-1">Final Settlement</span>
+                    <span className="text-4xl md:text-6xl font-black text-primary italic leading-none">₹{order.total}</span>
                   </div>
                 </div>
               </CardContent>
@@ -311,42 +294,52 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
           </div>
 
           <div className="space-y-8">
-            <Card className="rounded-[2.5rem] border-none shadow-xl bg-orange-gradient text-white overflow-hidden relative">
-              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+            {/* LOGISTICS NODE */}
+            <Card className="rounded-[2.5rem] border-none shadow-xl bg-zinc-900 text-white overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-8 opacity-10"><Truck className="w-32 h-32 rotate-12" /></div>
               <CardContent className="p-8 space-y-8 relative z-10">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                    <Truck className="w-7 h-7" />
+                  <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                    <MapPin className="w-7 h-7 text-primary" />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest opacity-70">Logistic Help</p>
-                    <h4 className="text-xl font-black uppercase tracking-tighter">Ezzy Buddy</h4>
+                    <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Delivery Sanctuary</p>
+                    <h4 className="text-xl font-black uppercase tracking-tighter leading-tight">Your Destination</h4>
                   </div>
                 </div>
+                <div className="p-5 bg-white/5 rounded-2xl border border-white/10 space-y-4">
+                  <p className="text-sm font-medium leading-relaxed italic text-white/80">"{order.address}"</p>
+                  {order.instructions && (
+                    <div className="pt-4 border-t border-white/5 flex gap-3">
+                       <Info className="w-4 h-4 text-primary shrink-0" />
+                       <p className="text-[10px] font-bold text-white/40 uppercase">Note: {order.instructions}</p>
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-3">
-                  <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-14 font-black uppercase text-[10px] tracking-widest gap-2 shadow-xl" onClick={() => window.open('tel:8639366800')}>
-                    <Phone className="w-4 h-4" /> Contact Fleet
+                  <Button className="w-full bg-primary text-white hover:bg-primary/90 rounded-2xl h-14 font-black uppercase text-[10px] tracking-widest gap-3 shadow-xl" onClick={() => window.open('https://wa.me/918639366800')}>
+                    <MessageSquare className="w-4 h-4" /> Live Chat Support
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden">
-              <CardContent className="p-8 space-y-6">
-                <div className="flex items-center gap-3">
-                   <div className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center text-primary"><MapPin className="w-4 h-4" /></div>
-                   <h4 className="font-black text-[10px] uppercase tracking-widest opacity-40">Drop Destination</h4>
-                </div>
-                <p className="text-sm font-bold leading-relaxed text-muted-foreground italic">
-                  "{order.address}"
-                </p>
-                {order.instructions && (
-                  <div className="p-4 bg-secondary/30 rounded-2xl border border-dashed border-muted">
-                     <p className="text-[8px] font-black uppercase opacity-40 mb-1">Rider Note</p>
-                     <p className="text-xs font-medium italic">"{order.instructions}"</p>
+            {/* TRUST BOX */}
+            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8">
+               <CardContent className="p-0 space-y-6">
+                  <div className="flex items-center gap-3">
+                    <HelpCircle className="w-5 h-5 text-primary" />
+                    <h4 className="text-xs font-black uppercase tracking-widest">Need Assistance?</h4>
                   </div>
-                )}
-              </CardContent>
+                  <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">
+                    Our hub is monitoring this ticket in real-time. If you face any issues with quality or logistics, reach out to our fleet commander instantly.
+                  </p>
+                  <Link href="/menu">
+                    <Button variant="ghost" className="w-full justify-start px-0 text-primary font-black uppercase text-[9px] tracking-widest hover:bg-transparent hover:translate-x-1 transition-transform">
+                      Continue Selecting Bites <ArrowLeft className="w-3 h-3 ml-2 rotate-180" />
+                    </Button>
+                  </Link>
+               </CardContent>
             </Card>
           </div>
         </div>

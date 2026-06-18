@@ -12,7 +12,8 @@ import {
   Truck,
   AlertCircle,
   Flame,
-  Activity
+  Activity,
+  CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -23,13 +24,18 @@ interface KitchenSystemProps {
 }
 
 export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) => {
+  // Focus only on active operational orders
   const kitchenOrders = orders.filter(o => 
     o.status === 'Confirmed' || o.status === 'Preparing'
   ).sort((a, b) => {
+    // Preparing orders always come first (higher urgency)
     if (a.status === 'Preparing' && b.status !== 'Preparing') return -1;
     if (a.status !== 'Preparing' && b.status === 'Preparing') return 1;
     return 0;
   });
+
+  const preparingCount = kitchenOrders.filter(o => o.status === 'Preparing').length;
+  const pendingCount = kitchenOrders.filter(o => o.status === 'Confirmed').length;
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
@@ -42,11 +48,11 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
            <div className="relative z-10 flex flex-col h-full justify-between gap-8">
               <div className="flex items-center gap-3 bg-white/20 w-fit px-4 py-2 rounded-full border border-white/20 backdrop-blur-md">
                  <ChefHat className="w-4 h-4" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Prep Stations</span>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Live Prep</span>
               </div>
               <div>
-                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none">{kitchenOrders.filter(o => o.status === 'Preparing').length}</h3>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-80 italic">Dishes In-Progress</p>
+                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none">{preparingCount}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-80 italic">In-Progress Station</p>
               </div>
            </div>
         </Card>
@@ -55,11 +61,11 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
            <div className="relative z-10 flex flex-col h-full justify-between gap-8">
               <div className="flex items-center gap-3 bg-primary/10 text-primary w-fit px-4 py-2 rounded-full border border-primary/10">
                  <BellRing className="w-4 h-4 animate-bounce" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Incoming Tickets</span>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Queue</span>
               </div>
               <div>
-                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-primary">{kitchenOrders.filter(o => o.status === 'Confirmed').length}</h3>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40 italic">Awaiting Provision</p>
+                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-primary">{pendingCount}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40 italic">Tickets Awaiting Provision</p>
               </div>
            </div>
         </Card>
@@ -69,7 +75,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
            <div className="relative z-10 flex flex-col h-full justify-between gap-8">
               <div className="flex items-center gap-3 bg-white/10 w-fit px-4 py-2 rounded-full border border-white/10">
                  <Activity className="w-4 h-4 text-emerald-400" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">KDS Efficiency</span>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Efficiency</span>
               </div>
               <div>
                 <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-emerald-400">99.2%</h3>
@@ -96,8 +102,8 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
             <Card 
               key={order.id} 
               className={cn(
-                "rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-all duration-700 hover:scale-[1.02]",
-                order.status === 'Confirmed' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20"
+                "rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-all duration-700",
+                order.status === 'Confirmed' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20 shadow-orange-500/10"
               )}
             >
               <div className={cn(
@@ -105,7 +111,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                 order.status === 'Confirmed' ? "bg-primary text-white" : "bg-orange-gradient text-white shadow-lg"
               )}>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20 shadow-xl">
+                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20">
                     {order.orderType === 'Dine-In' ? <Utensils className="w-6 h-6" /> : <Package className="w-6 h-6" />}
                   </div>
                   <div>
@@ -124,7 +130,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                     <div key={i} className="flex flex-col bg-zinc-50 dark:bg-zinc-800/50 p-6 rounded-[2rem] gap-4 border border-transparent hover:border-primary/10 transition-all group">
                       <div className="flex justify-between items-center">
                         <span className="font-black text-xl uppercase tracking-tight flex-1 truncate pr-4 group-hover:text-primary transition-colors">{item.name}</span>
-                        <div className="w-12 h-12 rounded-[1.2rem] bg-zinc-950 text-white flex items-center justify-center font-black text-lg shadow-2xl scale-110">
+                        <div className="w-12 h-12 rounded-[1.2rem] bg-zinc-950 text-white flex items-center justify-center font-black text-lg shadow-2xl">
                           {item.quantity}
                         </div>
                       </div>
@@ -142,7 +148,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                   <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-[2rem] border-2 border-dashed border-blue-200 dark:border-blue-800 flex gap-4">
                     <AlertCircle className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] font-black uppercase text-blue-600 mb-1 tracking-widest">Kitchen Note</p>
+                      <p className="text-[10px] font-black uppercase text-blue-600 mb-1 tracking-widest">Special Notes</p>
                       <p className="text-xs font-bold italic leading-relaxed text-blue-900 dark:text-blue-300">"{order.instructions}"</p>
                     </div>
                   </div>
@@ -150,24 +156,24 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
 
                 <div className="flex items-center justify-between pt-10 border-t border-dashed border-zinc-100 dark:border-zinc-800">
                   <div className="flex flex-col gap-1">
-                    <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Entry Time</p>
+                    <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Arrival</p>
                     <div className="flex items-center gap-2 text-xs font-black uppercase">
                        <Timer className="w-4 h-4 text-primary" />
-                       {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'hh:mm a') : 'Now'}
+                       {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'hh:mm a') : 'Just now'}
                     </div>
                   </div>
                   
                   {order.status === 'Confirmed' ? (
                     <Button 
                       onClick={() => onUpdateStatus(order.id, 'Preparing')}
-                      className="rounded-[1.5rem] h-18 px-10 bg-zinc-950 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-primary active:scale-95 group"
+                      className="rounded-[1.5rem] h-18 px-10 bg-zinc-950 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-primary group"
                     >
-                      <ChefHat className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Start Cooking
+                      <ChefHat className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Prep Dish
                     </Button>
                   ) : (
                     <Button 
                       onClick={() => onUpdateStatus(order.id, 'Out for Delivery')}
-                      className="rounded-[1.5rem] h-18 px-10 bg-emerald-600 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-emerald-500 active:scale-95"
+                      className="rounded-[1.5rem] h-18 px-10 bg-emerald-600 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-emerald-500"
                     >
                       <Truck className="w-5 h-5" /> Dispatch
                     </Button>
