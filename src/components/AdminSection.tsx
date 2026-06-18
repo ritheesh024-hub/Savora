@@ -42,6 +42,7 @@ import { useSound } from '@/hooks/use-sound';
 import { StaffRole } from '@/app/admin/dashboard/page';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AdminSectionProps {
   assignedRole: StaffRole;
@@ -126,7 +127,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     <section className="bg-[#F8F9FA] dark:bg-zinc-950 min-h-screen pb-24 overflow-x-hidden">
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
-      {/* SIDEBAR-STYLE TAB NAVIGATION (DESKTOP) */}
       <div className="container mx-auto px-4 pt-10">
         <Tabs defaultValue={availableTabs[0]} className="flex flex-col lg:flex-row gap-10">
           <div className="lg:w-72 shrink-0">
@@ -176,72 +176,84 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
              </div>
           </div>
 
-          <div className="flex-1 min-w-0">
-            <TabsContent value="overview" className="mt-0 outline-none"><DashboardAnalysis orders={realOrders || []} products={dbMenu || []} /></TabsContent>
-            <TabsContent value="users" className="mt-0 outline-none"><UserManagement /></TabsContent>
-            <TabsContent value="billing" className="mt-0 outline-none"><BillingSystem products={dbMenu || []} orders={realOrders || []} /></TabsContent>
-            <TabsContent value="kitchen" className="mt-0 outline-none"><KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} /></TabsContent>
-            <TabsContent value="products" className="mt-0 outline-none"><ProductManagement /></TabsContent>
-            <TabsContent value="coupons" className="mt-0 outline-none"><CouponManager /></TabsContent>
-            <TabsContent value="staff" className="mt-0 outline-none"><StaffManagement /></TabsContent>
-            <TabsContent value="settings" className="mt-0 outline-none"><StoreSettings /></TabsContent>
-
-            <TabsContent value="orders" className="mt-0 outline-none">
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
-                {[
-                  { id: 'pending', label: 'Queued', icon: BellRing, color: 'text-primary', desc: 'Awaiting Action' },
-                  { id: 'preparing', label: 'Active', icon: ChefHat, color: 'text-orange-500', desc: 'In Kitchen/Transit' },
-                  { id: 'completed', label: 'Archived', icon: BoxSelect, color: 'text-muted-foreground', desc: 'Finalized History' }
-                ].map((group) => (
-                  <div key={group.id} className="space-y-6">
-                    <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-zinc-900 rounded-2xl border shadow-sm">
-                      <div className="flex items-center gap-4">
-                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-inner bg-secondary/50", group.color)}>
-                          <group.icon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-black uppercase tracking-tight text-sm">{group.label}</h3>
-                          <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">{group.desc}</p>
-                        </div>
-                      </div>
-                      <Badge variant="secondary" className="rounded-full h-8 w-8 p-0 flex items-center justify-center font-black text-xs">{orderGroups[group.id as keyof typeof orderGroups].length}</Badge>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      {orderGroups[group.id as keyof typeof orderGroups].map((order) => (
-                        <Card 
-                          key={order.id} 
-                          className="rounded-[2rem] border-none shadow-sm bg-white dark:bg-zinc-900 overflow-hidden group hover:shadow-2xl transition-all cursor-pointer border-l-4 border-l-transparent active:scale-[0.98]" 
-                          onClick={() => setSelectedOrderForView(order)} 
-                          style={{ borderLeftColor: order.status === 'Pending' ? '#ef4444' : order.status === 'Preparing' ? '#f97316' : '#22c55e' }}
-                        >
-                          <div className="p-6 space-y-6">
-                            <div className="flex justify-between items-start">
-                              <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase text-primary italic">#{order.orderId}</p>
-                                <h4 className="text-lg font-black uppercase tracking-tighter truncate">{order.customerName}</h4>
+          <div className="flex-1 min-w-0 min-h-[70vh]">
+            <AnimatePresence mode="wait">
+              {availableTabs.map((tab) => (
+                <TabsContent key={tab} value={tab} className="mt-0 outline-none">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                  >
+                    {tab === 'overview' && <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />}
+                    {tab === 'users' && <UserManagement />}
+                    {tab === 'billing' && <BillingSystem products={dbMenu || []} orders={realOrders || []} />}
+                    {tab === 'kitchen' && <KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} />}
+                    {tab === 'products' && <ProductManagement />}
+                    {tab === 'coupons' && <CouponManager />}
+                    {tab === 'staff' && <StaffManagement />}
+                    {tab === 'settings' && <StoreSettings />}
+                    {tab === 'orders' && (
+                      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+                        {[
+                          { id: 'pending', label: 'Queued', icon: BellRing, color: 'text-primary', desc: 'Awaiting Action' },
+                          { id: 'preparing', label: 'Active', icon: ChefHat, color: 'text-orange-500', desc: 'In Kitchen/Transit' },
+                          { id: 'completed', label: 'Archived', icon: BoxSelect, color: 'text-muted-foreground', desc: 'Finalized History' }
+                        ].map((group) => (
+                          <div key={group.id} className="space-y-6">
+                            <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-zinc-900 rounded-2xl border shadow-sm">
+                              <div className="flex items-center gap-4">
+                                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-inner bg-secondary/50", group.color)}>
+                                  <group.icon className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <h3 className="font-black uppercase tracking-tight text-sm">{group.label}</h3>
+                                  <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">{group.desc}</p>
+                                </div>
                               </div>
-                              <div className="text-right">
-                                <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Final Sale</p>
-                                <p className="text-xl font-black text-primary italic leading-none mt-1">₹{order.total}</p>
-                              </div>
+                              <Badge variant="secondary" className="rounded-full h-8 w-8 p-0 flex items-center justify-center font-black text-xs">{orderGroups[group.id as keyof typeof orderGroups].length}</Badge>
                             </div>
                             
-                            <div className="flex items-center justify-between pt-5 border-t border-dashed border-zinc-100 dark:border-zinc-800">
-                              {getStatusBadge(order)}
-                              <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground opacity-40 uppercase">
-                                <Clock className="w-3 h-3" />
-                                {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Syncing'}
-                              </div>
+                            <div className="space-y-4">
+                              {orderGroups[group.id as keyof typeof orderGroups].map((order) => (
+                                <Card 
+                                  key={order.id} 
+                                  className="rounded-[2rem] border-none shadow-sm bg-white dark:bg-zinc-900 overflow-hidden group hover:shadow-2xl transition-all cursor-pointer border-l-4 border-l-transparent active:scale-[0.98]" 
+                                  onClick={() => setSelectedOrderForView(order)} 
+                                  style={{ borderLeftColor: order.status === 'Pending' ? '#ef4444' : order.status === 'Preparing' ? '#f97316' : '#22c55e' }}
+                                >
+                                  <div className="p-6 space-y-6">
+                                    <div className="flex justify-between items-start">
+                                      <div className="space-y-1">
+                                        <p className="text-[10px] font-black uppercase text-primary italic">#{order.orderId}</p>
+                                        <h4 className="text-lg font-black uppercase tracking-tighter truncate">{order.customerName}</h4>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Final Sale</p>
+                                        <p className="text-xl font-black text-primary italic leading-none mt-1">₹{order.total}</p>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between pt-5 border-t border-dashed border-zinc-100 dark:border-zinc-800">
+                                      {getStatusBadge(order)}
+                                      <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground opacity-40 uppercase">
+                                        <Clock className="w-3 h-3" />
+                                        {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Syncing'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Card>
+                              ))}
                             </div>
                           </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                </TabsContent>
+              ))}
+            </AnimatePresence>
           </div>
         </Tabs>
       </div>

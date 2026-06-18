@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export type StaffRole = 'admin' | 'cashier' | 'kitchen';
 
@@ -113,13 +114,19 @@ function DashboardContent() {
   if (userLoading || checkingRole || !activeView) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-6 text-center">
-        <div className="w-20 h-20 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-8">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-xl font-black uppercase tracking-tight">Syncing Hub</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Establishing Identity...</p>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center"
+        >
+          <div className="w-20 h-20 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-8">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-black uppercase tracking-tight">Syncing Hub</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Establishing Identity...</p>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -179,7 +186,7 @@ function DashboardContent() {
         </div>
       </nav>
 
-      <main className="animate-in fade-in slide-in-from-bottom-2 duration-700">
+      <main>
         <AdminSection assignedRole={assignedRole as StaffRole} activeView={activeView as StaffRole} />
       </main>
     </div>
@@ -188,7 +195,7 @@ function DashboardContent() {
 
 export default function AdminDashboardPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>}>
       <DashboardContent />
     </Suspense>
   );

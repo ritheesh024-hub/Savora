@@ -50,9 +50,15 @@
 
 @layer base {
   * { @apply border-border; }
+  html {
+    scrollbar-gutter: stable;
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground font-body antialiased overflow-x-hidden;
     -webkit-tap-highlight-color: transparent;
+    height: 100%;
+    position: relative;
   }
   h1, h2, h3, h4, h5, h6 { @apply font-headline tracking-tight; }
 }
@@ -101,8 +107,6 @@
 .animate-orbit-3 { animation: orbit-3 8s linear infinite; }
 .animate-orbit-4 { animation: orbit-4 8s linear infinite; }
 
-html { scroll-behavior: smooth; height: 100%; }
-body { height: 100%; position: relative; }
 @media (max-width: 768px) { .animate-in { animation-duration: 400ms !important; } }
 
 /* SVG Drawing Utilities */
