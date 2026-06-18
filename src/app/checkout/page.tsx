@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -23,13 +24,14 @@ import {
   X,
   PartyPopper,
   Lock,
-  MapPin
+  MapPin,
+  Gift
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, increment, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
@@ -50,9 +52,12 @@ export default function CheckoutPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   
   const [couponInput, setCouponInput] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [referralInput, setReferralInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
+  const [appliedReferral, setAppliedReferral] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [isFirstOrder, setIsFirstOrder] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -67,60 +72,19 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
-    if (cart.length > 0 && step === 1) {
-      trackCheckoutStarted(cart, getTotal());
-    }
-    // Smart Trigger: Location detection during delivery info step
-    if (step === 2) {
-      requestSmartly('location');
-    }
-  }, [cart, step, trackCheckoutStarted, getTotal, requestSmartly]);
-
-  useEffect(() => {
     if (user && db) {
-      setFormData(prev => ({
-        ...prev,
-        name: prev.name || user.displayName || '',
-      }));
-      
-      const loadProfile = async () => {
-        const userRef = doc(db, 'users', user.uid);
-        const snap = await getDoc(userRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          setFormData(prev => ({
-            ...prev,
-            name: data.name || user.displayName || prev.name,
-            phone: data.phone || prev.phone,
-            address: data.address || prev.address
-          }));
-        }
+      const checkFirstOrder = async () => {
+        const q = query(collection(db, 'orders'), where('userId', '==', user.uid));
+        const snap = await getDocs(q);
+        setIsFirstOrder(snap.empty);
       };
-      loadProfile();
+      checkFirstOrder();
     }
   }, [user, db]);
 
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 149 ? 0 : 40;
   const total = subtotal - discount + deliveryFee;
-
-  const handleDetectLocation = () => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-          const data = await response.json();
-          if (data.display_name) {
-            setFormData(prev => ({ ...prev, address: data.display_name }));
-            toast({ title: "Sanctuary Located", description: "Address pre-filled from your location." });
-          }
-        } catch (e) {
-          toast({ variant: "destructive", title: "Sync Failed", description: "Could not reverse geocode location." });
-        }
-      });
-    }
-  };
 
   const handleApplyCoupon = async () => {
     if (!db) return;
@@ -138,11 +102,15 @@ export default function CheckoutPage() {
         if (data.expiryDate && new Date() > new Date(data.expiryDate)) throw new Error("This coupon has expired.");
         if (data.minOrderValue && subtotal < data.minOrderValue) throw new Error(`Minimum order of ₹${data.minOrderValue} required.`);
 
-        const discountVal = Math.round(subtotal * (data.discount / 100));
+        const discountVal = data.type === 'percent' 
+          ? Math.round(subtotal * (data.discount / 100))
+          : data.discount;
+
         setDiscount(discountVal);
-        setAppliedCoupon(code);
+        setAppliedCoupon({ code, ...data });
+        setAppliedReferral(null); // Mutually exclusive
         setCouponInput('');
-        toast({ title: "Coupon Applied! 🎉", description: `${data.discount}% discount activated.` });
+        toast({ title: "Coupon Applied! 🎉", description: `${data.discount}${data.type === 'percent' ? '%' : '₹'} discount activated.` });
       } else {
          throw new Error("Invalid promo code.");
       }
@@ -153,10 +121,39 @@ export default function CheckoutPage() {
     }
   };
 
-  const removeCoupon = () => {
+  const handleApplyReferral = async () => {
+    if (!db || !isFirstOrder) return;
+    const code = referralInput.trim().toUpperCase();
+    if (!code) return;
+
+    setCouponLoading(true);
+    try {
+      // Find user who owns this code: EB-{UID.slice(0,6)}
+      // This is a simplified check. Real production would use a specific collection.
+      const usersRef = collection(db, 'users');
+      const snap = await getDocs(usersRef);
+      const referrerDoc = snap.docs.find(d => `EB-${d.id.slice(0, 6).toUpperCase()}` === code);
+
+      if (!referrerDoc) throw new Error("Invalid referral code.");
+      if (referrerDoc.id === user?.uid) throw new Error("You cannot refer yourself.");
+
+      setDiscount(50);
+      setAppliedReferral(code);
+      setAppliedCoupon(null); // Mutually exclusive
+      setReferralInput('');
+      toast({ title: "Referral Applied! 🤝", description: "₹50 discount unlocked for your first order." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Referral Error", description: e.message });
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removePromo = () => {
     setDiscount(0);
     setAppliedCoupon(null);
-    toast({ title: "Coupon Removed" });
+    setAppliedReferral(null);
+    toast({ title: "Offer Removed" });
   };
 
   const handleNext = () => {
@@ -202,7 +199,8 @@ export default function CheckoutPage() {
       })),
       subtotal: Number(subtotal),
       discount: Number(discount),
-      couponCode: appliedCoupon,
+      couponCode: appliedCoupon?.code || null,
+      referralCode: appliedReferral,
       deliveryFee: Number(deliveryFee),
       total: Number(total),
       totalAmount: Number(total),
@@ -214,9 +212,9 @@ export default function CheckoutPage() {
 
     const orderRef = doc(db, 'orders', finalOrderId);
     setDoc(orderRef, orderData)
-      .then(() => {
+      .then(async () => {
         const userRef = doc(db, 'users', user.uid);
-        setDoc(userRef, {
+        await setDoc(userRef, {
           phone: formData.phone,
           name: formData.name,
           address: formData.address,
@@ -224,12 +222,21 @@ export default function CheckoutPage() {
           orderCount: increment(1)
         }, { merge: true });
 
+        // Referral Logging
+        if (appliedReferral) {
+           await addDoc(collection(db, 'referrals'), {
+              newUserId: user.uid,
+              referralCode: appliedReferral,
+              orderId: finalOrderId,
+              status: 'pending',
+              createdAt: serverTimestamp()
+           });
+        }
+
         trackOrderPlaced(orderData);
         clearCart();
         setStep(4);
         toast({ title: "Order Placed Successfully! 🚀" });
-        
-        // Smart Trigger: Ask for notifications after first order
         requestSmartly('notifications');
       })
       .catch(async (error) => {
@@ -263,8 +270,8 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-secondary/10 pb-12 overflow-x-hidden">
       <Navbar />
-      <main className="container mx-auto px-4 pt-20 md:pt-24">
-        <div className="max-w-xl mx-auto mb-10 md:mb-16 px-2">
+      <main className="container mx-auto px-4 pt-24">
+        <div className="max-w-xl mx-auto mb-12">
           <div className="flex items-center justify-between relative">
             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
             <div 
@@ -274,37 +281,37 @@ export default function CheckoutPage() {
             {[1, 2, 3, 4].map((s) => (
               <div key={s} className="relative z-10 flex flex-col items-center">
                 <div className={cn(
-                  "w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 md:border-4 border-background transition-all",
+                  "w-10 h-10 rounded-full flex items-center justify-center border-4 border-background transition-all",
                   step >= s ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
                 )}>
-                  {step > s ? <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" /> : <span className="font-black text-xs md:text-sm">{s}</span>}
+                  {step > s ? <CheckCircle2 className="w-5 h-5" /> : <span className="font-black text-sm">{s}</span>}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-6 md:gap-10">
-          <div className="lg:col-span-2 space-y-6 md:space-y-8">
+        <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-2 space-y-8">
             {step === 1 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
-                <h2 className="text-2xl md:text-4xl font-headline font-black uppercase tracking-tighter">Review <span className="text-primary italic">Order</span></h2>
-                <Card className="rounded-[2rem] border-none shadow-xl overflow-hidden bg-white dark:bg-zinc-900">
+                <h2 className="text-4xl font-headline font-black uppercase tracking-tighter">Review <span className="text-primary italic">Order</span></h2>
+                <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white dark:bg-zinc-900">
                   <div className="divide-y">
                     {cart.map((item) => (
-                      <div key={item.cartId} className="p-4 md:p-6 flex gap-4 md:gap-6 items-center">
-                        <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl md:rounded-2xl overflow-hidden bg-secondary shrink-0">
+                      <div key={item.cartId} className="p-6 flex gap-6 items-center">
+                        <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-secondary shrink-0">
                           <Image src={item.imageUrl} alt={item.name} fill className="object-cover" unoptimized />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-sm md:text-lg truncate uppercase tracking-tight">{item.name}</h4>
-                          <div className="flex flex-wrap gap-1 mt-1">
+                          <h4 className="font-bold text-lg truncate uppercase tracking-tight">{item.name}</h4>
+                          <div className="flex gap-2 mt-1">
                             <Badge variant="secondary" className="text-[9px] font-black uppercase">Qty: {item.quantity}</Badge>
                             {item.customization && <Badge variant="outline" className="text-[9px] font-black uppercase border-primary/20 text-primary">{item.customization.size}</Badge>}
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-black text-base md:text-xl text-primary italic">₹{item.price * item.quantity}</p>
+                          <p className="font-black text-xl text-primary italic">₹{item.price * item.quantity}</p>
                           <button onClick={() => removeFromCart(item.cartId)} className="text-muted-foreground hover:text-destructive mt-2 transition-colors">
                             <Trash2 className="w-4 h-4 ml-auto" />
                           </button>
@@ -313,82 +320,41 @@ export default function CheckoutPage() {
                     ))}
                   </div>
                 </Card>
-                <Button onClick={handleNext} className="w-full h-16 rounded-2xl text-lg font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">Confirm & Continue</Button>
+                <Button onClick={handleNext} className="w-full h-18 rounded-[1.5rem] text-lg font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">Confirm & Continue</Button>
               </div>
             )}
 
             {step === 2 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
                 <div className="flex justify-between items-end">
-                  <h2 className="text-2xl md:text-4xl font-headline font-black uppercase tracking-tighter">Delivery <span className="text-primary italic">Details</span></h2>
-                  {user && (
-                    <Badge variant="outline" className="mb-2 bg-green-50 text-green-700 border-green-200 flex items-center gap-1 font-black text-[10px] py-1 uppercase px-3">
-                      <UserCheck className="w-3 h-3" /> {user.displayName?.split(' ')[0]}
-                    </Badge>
-                  )}
+                  <h2 className="text-4xl font-headline font-black uppercase tracking-tighter">Delivery <span className="text-primary italic">Details</span></h2>
                 </div>
                 <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900">
-                  <CardContent className="p-6 md:p-10 space-y-6">
-                    <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                  <CardContent className="p-10 space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <div className="flex justify-between items-center ml-1">
-                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Full Name</Label>
-                        </div>
-                        <Input 
-                          value={formData.name} 
-                          onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                          className="h-14 rounded-xl font-bold bg-secondary/20 border-none" 
-                          placeholder="Your Name" 
-                        />
+                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Full Name</Label>
+                        <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl font-bold bg-secondary/20 border-none" />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Mobile Number</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Mobile Node</Label>
                         <div className="relative">
                           <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r pr-3 border-muted">
                             <span className="text-xs font-black">+91</span>
                           </div>
-                          <Input 
-                            type="tel"
-                            value={formData.phone} 
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                              setFormData({...formData, phone: val});
-                            }} 
-                            className="h-14 pl-20 rounded-xl font-black bg-secondary/20 border-none" 
-                            placeholder="00000 00000"
-                          />
+                          <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} className="h-14 pl-20 rounded-xl font-black bg-secondary/20 border-none" placeholder="00000 00000" />
                         </div>
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center ml-1">
-                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Delivery Address</Label>
-                        <button onClick={handleDetectLocation} className="text-[9px] font-black text-primary uppercase flex items-center gap-1.5 hover:underline">
-                          <MapPin className="w-3 h-3" /> Detect Sanctuary
-                        </button>
-                      </div>
-                      <Textarea 
-                        value={formData.address} 
-                        onChange={(e) => setFormData({...formData, address: e.target.value})} 
-                        className="rounded-xl min-h-[120px] font-medium bg-secondary/20 border-none px-6 py-4" 
-                        placeholder="Complete address (Building, Street, Area)" 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Special Instructions (Optional)</Label>
-                      <Input 
-                        value={formData.instructions} 
-                        onChange={(e) => setFormData({...formData, instructions: e.target.value})} 
-                        className="h-14 rounded-xl bg-secondary/20 border-none" 
-                        placeholder="e.g. Leave at the gate" 
-                      />
+                      <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Sanctuary Address</Label>
+                      <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[120px] font-medium bg-secondary/20 border-none px-6 py-4" placeholder="Building, Street, Area..." />
                     </div>
                   </CardContent>
                 </Card>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={handleBack} className="h-16 rounded-2xl px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
-                  <Button onClick={handleNext} className="flex-1 h-16 rounded-2xl text-base font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">
-                    {!user && <Lock className="w-4 h-4 mr-2" />}
+                  <Button variant="outline" onClick={handleBack} className="h-18 rounded-[1.5rem] px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
+                  <Button onClick={handleNext} className="flex-1 h-18 rounded-[1.5rem] text-base font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">
                     {user ? 'Select Payment' : 'Login to Continue'}
                   </Button>
                 </div>
@@ -397,66 +363,66 @@ export default function CheckoutPage() {
 
             {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
-                <h2 className="text-2xl md:text-4xl font-headline font-black uppercase tracking-tighter">Payment <span className="text-primary italic">Methods</span></h2>
+                <h2 className="text-4xl font-headline font-black uppercase tracking-tighter">Payment <span className="text-primary italic">Methods</span></h2>
                 <RadioGroup value={formData.paymentMethod} onValueChange={(v) => setFormData({...formData, paymentMethod: v})} className="space-y-4">
-                  <Label htmlFor="cod" className={cn("flex items-center gap-4 p-6 rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent')}>
+                  <Label htmlFor="cod" className={cn("flex items-center gap-4 p-8 rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent')}>
                     <RadioGroupItem value="cod" id="cod" className="sr-only" />
                     <Truck className={cn("w-8 h-8", formData.paymentMethod === 'cod' ? 'text-primary' : 'text-muted-foreground')} />
                     <div className="flex-1">
-                      <p className="font-black text-base uppercase">Cash on Delivery</p>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Pay when you receive your meal</p>
+                      <p className="font-black text-base uppercase">Pay on Arrival</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Settle with cash or UPI at delivery</p>
                     </div>
                   </Label>
-                  <Label htmlFor="upi" className={cn("flex items-center gap-4 p-6 rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'upi' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent')}>
+                  <Label htmlFor="upi" className={cn("flex items-center gap-4 p-8 rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'upi' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent')}>
                     <RadioGroupItem value="upi" id="upi" className="sr-only" />
                     <Smartphone className={cn("w-8 h-8", formData.paymentMethod === 'upi' ? 'text-primary' : 'text-muted-foreground')} />
                     <div className="flex-1">
-                      <p className="font-black text-base uppercase">UPI / QR Scan</p>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Instant payment via any UPI app</p>
+                      <p className="font-black text-base uppercase">Instant UPI Scan</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">High-speed verification via QR</p>
                     </div>
                   </Label>
                 </RadioGroup>
                 
                 {formData.paymentMethod === 'upi' && (
-                  <Card className="p-10 text-center animate-in zoom-in rounded-[3rem] border-dashed border-4 bg-white dark:bg-zinc-900">
-                    <div className="w-48 h-48 md:w-56 md:h-56 mx-auto relative bg-white border-8 border-secondary rounded-[2rem] overflow-hidden mb-6 p-2 shadow-inner">
-                      <Image src={qrImage} alt="QR Code" fill className="object-contain p-2" priority unoptimized />
+                  <Card className="p-10 text-center animate-in zoom-in rounded-[3rem] border-dashed border-4">
+                    <div className="w-56 h-56 mx-auto relative bg-white border-8 border-secondary rounded-[2rem] overflow-hidden mb-6 p-2">
+                      <Image src={qrImage} alt="QR Code" fill className="object-contain" priority unoptimized />
                     </div>
                     <div className="bg-secondary/50 rounded-2xl p-4 inline-block">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Business UPI ID</p>
-                      <p className="font-black text-primary text-base md:text-lg">8639366800@ybl</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Business Identity</p>
+                      <p className="font-black text-primary text-lg">8639366800@ybl</p>
                     </div>
                   </Card>
                 )}
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={handleBack} className="h-16 rounded-2xl px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
-                  <Button onClick={handleSubmit} disabled={loading} className="flex-1 h-16 rounded-2xl text-base font-black uppercase tracking-widest bg-primary shadow-2xl shadow-primary/30">
-                    {loading ? <Loader2 className="animate-spin" /> : 'Confirm Order'}
+                  <Button variant="outline" onClick={handleBack} className="h-18 rounded-[1.5rem] px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
+                  <Button onClick={handleSubmit} disabled={loading} className="flex-1 h-18 rounded-[1.5rem] text-base font-black uppercase tracking-widest bg-primary shadow-2xl shadow-primary/30">
+                    {loading ? <Loader2 className="animate-spin" /> : 'Settle Order'}
                   </Button>
                 </div>
               </div>
             )}
 
             {step === 4 && (
-              <Card className="p-10 md:p-16 text-center space-y-8 rounded-[3rem] md:rounded-[5rem] shadow-3xl animate-in zoom-in border-none bg-white dark:bg-zinc-900">
-                <div className="w-20 h-20 md:w-28 md:h-28 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                  <CheckCircle2 className="w-10 h-10 md:w-16 md:h-16" />
+              <Card className="p-16 text-center space-y-10 rounded-[4rem] shadow-3xl animate-in zoom-in border-none bg-white dark:bg-zinc-900">
+                <div className="w-28 h-28 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <CheckCircle2 className="w-16 h-16" />
                 </div>
-                <div>
-                  <h2 className="text-3xl md:text-6xl font-black font-headline uppercase tracking-tighter">Order <span className="text-primary italic">Placed!</span></h2>
-                  <p className="text-muted-foreground font-bold text-sm md:text-lg uppercase tracking-widest opacity-60">Preparing with love.</p>
+                <div className="space-y-2">
+                  <h2 className="text-6xl font-black font-headline uppercase tracking-tighter">Order <span className="text-primary italic">Placed!</span></h2>
+                  <p className="text-muted-foreground font-bold text-lg uppercase tracking-widest opacity-60">Syncing with kitchen station...</p>
                 </div>
-                <div className="bg-secondary/50 p-6 rounded-[2rem] inline-block w-full max-w-xs mx-auto border-2 border-dashed">
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">Tracking ID</p>
-                  <p className="font-mono text-xl md:text-3xl font-black text-primary">{orderId}</p>
+                <div className="bg-secondary/50 p-8 rounded-[2rem] inline-block border-2 border-dashed">
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">Live Ticket ID</p>
+                  <p className="font-mono text-4xl font-black text-primary">{orderId}</p>
                 </div>
-                <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6">
-                  <Link href={`/orders/${orderId}`} className="w-full sm:w-auto">
-                    <Button className="w-full sm:w-auto rounded-2xl px-12 h-16 font-black uppercase text-[10px] tracking-widest bg-primary">Track Order</Button>
+                <div className="flex justify-center gap-6 pt-6">
+                  <Link href={`/orders/${orderId}`}>
+                    <Button className="rounded-2xl px-12 h-18 font-black uppercase text-[10px] tracking-widest bg-primary">Track Order</Button>
                   </Link>
-                  <Link href="/" className="w-full sm:w-auto">
-                    <Button variant="outline" className="w-full sm:w-auto rounded-2xl px-12 h-16 font-black uppercase text-[10px] tracking-widest border-2">Go Home</Button>
+                  <Link href="/">
+                    <Button variant="outline" className="rounded-2xl px-12 h-18 font-black uppercase text-[10px] tracking-widest border-2">Return Home</Button>
                   </Link>
                 </div>
               </Card>
@@ -464,53 +430,64 @@ export default function CheckoutPage() {
           </div>
 
           {step < 4 && (
-            <div className="space-y-6 sticky top-20 lg:top-24 h-fit">
+            <div className="space-y-6 sticky top-24 h-fit">
+              {/* GROWTH BOX (Coupons & Referrals) */}
               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden">
-                <CardHeader className="p-6 border-b bg-muted/5">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">Promo Engine</p>
+                <CardHeader className="p-6 border-b bg-muted/5 flex flex-row items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">Bounty Engine</p>
+                  <TicketPercent className="w-4 h-4 text-primary opacity-40" />
                 </CardHeader>
-                <CardContent className="p-6">
-                  {appliedCoupon ? (
-                    <div className="flex items-center justify-between bg-green-50 border border-green-100 p-4 rounded-2xl animate-in zoom-in duration-300">
+                <CardContent className="p-6 space-y-6">
+                  {(appliedCoupon || appliedReferral) ? (
+                    <div className="bg-green-50 border border-green-100 p-4 rounded-2xl flex items-center justify-between animate-in zoom-in">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center text-white shadow-lg animate-bounce">
-                          <PartyPopper className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black uppercase text-green-700 tracking-tighter">{appliedCoupon}</p>
-                          <p className="text-[8px] font-bold text-green-600 uppercase tracking-widest">Active Discount</p>
-                        </div>
+                         <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center text-white"><PartyPopper className="w-5 h-5" /></div>
+                         <div>
+                            <p className="text-[10px] font-black uppercase text-green-700 tracking-tighter">{appliedCoupon?.code || appliedReferral}</p>
+                            <p className="text-[8px] font-bold text-green-600 uppercase">Discount Activated</p>
+                         </div>
                       </div>
-                      <button onClick={removeCoupon} className="text-green-700 hover:text-destructive transition-colors p-2">
-                        <X className="w-5 h-5" />
-                      </button>
+                      <button onClick={removePromo} className="text-green-700 hover:text-destructive transition-colors"><X className="w-5 h-5" /></button>
                     </div>
                   ) : (
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <TicketPercent className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
-                        <Input 
-                          placeholder="Coupon Code" 
-                          value={couponInput} 
-                          onChange={(e) => setCouponInput(e.target.value)} 
-                          className="rounded-xl h-14 pl-12 uppercase font-black bg-secondary/20 border-none"
-                        />
-                      </div>
-                      <Button 
-                        onClick={handleApplyCoupon} 
-                        disabled={couponLoading || !couponInput}
-                        className="h-14 rounded-xl font-black text-[10px] uppercase px-6 bg-primary"
-                      >
-                        {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
-                      </Button>
+                    <div className="space-y-4">
+                       <div className="flex gap-2">
+                          <Input 
+                            placeholder="Coupon Code" 
+                            value={couponInput} 
+                            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                            className="rounded-xl h-12 uppercase font-black bg-secondary/20 border-none px-4"
+                          />
+                          <Button onClick={handleApplyCoupon} disabled={couponLoading || !couponInput} className="h-12 rounded-xl font-black text-[9px] uppercase px-6 bg-primary">Apply</Button>
+                       </div>
+                       
+                       {isFirstOrder && (
+                         <div className="pt-4 border-t border-dashed">
+                            <Label className="text-[9px] font-black uppercase opacity-40 ml-1 mb-2 block">Referral Invite</Label>
+                            <div className="flex gap-2">
+                               <div className="relative flex-1">
+                                  <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+                                  <Input 
+                                    placeholder="Friend's Code" 
+                                    value={referralInput} 
+                                    onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                                    className="rounded-xl h-11 uppercase font-bold bg-secondary/10 border-none pl-9"
+                                  />
+                               </div>
+                               <Button onClick={handleApplyReferral} disabled={couponLoading || !referralInput} variant="outline" className="h-11 rounded-xl font-black text-[8px] uppercase px-4 border-2">Unlock</Button>
+                            </div>
+                         </div>
+                       )}
                     </div>
                   )}
+                  <Link href="/coupons" className="text-[9px] font-black text-primary uppercase text-center block hover:underline">View Available Bounties</Link>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-zinc-900">
+              {/* SETTLEMENT CARD */}
+              <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-zinc-900 overflow-hidden">
                 <CardHeader className="p-6 border-b bg-muted/5">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">Billing Ledger</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">Settlement Summary</p>
                 </CardHeader>
                 <CardContent className="p-8 space-y-6">
                   <div className="flex justify-between text-xs font-black uppercase tracking-widest text-muted-foreground">
@@ -519,7 +496,7 @@ export default function CheckoutPage() {
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between items-center bg-green-50 p-4 rounded-2xl border border-green-100">
-                      <span className="text-[10px] font-black text-green-700 uppercase">Discount</span>
+                      <span className="text-[10px] font-black text-green-700 uppercase">Bounty Credit</span>
                       <span className="font-black text-green-600">- ₹{discount}</span>
                     </div>
                   )}
@@ -527,14 +504,9 @@ export default function CheckoutPage() {
                     <span>Delivery</span>
                     <span className="text-green-600 italic">{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
                   </div>
-                  <div className="border-t border-dashed pt-6 flex justify-between items-center">
-                    <span className="text-xs font-black uppercase tracking-[0.2em]">Grand Total</span>
-                    <div className="text-right">
-                      {discount > 0 && (
-                        <p className="text-[10px] line-through text-muted-foreground opacity-30 font-bold mb-[-2px]">₹{subtotal + deliveryFee}</p>
-                      )}
-                      <span className="text-4xl font-headline font-black text-primary italic">₹{total}</span>
-                    </div>
+                  <div className="border-t-2 border-dashed pt-6 flex justify-between items-end">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Final Amount</span>
+                    <span className="text-5xl font-black font-headline text-primary italic leading-none">₹{total}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -543,13 +515,8 @@ export default function CheckoutPage() {
         </div>
       </main>
 
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)}
-        onSuccess={() => {
-          if (step === 2) setStep(3);
-        }}
-      />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} onSuccess={() => { if (step === 2) setStep(3); }} />
     </div>
   );
 }
+

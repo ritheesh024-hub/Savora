@@ -19,12 +19,14 @@ import {
   Ban,
   Bell,
   Megaphone,
-  MessageSquare
+  MessageSquare,
+  TrendingUp,
+  Gift
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp, addDoc } from 'firebase/firestore';
+import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp, addDoc, getDoc, getDocs, where } from 'firebase/firestore';
 import { DashboardAnalysis } from './DashboardAnalysis';
 import { BillingSystem } from './BillingSystem';
 import { StoreSettings } from './StoreSettings';
@@ -126,6 +128,40 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
             read: false,
             createdAt: serverTimestamp()
           });
+
+          // Referral Reward Check: If order is DELIVERED and has a referral code
+          if (newStatus === 'Delivered' && orderSnap.referralCode) {
+             const refQuery = query(collection(db, 'referrals'), where('orderId', '==', id), where('status', '==', 'pending'));
+             const refSnap = await getDocs(refQuery);
+             
+             if (!refSnap.empty) {
+                const referralDoc = refSnap.docs[0];
+                const code = orderSnap.referralCode;
+                // Find referrer
+                const usersRef = collection(db, 'users');
+                const usersSnap = await getDocs(usersRef);
+                const referrerDoc = usersSnap.docs.find(d => `EB-${d.id.slice(0, 6).toUpperCase()}` === code);
+                
+                if (referrerDoc) {
+                   // Reward Referrer
+                   await updateDoc(doc(db, 'users', referrerDoc.id), {
+                      rewardCoins: increment(50),
+                      totalCoinsEarned: increment(50)
+                   });
+                   // Notify Referrer
+                   await addDoc(collection(db, 'users', referrerDoc.id, 'notifications'), {
+                      title: 'Referral Bonus Unlocked! 🎁',
+                      body: `Your friend finished their first meal. 50 Ezzy Coins added to your wallet.`,
+                      type: 'promo',
+                      link: '/rewards',
+                      read: false,
+                      createdAt: serverTimestamp()
+                   });
+                   // Close referral record
+                   await updateDoc(doc(db, 'referrals', referralDoc.id), { status: 'completed' });
+                }
+             }
+          }
         }
 
         playSound('success');
@@ -185,7 +221,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                     {tab === 'notifications' && <Megaphone className="w-4 h-4" />}
                     {tab === 'staff' && <Fingerprint className="w-4 h-4" />}
                     {tab === 'settings' && <Settings2 className="w-4 h-4" />}
-                    <span className="capitalize">{tab === 'overview' ? 'Analytics' : tab === 'billing' ? 'Counter' : tab === 'products' ? 'Inventory' : tab === 'notifications' ? 'Broadcast' : tab}</span>
+                    <span className="capitalize">{tab === 'overview' ? 'Analytics' : tab === 'billing' ? 'Counter' : tab === 'products' ? 'Inventory' : tab === 'notifications' ? 'Broadcast' : tab === 'coupons' ? 'Growth' : tab}</span>
                   </TabsTrigger>
                 ))}
               </TabsList>
