@@ -71,6 +71,10 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[90vh] md:h-auto md:max-h-[85vh] rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950 flex flex-col md:flex-row">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{item.name} Details</DialogTitle>
+        </DialogHeader>
+        
         {/* LEFT: IMAGE & PRIMARY INFO */}
         <div className="w-full md:w-[40%] bg-zinc-900 relative flex flex-col h-[300px] md:h-auto">
           <Image 

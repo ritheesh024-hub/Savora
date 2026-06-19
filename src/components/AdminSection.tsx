@@ -275,6 +275,10 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       {/* GLOBAL ORDER PREVIEW DIALOG */}
       <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
         <DialogContent className="max-w-3xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
+          <DialogHeader className="sr-only">
+             <DialogTitle>Order Manifest: #{selectedOrderForView?.orderId}</DialogTitle>
+          </DialogHeader>
+          
           {selectedOrderForView && (
             <div className="flex flex-col">
               <div className={cn("p-10 text-white relative overflow-hidden", selectedOrderForView.status === 'Cancelled' ? "bg-rose-600" : "bg-primary")}>
