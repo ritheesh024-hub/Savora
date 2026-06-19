@@ -15,12 +15,10 @@ import {
   ShoppingBag, 
   TicketPercent, 
   Settings, 
-  X, 
-  CheckCircle2, 
   Clock, 
   ChevronRight,
   Inbox,
-  AlertCircle
+  Sparkles
 } from 'lucide-react';
 import { useNotifications, AppNotification } from '@/hooks/use-notifications';
 import { format } from 'date-fns';
@@ -28,7 +26,7 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 export const NotificationCenter = ({ children }: { children: React.ReactNode }) => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, requestPermission } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const router = useRouter();
 
   const handleNotifClick = (notif: AppNotification) => {
@@ -48,7 +46,7 @@ export const NotificationCenter = ({ children }: { children: React.ReactNode }) 
 
   return (
     <Sheet>
-      <SheetTrigger asChild onClick={() => requestPermission()}>
+      <SheetTrigger asChild>
         {children}
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md flex flex-col p-0 rounded-l-[2.5rem] border-none shadow-3xl bg-white dark:bg-zinc-950">
@@ -135,9 +133,9 @@ export const NotificationCenter = ({ children }: { children: React.ReactNode }) 
 
         <div className="p-8 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100">
            <div className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-[1.5rem] border border-dashed border-zinc-200 shadow-sm">
-              <AlertCircle className="w-5 h-5 text-blue-500 shrink-0" />
+              <Sparkles className="w-5 h-5 text-primary shrink-0" />
               <p className="text-[10px] font-bold leading-relaxed text-muted-foreground">
-                Enable <span className="text-foreground">Browser Push</span> in settings to receive updates even when the app is closed.
+                Stay tuned for seasonal <span className="text-primary font-black uppercase">Bounties</span> and exclusive flavor updates right here!
               </p>
            </div>
         </div>

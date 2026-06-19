@@ -44,23 +44,7 @@ function NotificationInitializer() {
 }
 
 function PermissionController() {
-  const { activeRequest, closeRequest, confirmRequest, requestSmartly } = useSmartPermissions();
-  const { user } = useUser();
-
-  // Smart Trigger: 30 seconds after app usage
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      requestSmartly('notifications');
-    }, 30000);
-    return () => clearTimeout(timer);
-  }, [requestSmartly]);
-
-  // Smart Trigger: On sign in
-  useEffect(() => {
-    if (user) {
-      requestSmartly('notifications');
-    }
-  }, [user, requestSmartly]);
+  const { activeRequest, closeRequest, confirmRequest } = useSmartPermissions();
 
   return (
     <SmartPermissionModal 

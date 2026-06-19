@@ -18,13 +18,11 @@ import {
   ShoppingBag, 
   Loader2, 
   Trash2,
-  UserCheck,
   TicketPercent,
   X,
   PartyPopper,
-  Lock,
-  MapPin,
-  Gift
+  Gift,
+  MapPin
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -42,7 +40,7 @@ export default function CheckoutPage() {
   const { cart, getTotal, clearCart, removeFromCart } = useStore();
   const db = useFirestore();
   const { user, loading: userLoading } = useUser();
-  const { trackCheckoutStarted, trackOrderPlaced } = useAnalytics();
+  const { trackOrderPlaced } = useAnalytics();
   const { requestSmartly } = useSmartPermissions();
   
   const [step, setStep] = useState(1);
@@ -109,7 +107,7 @@ export default function CheckoutPage() {
 
         setDiscount(discountVal);
         setAppliedCoupon({ code, ...data });
-        setAppliedReferral(null); // Mutually exclusive
+        setAppliedReferral(null);
         setCouponInput('');
         toast({ title: "Coupon Applied! 🎉", description: `${data.discount}${data.type === 'percent' ? '%' : '₹'} discount activated.` });
       } else {
@@ -142,7 +140,7 @@ export default function CheckoutPage() {
 
       setDiscount(50);
       setAppliedReferral(code);
-      setAppliedCoupon(null); // Mutually exclusive
+      setAppliedCoupon(null);
       setReferralInput('');
       toast({ title: "Referral Applied! 🤝", description: "₹50 discount unlocked for your first order." });
     } catch (e: any) {
@@ -173,6 +171,7 @@ export default function CheckoutPage() {
         setIsAuthModalOpen(true);
         return;
       }
+      requestSmartly('location');
     }
     setStep(step + 1);
   };
@@ -245,7 +244,6 @@ export default function CheckoutPage() {
         clearCart();
         setStep(4);
         toast({ title: "Order Placed Successfully! 🚀" });
-        requestSmartly('notifications');
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({

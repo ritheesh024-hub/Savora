@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAnalytics } from './use-analytics';
 
-export type PermissionType = 'notifications' | 'location' | 'camera';
+export type PermissionType = 'location' | 'camera';
 
 interface PermissionState {
   asked: boolean;
@@ -14,7 +14,7 @@ interface PermissionState {
 
 /**
  * Custom hook to manage smart, contextual permissions.
- * Prevents immediate prompts and provides logic for pre-permission UI.
+ * Focuses on Location and Camera for mobile-optimized flows.
  */
 export function useSmartPermissions() {
   const db = useFirestore();
@@ -28,11 +28,6 @@ export function useSmartPermissions() {
     if (typeof window === 'undefined') return 'prompt';
 
     try {
-      if (type === 'notifications') {
-        if (!('Notification' in window)) return 'unsupported';
-        return Notification.permission as PermissionState['status'];
-      }
-
       if (type === 'location' || type === 'camera') {
         const name = type === 'location' ? 'geolocation' : 'camera';
         const result = await navigator.permissions.query({ name: name as any });
@@ -62,9 +57,7 @@ export function useSmartPermissions() {
     let result: string = 'denied';
 
     try {
-      if (type === 'notifications') {
-        result = await Notification.requestPermission();
-      } else if (type === 'location') {
+      if (type === 'location') {
         return new Promise<void>((resolve) => {
           navigator.geolocation.getCurrentPosition(
             () => {
@@ -93,10 +86,10 @@ export function useSmartPermissions() {
   const requestSmartly = useCallback(async (type: PermissionType) => {
     const status = await checkStatus(type);
     
-    // If already granted, don't show custom UI, just log or return
+    // If already granted, don't show custom UI
     if (status === 'granted') return;
 
-    // Check if we've asked recently in this session (simple local check)
+    // Check session frequency
     const sessionKey = `eb_asked_${type}`;
     if (sessionStorage.getItem(sessionKey)) return;
 

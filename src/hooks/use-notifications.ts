@@ -1,24 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   collection, 
   query, 
-  where, 
   orderBy, 
   limit, 
   addDoc, 
-  setDoc,
   doc, 
   updateDoc, 
   serverTimestamp, 
   onSnapshot,
   writeBatch
 } from 'firebase/firestore';
-import { getToken, onMessage, Messaging } from 'firebase/messaging';
-import { useFirestore, useUser, useFirebase } from '@/firebase';
-import { toast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useFirestore, useUser } from '@/firebase';
 
 export interface AppNotification {
   id: string;
@@ -34,14 +29,12 @@ export interface AppNotification {
 export function useNotifications() {
   const db = useFirestore();
   const { user } = useUser();
-  const { messaging } = useFirebase();
-  const router = useRouter();
   
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch & Listen to Notifications
+  // Fetch & Listen to Notifications (In-App Only)
   useEffect(() => {
     if (!db || !user) {
       setLoading(false);
@@ -68,34 +61,7 @@ export function useNotifications() {
     return unsubscribe;
   }, [db, user]);
 
-  // 2. Browser Push Permission (Request only on demand)
-  const requestPermission = useCallback(async () => {
-    if (!messaging || !user || !db) return false;
-
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        const token = await getToken(messaging, {
-          vapidKey: 'BGE1W8R8N9S8_YOUR_VAPID_KEY' // Note: This needs a real VAPID key for production push
-        });
-        
-        if (token) {
-          // Store token in Firestore for backend push targeting
-          await setDoc(doc(db, 'users', user.uid, 'fcm_tokens', token), {
-            token,
-            updatedAt: serverTimestamp(),
-            platform: 'web'
-          });
-          return true;
-        }
-      }
-    } catch (e) {
-      console.warn("Notification permission failed", e);
-    }
-    return false;
-  }, [messaging, user, db]);
-
-  // 3. Trigger Notification (Internal Logic)
+  // Trigger Notification (Internal Logic)
   const sendNotification = useCallback(async (uid: string, data: Omit<AppNotification, 'id' | 'createdAt' | 'read'>) => {
     if (!db) return;
     const notifRef = collection(db, 'users', uid, 'notifications');
@@ -106,7 +72,7 @@ export function useNotifications() {
     });
   }, [db]);
 
-  // 4. Mark Read
+  // Mark Read
   const markAsRead = useCallback(async (notifId: string) => {
     if (!db || !user) return;
     const notifRef = doc(db, 'users', user.uid, 'notifications', notifId);
@@ -130,7 +96,6 @@ export function useNotifications() {
     notifications,
     unreadCount,
     loading,
-    requestPermission,
     sendNotification,
     markAsRead,
     markAllAsRead

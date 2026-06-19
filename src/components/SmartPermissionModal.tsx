@@ -11,17 +11,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { 
-  Bell, 
   MapPin, 
   Camera, 
   ShieldCheck, 
   Zap,
-  ArrowRight,
-  X
+  ArrowRight
 } from 'lucide-react';
 import { PermissionType } from '@/hooks/use-smart-permissions';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface SmartPermissionModalProps {
   type: PermissionType | null;
@@ -31,13 +28,6 @@ interface SmartPermissionModalProps {
 
 export const SmartPermissionModal = ({ type, onClose, onConfirm }: SmartPermissionModalProps) => {
   const content = {
-    notifications: {
-      title: "Pulse Notifications",
-      desc: "Get real-time order updates, live tracking, and exclusive flavor bounties direct to your sanctuary.",
-      icon: Bell,
-      color: "bg-primary",
-      action: "Enable Updates"
-    },
     location: {
       title: "Precise Delivery",
       desc: "Help our riders find your sanctuary faster with high-accuracy location signals.",
@@ -54,7 +44,7 @@ export const SmartPermissionModal = ({ type, onClose, onConfirm }: SmartPermissi
     }
   };
 
-  const active = type ? content[type] : null;
+  const active = type ? (content as any)[type] : null;
 
   return (
     <Dialog open={!!type} onOpenChange={(open) => !open && onClose()}>
@@ -102,7 +92,7 @@ export const SmartPermissionModal = ({ type, onClose, onConfirm }: SmartPermissi
                   Later
                 </Button>
                 <Button 
-                  className={cn("flex-2 h-16 rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest gap-3 shadow-2xl px-10 text-white", active.color)}
+                  className={cn("flex-[2] h-16 rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest gap-3 shadow-2xl px-10 text-white", active.color)}
                   onClick={onConfirm}
                 >
                   {active.action}
