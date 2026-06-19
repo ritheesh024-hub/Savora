@@ -3,9 +3,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
-  ShoppingBag, 
-  Menu, 
-  LogOut, 
   History, 
   ShieldCheck, 
   LayoutDashboard, 
@@ -22,8 +19,8 @@ import {
   Settings,
   Gift,
   Bell,
-  Sun,
-  Moon
+  LogOut,
+  ShoppingBag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
@@ -95,7 +92,7 @@ export const Navbar = () => {
   const handleLogout = async () => {
     if (auth) {
       await auth.signOut();
-      toast({ title: "Logged Out", description: "Identity session terminated. Come back soon!" });
+      toast({ title: "Logged Out", description: "Identity session terminated." });
       router.push('/');
       setIsMenuOpen(false);
     }
@@ -108,26 +105,26 @@ export const Navbar = () => {
     { label: 'Favorites', href: '/favorites', icon: Heart, authRequired: true },
     { label: 'Saved Addresses', href: '/addresses', icon: MapPin, authRequired: true },
     { label: 'Coupons & Offers', href: '/coupons', icon: TicketPercent },
-    { label: 'Reward Points', href: '/rewards', icon: Wallet, badge: customerProfile?.rewardCoins || 0, authRequired: true },
+    { label: 'Reward Points', href: '/rewards', icon: Wallet, authRequired: true },
     { label: 'Contact Us', href: 'https://wa.me/918639366800', icon: Phone, isExternal: true },
-    { label: 'Operational Control', href: '/admin/dashboard', icon: LayoutDashboard, authRequired: true, staffOnly: true },
+    { label: 'Staff Console', href: '/admin/dashboard', icon: LayoutDashboard, authRequired: true, staffOnly: true },
     { label: 'Settings', href: '/settings', icon: Settings, authRequired: true },
   ];
 
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 z-40 transition-all duration-500",
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
       scrolled 
-        ? "bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-1 shadow-2xl" 
-        : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-2"
+        ? "bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-2 shadow-xl" 
+        : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-4"
     )}>
       <div className="container mx-auto px-4">
-        <div className="h-10 md:h-12 flex items-center justify-between gap-4">
+        <div className="h-12 flex items-center justify-between gap-4">
           <Link href="/" className="transition-transform active:scale-95">
             <Logo 
               variant={scrolled ? 'dark' : (mounted && isDarkMode ? 'dark' : 'light')} 
               size="sm" 
-              className="shrink-0 scale-90 md:scale-100 origin-left" 
+              className="shrink-0" 
             />
           </Link>
 
@@ -143,7 +140,7 @@ export const Navbar = () => {
                 placeholder="Search premium bites..." 
                 suppressHydrationWarning
                 className={cn(
-                  "w-full h-9 pl-10 pr-4 rounded-xl border-none transition-all font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
+                  "w-full h-10 pl-10 pr-4 rounded-xl border-none transition-all font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
                   scrolled 
                     ? "bg-secondary/60 focus:bg-white dark:bg-zinc-900 !text-foreground" 
                     : "bg-white/10 !text-white placeholder:text-white/40 focus:bg-white/20 backdrop-blur-xl"
@@ -152,16 +149,16 @@ export const Navbar = () => {
             </form>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-3">
             {mounted && user && (
               <NotificationCenter>
                 <Button variant="ghost" size="icon" className={cn(
-                  "rounded-full w-9 h-9 transition-all relative",
+                  "rounded-full w-10 h-10 transition-all relative",
                   scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
                 )}>
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
+                    <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
                       {unreadCount}
                     </span>
                   )}
@@ -169,7 +166,7 @@ export const Navbar = () => {
               </NotificationCenter>
             )}
 
-            <ThemeToggle className="hidden md:flex h-8 w-8" />
+            <ThemeToggle className="hidden md:flex h-9 w-9" />
             
             <div className="hidden md:flex items-center gap-4">
               {mounted && !userLoading && (
@@ -177,7 +174,7 @@ export const Navbar = () => {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="outline-none rounded-xl ring-offset-background focus:ring-4 focus:ring-primary/20 transition-all active:scale-90 overflow-hidden shadow-lg">
-                        <Avatar className="h-8 w-8 rounded-xl border-2 border-background">
+                        <Avatar className="h-9 w-9 rounded-xl border-2 border-background">
                           <AvatarImage src={customerProfile?.photoUrl || user.photoURL || ''} alt={user.displayName || 'Member'} />
                           <AvatarFallback className="bg-orange-gradient text-white font-black text-[10px] rounded-xl">
                             {(customerProfile?.name || user.displayName || 'EB').slice(0, 2).toUpperCase()}
@@ -185,7 +182,7 @@ export const Navbar = () => {
                         </Avatar>
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-72 rounded-[2.5rem] p-4 border-none shadow-3xl bg-white dark:bg-zinc-950 mt-4 animate-in slide-in-from-top-2">
+                    <DropdownMenuContent align="end" className="w-72 rounded-[2.5rem] p-4 border-none shadow-3xl bg-white dark:bg-zinc-950 mt-4">
                       <DropdownMenuLabel className="px-5 py-6">
                         <p className="text-sm font-black uppercase tracking-widest truncate mb-1">{customerProfile?.name || user.displayName || 'Member'}</p>
                         <p className="text-[10px] font-black uppercase opacity-40 truncate tracking-[0.1em]">{user.email}</p>
@@ -202,7 +199,7 @@ export const Navbar = () => {
                       {isStaff && (
                         <DropdownMenuItem asChild className="rounded-[1.5rem] py-4 px-5 font-black uppercase text-[10px] tracking-widest cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-950/20 text-orange-600 transition-all">
                           <Link href="/admin/dashboard" className="flex items-center gap-4">
-                            <ShieldCheck className="w-5 h-5" /> Staff console
+                            <ShieldCheck className="w-5 h-5" /> Staff Hub
                           </Link>
                         </DropdownMenuItem>
                       )}
@@ -215,7 +212,7 @@ export const Navbar = () => {
                 ) : (
                   <Button 
                     onClick={() => setIsAuthModalOpen(true)}
-                    className="rounded-full px-5 h-9 font-black uppercase text-[9px] tracking-widest bg-orange-gradient text-white shadow-xl shadow-primary/20 transform hover:scale-105 transition-all"
+                    className="rounded-full px-6 h-10 font-black uppercase text-[10px] tracking-widest bg-orange-gradient text-white shadow-xl shadow-primary/20 transform hover:scale-105 transition-all"
                   >
                     Login
                   </Button>
@@ -226,12 +223,12 @@ export const Navbar = () => {
             {mounted && (
               <CartDrawer>
                 <Button variant="ghost" size="icon" className={cn(
-                  "rounded-full w-9 h-9 transition-all relative",
+                  "rounded-full w-10 h-10 transition-all relative",
                   scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
                 )}>
                   <ShoppingBag className="w-5 h-5" />
                   {cart.length > 0 && (
-                    <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
                       {cart.reduce((acc, i) => acc + i.quantity, 0)}
                     </span>
                   )}
@@ -243,7 +240,7 @@ export const Navbar = () => {
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className={cn(
-                    "rounded-full w-9 h-9 transition-transform active:scale-90",
+                    "rounded-full w-10 h-10 transition-transform active:scale-90",
                     scrolled ? "text-foreground" : (mounted && isDarkMode ? "text-foreground" : "text-white")
                   )}>
                     <Menu className="w-5 h-5" />
@@ -320,9 +317,6 @@ export const Navbar = () => {
                               {item.label}
                             </span>
                           </div>
-                          {item.badge !== undefined && item.badge > 0 && (
-                            <Badge className="bg-primary/10 text-primary border-none text-[8px] h-6 px-3 font-black rounded-full">{item.badge}</Badge>
-                          )}
                         </Link>
                       );
                     })}
