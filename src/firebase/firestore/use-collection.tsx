@@ -5,19 +5,33 @@ import { onSnapshot, Query, DocumentData, QuerySnapshot } from 'firebase/firesto
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 
+/**
+ * Robust hook for real-time Firestore collection streams.
+ * Ensures strict cleanup and stability against Next.js re-renders.
+ */
 export function useCollection<T = DocumentData>(query: Query<T> | null) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
-  // Track query stability to avoid redundant re-subscriptions
-  const queryPath = (query as any)?._query?.path?.toString() || '';
+  // Use a ref to track the current active query to prevent race conditions during Fast Refresh
+  const activeQueryRef = useRef<string>('');
 
   useEffect(() => {
     if (!query) {
+      setData([]);
       setLoading(false);
       return;
     }
+
+    // Generate a unique fingerprint for the query (path + constraints)
+    // This is more reliable than just the path string
+    const queryFingerprint = JSON.stringify((query as any)._query || query);
+    
+    if (activeQueryRef.current === queryFingerprint) return;
+    activeQueryRef.current = queryFingerprint;
+
+    setLoading(true);
 
     const unsubscribe = onSnapshot(
       query,
@@ -31,8 +45,9 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
         setError(null);
       },
       async (serverError) => {
+        const queryPath = (query as any)?._query?.path?.toString() || 'unknown collection';
         const permissionError = new FirestorePermissionError({
-          path: queryPath || 'unknown',
+          path: queryPath,
           operation: 'list',
         } satisfies SecurityRuleContext);
 
@@ -42,9 +57,12 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
       }
     );
 
-    // Critical: Unsubscribe on unmount or query change
-    return () => unsubscribe();
-  }, [queryPath]); // Depend on path rather than object reference
+    // CRITICAL: Unsubscribe on unmount or when query changes
+    return () => {
+      unsubscribe();
+      activeQueryRef.current = '';
+    };
+  }, [query]); // Calling components MUST memoize the query object
 
   return { data, loading, error };
 }
