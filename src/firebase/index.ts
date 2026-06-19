@@ -1,11 +1,19 @@
+'use client';
+
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { getMessaging, Messaging, isSupported as isMessagingSupported } from 'firebase/messaging';
 import { firebaseConfig } from './config';
 
+// Singleton instances to prevent multiple initializations and assertion errors
+let firebaseApp: FirebaseApp | undefined;
+let firestore: Firestore | undefined;
+let firebaseAuth: Auth | undefined;
+let firebaseMessaging: Messaging | null = null;
+
 /**
- * Initializes Firebase services safely.
+ * Initializes Firebase services safely on the client side only.
  * Note: Analytics is initialized asynchronously in the provider.
  */
 export function initializeFirebase(): { 
@@ -14,30 +22,40 @@ export function initializeFirebase(): {
   auth: Auth | null;
   messaging: Messaging | null;
 } {
+  // Ensure Firebase is only initialized on the client to avoid SSR assertion errors
+  if (typeof window === 'undefined') {
+    return { app: null, db: null, auth: null, messaging: null };
+  }
+
   // Check if config has been updated from defaults
   const isConfigValid = 
     firebaseConfig.apiKey && 
     !firebaseConfig.apiKey.includes('your_');
 
   if (!isConfigValid) {
-    console.warn('Firebase configuration is missing or incomplete.');
     return { app: null, db: null, auth: null, messaging: null };
   }
 
   try {
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    
-    // Messaging is client-only and environment dependent
-    let messaging: Messaging | null = null;
-    if (typeof window !== 'undefined') {
+    if (!firebaseApp) {
+      firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+      firestore = getFirestore(firebaseApp);
+      firebaseAuth = getAuth(firebaseApp);
+      
+      // Messaging is client-only and environment dependent
       isMessagingSupported().then(supported => {
-        if (supported) messaging = getMessaging(app);
+        if (supported && firebaseApp) {
+          firebaseMessaging = getMessaging(firebaseApp);
+        }
       });
     }
     
-    return { app, db, auth, messaging };
+    return { 
+      app: firebaseApp, 
+      db: firestore!, 
+      auth: firebaseAuth!, 
+      messaging: firebaseMessaging 
+    };
   } catch (error) {
     console.error('Failed to initialize Firebase services:', error);
     return { app: null, db: null, auth: null, messaging: null };
