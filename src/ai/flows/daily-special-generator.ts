@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A Genkit flow for generating marketing copy for a daily special food item.
@@ -28,13 +27,17 @@ export async function dailySpecialGenerator(input: DailySpecialInput): Promise<D
 
 const promoPrompt = ai.definePrompt({
   name: 'dailySpecialPrompt',
-  input: { schema: DailySpecialInputSchema },
+  input: { 
+    schema: DailySpecialInputSchema.extend({
+      calculatedFinalPrice: z.number().describe('The final price calculated after discount.')
+    }) 
+  },
   output: { schema: DailySpecialOutputSchema },
   prompt: `You are a creative marketing expert for "Ezzy Bites", a premium fast food cafe.
 Generate a punchy, exciting promotion for the dish: {{{dishName}}}.
 The base price is ₹{{{basePrice}}} and we are offering a {{{discountPercent}}}% discount.
 
-Calculated final price: ₹{{#with this}}{{{multiply basePrice (subtract 1 (divide discountPercent 100))}}}{{/with}} (just estimate if math helpers aren't clear, but prefer accuracy).
+The calculated final price is: ₹{{{calculatedFinalPrice}}}.
 
 Include:
 1. A catchy headline.
@@ -50,7 +53,18 @@ const dailySpecialGeneratorFlow = ai.defineFlow(
     outputSchema: DailySpecialOutputSchema,
   },
   async (input) => {
-    const { output } = await promoPrompt(input);
-    return output!;
+    // Perform calculation in TypeScript to ensure reliability
+    const finalPrice = Math.round(input.basePrice * (1 - (input.discountPercent / 100)));
+    
+    const { output } = await promoPrompt({
+      ...input,
+      calculatedFinalPrice: finalPrice
+    });
+    
+    if (!output) {
+      throw new Error('Failed to generate promotion copy.');
+    }
+    
+    return output;
   }
 );

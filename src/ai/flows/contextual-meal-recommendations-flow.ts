@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A Genkit flow for providing personalized meal recommendations based on current weather, time of day, and user mood.
@@ -59,7 +58,7 @@ If weather is "sunny", time of day is "afternoon", and user mood is "thirsty and
    Description: "A refreshing blend of fresh mangoes, yogurt, and a hint of mint."
    Reasoning: "Perfect for a sunny afternoon when you're thirsty and looking for a light, fruity treat."
 
-Output the recommendations in JSON format as specified by the output schema.`
+Output the recommendations structured according to the defined schema.`
 });
 
 // Define the Genkit flow
