@@ -46,9 +46,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useFirestore, useCollection, useUser } from '@/firebase';
+import { useFirestore, useCollection, useUser, useAuth } from '@/firebase';
 import { collection, query, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, orderBy } from 'firebase/firestore';
-import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
 import { StaffRole } from '@/app/admin/dashboard/page';
 import { cn } from '@/lib/utils';
@@ -58,7 +58,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 export const StaffManagement = () => {
   const db = useFirestore();
-  const auth = getAuth();
+  const auth = useAuth();
   const { user: currentUser } = useUser();
   
   const staffQuery = useMemo(() => {
@@ -424,7 +424,6 @@ export const StaffManagement = () => {
         </CardContent>
       </Card>
 
-      {/* MODALS RENDERED HERE FOR FLOW */}
       {/* ADD STAFF DIALOG */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">

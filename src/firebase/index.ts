@@ -7,8 +7,8 @@ import { firebaseConfig } from './config';
 
 /**
  * IDEMPOTENT FIREBASE INITIALIZATION
- * Uses a global singleton pattern to survive Next.js Fast Refresh
- * and prevent "Unexpected state (ID: ca9)" errors in Firestore.
+ * Uses the getApps() registry to ensure singleton behavior 
+ * across Next.js reloads and hydration.
  */
 
 declare global {
@@ -28,24 +28,26 @@ export function initializeFirebase(): {
 
   try {
     // 1. Initialize or retrieve the App
-    if (!globalThis.__FIREBASE_APP__) {
-      globalThis.__FIREBASE_APP__ = getApps().length === 0 
-        ? initializeApp(firebaseConfig) 
-        : getApp();
+    let app: FirebaseApp;
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+      globalThis.__FIREBASE_APP__ = app;
+    } else {
+      app = getApp();
     }
 
     // 2. Initialize or retrieve Firestore
     if (!globalThis.__FIREBASE_DB__) {
-      globalThis.__FIREBASE_DB__ = getFirestore(globalThis.__FIREBASE_APP__);
+      globalThis.__FIREBASE_DB__ = getFirestore(app);
     }
 
     // 3. Initialize or retrieve Auth
     if (!globalThis.__FIREBASE_AUTH__) {
-      globalThis.__FIREBASE_AUTH__ = getAuth(globalThis.__FIREBASE_APP__);
+      globalThis.__FIREBASE_AUTH__ = getAuth(app);
     }
     
     return { 
-      app: globalThis.__FIREBASE_APP__, 
+      app: app, 
       db: globalThis.__FIREBASE_DB__, 
       auth: globalThis.__FIREBASE_AUTH__
     };
