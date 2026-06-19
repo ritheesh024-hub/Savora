@@ -1,7 +1,7 @@
 'use client';
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, terminate } from 'firebase/firestore';
+import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
@@ -19,24 +19,18 @@ export function initializeFirebase(): {
   db: Firestore | null; 
   auth: Auth | null;
 } {
+  // 1. Strict Server Guard: Firebase Client SDK should never run on the server
   if (typeof window === 'undefined') {
     return { app: null, db: null, auth: null };
   }
 
-  if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('AIza')) {
-    // Basic validation passed
-  } else {
-    return { app: null, db: null, auth: null };
-  }
-
   try {
-    // 1. App Singleton
+    // 2. App Singleton: Use existing app if available
     if (!firebaseApp) {
       firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     }
 
-    // 2. Service Singletons: Ensure we don't recreate if already present
-    // Re-using existing instances is critical to prevent "Unexpected state" errors
+    // 3. Service Singletons: Re-using existing instances is critical to prevent "Unexpected state" errors
     if (!firestore) {
       firestore = getFirestore(firebaseApp);
     }
@@ -51,7 +45,7 @@ export function initializeFirebase(): {
       auth: firebaseAuth
     };
   } catch (error) {
-    console.error('Firebase Init Error:', error);
+    console.error('Firebase Initialization Error:', error);
     return { app: null, db: null, auth: null };
   }
 }

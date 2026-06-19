@@ -21,14 +21,13 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (initRef.current) return;
     
-    setMounted(true);
     const initialized = initializeFirebase();
     setServices(initialized);
+    setMounted(true);
     initRef.current = true;
   }, []);
 
   // 2. Handle theme syncing independently of Firebase state
-  // Using document.documentElement ensures the dark class is applied early
   useEffect(() => {
     if (mounted && typeof document !== 'undefined') {
       document.documentElement.classList.toggle('dark', isDarkMode);
@@ -37,6 +36,8 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
 
   // Avoid rendering children that might use Firebase hooks until services are ready
   // This prevents hooks from being called with null instances initially
+  if (!mounted) return null;
+
   return (
     <FirebaseProvider 
       app={services.app} 

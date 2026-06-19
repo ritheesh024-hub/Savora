@@ -11,25 +11,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Star, 
-  Clock, 
   ShoppingBag, 
   MessageSquare, 
   TrendingUp,
-  Filter,
-  CheckCircle2,
-  ChevronRight,
-  ArrowRight,
   Loader2,
   Plus
 } from 'lucide-react';
-import { FoodItem, useStore } from '@/app/lib/store';
+import { FoodItem } from '@/app/lib/store';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
 
 interface ProductDetailsProps {
   item: FoodItem;
@@ -72,7 +66,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[90vh] md:h-auto md:max-h-[85vh] rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950 flex flex-col md:flex-row">
         <DialogHeader className="sr-only">
-          <DialogTitle>{item.name} Details</DialogTitle>
+          <DialogTitle>{item.name} Details & Customer Reviews</DialogTitle>
         </DialogHeader>
         
         {/* LEFT: IMAGE & PRIMARY INFO */}

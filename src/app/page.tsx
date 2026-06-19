@@ -55,6 +55,9 @@ export default function Home() {
 
   const heroBg = "https://picsum.photos/seed/ezzybites-dark-hero/1920/1080";
 
+  // Prevent hydration mismatch by deferring client-specific rendering
+  if (!mounted) return null;
+
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-950 overflow-x-hidden">
       <Navbar />
@@ -115,6 +118,7 @@ export default function Home() {
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search dishes, burgers, momos..." 
                   className="w-full h-11 pl-14 rounded-2xl bg-secondary/50 border-none font-bold text-base focus:ring-2 focus:ring-primary/20 !text-foreground shadow-inner"
+                  suppressHydrationWarning
                 />
               </form>
               <div className="px-1">
@@ -130,7 +134,7 @@ export default function Home() {
                <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter whitespace-nowrap">Exclusive <span className="text-primary italic">Bounties</span></h2>
                <div className="h-px bg-border flex-1" />
             </div>
-            {mounted && <PromoBanner />}
+            <PromoBanner />
           </div>
         </section>
 
