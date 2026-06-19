@@ -18,18 +18,22 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
-import { FoodItem } from '@/app/lib/store';
+import { FoodItem, useStore } from '@/app/lib/store';
 import { Logo } from '@/components/Logo';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const [currentYear, setCurrentYear] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  
   const db = useFirestore();
   const router = useRouter();
+  const { isDarkMode } = useStore();
 
   useEffect(() => {
+    setMounted(true);
     setCurrentYear(new Date().getFullYear());
   }, []);
 
@@ -126,7 +130,7 @@ export default function Home() {
                <h2 className="text-lg md:text-xl font-black uppercase tracking-tighter whitespace-nowrap">Exclusive <span className="text-primary italic">Bounties</span></h2>
                <div className="h-px bg-border flex-1" />
             </div>
-            <PromoBanner />
+            {mounted && <PromoBanner />}
           </div>
         </section>
 

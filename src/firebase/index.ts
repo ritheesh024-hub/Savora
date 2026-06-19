@@ -5,37 +5,38 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
-// Singleton instances to prevent multiple initializations and assertion errors
+// Module-level singletons to maintain state across HMR and navigation
 let firebaseApp: FirebaseApp | undefined;
 let firestore: Firestore | undefined;
 let firebaseAuth: Auth | undefined;
 
 /**
  * Initializes Firebase services safely on the client side only.
- * This is defensive against Next.js SSR and Hot Module Replacement.
+ * Uses a defensive singleton pattern to prevent multiple initializations.
  */
 export function initializeFirebase(): { 
   app: FirebaseApp | null; 
   db: Firestore | null; 
   auth: Auth | null;
 } {
-  // Ensure Firebase is only initialized on the client to avoid SSR assertion errors
+  // 1. Strict server-side guard
   if (typeof window === 'undefined') {
     return { app: null, db: null, auth: null };
   }
 
-  // Check if config is valid
+  // 2. Validate configuration
   if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('your_')) {
     console.warn('Firebase configuration is missing or invalid.');
     return { app: null, db: null, auth: null };
   }
 
   try {
-    // Standard singleton pattern for Next.js Client Components
+    // 3. App Singleton: Check the global registry first
     if (!firebaseApp) {
       firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     }
 
+    // 4. Service Singletons: Ensure we don't recreate if already present
     if (!firestore) {
       firestore = getFirestore(firebaseApp);
     }
@@ -50,6 +51,7 @@ export function initializeFirebase(): {
       auth: firebaseAuth
     };
   } catch (error) {
+    // Return nulls rather than throwing to prevent app-wide crashes during boot
     console.error('Failed to initialize Firebase services:', error);
     return { app: null, db: null, auth: null };
   }

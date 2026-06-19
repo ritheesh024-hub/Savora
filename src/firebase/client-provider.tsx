@@ -3,38 +3,31 @@
 import React, { ReactNode, useEffect, useState } from 'react';
 import { initializeFirebase } from './index';
 import { FirebaseProvider } from './provider';
-import { FirebaseApp } from 'firebase/app';
-import { Firestore } from 'firebase/firestore';
-import { Auth } from 'firebase/auth';
 import { useStore } from '@/app/lib/store';
 
 export function FirebaseClientProvider({ children }: { children: ReactNode }) {
-  // Initialize state with nulls to match server-side render
+  const [mounted, setMounted] = useState(false);
   const [services, setServices] = useState<{
-    app: FirebaseApp | null;
-    db: Firestore | null;
-    auth: Auth | null;
+    app: any;
+    db: any;
+    auth: any;
   }>({ app: null, db: null, auth: null });
 
   const { isDarkMode } = useStore();
 
-  // ONLY initialize Firebase once on mount. 
-  // Do NOT include state dependencies that change frequently.
+  // 1. Initialize Firebase strictly ONCE after browser mount
   useEffect(() => {
+    setMounted(true);
     const initialized = initializeFirebase();
     setServices(initialized);
   }, []);
 
-  // Handle theme syncing separately to avoid re-initializing Firebase
+  // 2. Handle theme syncing independently of Firebase state
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      if (isDarkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+    if (mounted && typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', isDarkMode);
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, mounted]);
 
   return (
     <FirebaseProvider 
