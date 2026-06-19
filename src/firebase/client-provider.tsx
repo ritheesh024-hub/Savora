@@ -9,12 +9,22 @@ import { Auth } from 'firebase/auth';
 import { useStore } from '@/app/lib/store';
 
 export function FirebaseClientProvider({ children }: { children: ReactNode }) {
-  // Initialize core services immediately
-  const [services] = useState(() => initializeFirebase());
+  // Initialize state with nulls to match server-side render
+  const [services, setServices] = useState<{
+    app: FirebaseApp | null;
+    db: Firestore | null;
+    auth: Auth | null;
+  }>({ app: null, db: null, auth: null });
+
   const { isDarkMode } = useStore();
 
-  // Sync dark mode class on mount and when state changes
   useEffect(() => {
+    // This strictly runs on the client after hydration.
+    // It prevents Firestore from being initialized in a Node.js context.
+    const initialized = initializeFirebase();
+    setServices(initialized);
+
+    // Sync dark mode class
     if (typeof document !== 'undefined') {
       if (isDarkMode) {
         document.documentElement.classList.add('dark');
@@ -24,12 +34,12 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
     }
   }, [isDarkMode]);
 
-  // Provide initialized services. Analytics will be handled inside FirebaseProvider.
+  // Pass current services (will be null initially, then populated)
   return (
     <FirebaseProvider 
-      app={services.app as FirebaseApp} 
-      db={services.db as Firestore} 
-      auth={services.auth as Auth}
+      app={services.app} 
+      db={services.db} 
+      auth={services.auth}
     >
       {children}
     </FirebaseProvider>
