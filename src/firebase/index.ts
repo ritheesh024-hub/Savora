@@ -24,16 +24,15 @@ export function initializeFirebase(): {
     return { app: null, db: null, auth: null };
   }
 
-  // Check if config is likely valid
-  const isConfigValid = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('your_');
-  if (!isConfigValid) {
+  // Check if config is valid
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('your_')) {
     console.warn('Firebase configuration is missing or invalid.');
     return { app: null, db: null, auth: null };
   }
 
   try {
+    // Standard singleton pattern for Next.js Client Components
     if (!firebaseApp) {
-      // Use existing app if available (prevents "duplicate app" errors)
       firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     }
 

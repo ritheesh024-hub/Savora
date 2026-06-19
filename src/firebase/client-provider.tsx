@@ -18,13 +18,15 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
 
   const { isDarkMode } = useStore();
 
+  // ONLY initialize Firebase once on mount. 
+  // Do NOT include state dependencies that change frequently.
   useEffect(() => {
-    // This strictly runs on the client after hydration.
-    // It prevents Firestore from being initialized in a Node.js context.
     const initialized = initializeFirebase();
     setServices(initialized);
+  }, []);
 
-    // Sync dark mode class
+  // Handle theme syncing separately to avoid re-initializing Firebase
+  useEffect(() => {
     if (typeof document !== 'undefined') {
       if (isDarkMode) {
         document.documentElement.classList.add('dark');
@@ -34,7 +36,6 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
     }
   }, [isDarkMode]);
 
-  // Pass current services (will be null initially, then populated)
   return (
     <FirebaseProvider 
       app={services.app} 
