@@ -68,7 +68,7 @@ export const Navbar = () => {
   const { user, loading: userLoading } = useUser();
   const auth = useAuth();
   const db = useFirestore();
-  const { cart, isDarkMode, toggleDarkMode } = useStore();
+  const { cart, isDarkMode } = useStore();
   const { unreadCount } = useNotifications();
   const router = useRouter();
   const pathname = usePathname();
@@ -328,28 +328,7 @@ export const Navbar = () => {
                     <div className="h-px bg-border my-6 mx-4 opacity-50" />
 
                     <div className="px-2">
-                       <button 
-                        onClick={toggleDarkMode}
-                        className="flex items-center justify-between w-full p-5 rounded-[1.5rem] bg-secondary/40 hover:bg-secondary/60 transition-all group outline-none border border-border/20"
-                       >
-                         <div className="flex items-center gap-4">
-                           <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center border shadow-sm group-active:scale-90 transition-all">
-                             {mounted && isDarkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-indigo-500" />}
-                           </div>
-                           <span className="font-black text-[10px] uppercase tracking-widest">
-                             Appearance: {mounted && isDarkMode ? 'Light' : 'Dark'}
-                           </span>
-                         </div>
-                         <div className={cn(
-                           "w-12 h-6 rounded-full relative transition-colors duration-500",
-                           mounted && isDarkMode ? "bg-primary" : "bg-zinc-300 dark:bg-zinc-700"
-                         )}>
-                           <div className={cn(
-                             "absolute top-1 w-4 h-4 rounded-full bg-white shadow-lg transition-transform duration-500",
-                             mounted && isDarkMode ? "translate-x-7" : "translate-x-1"
-                           )} />
-                         </div>
-                       </button>
+                       <ThemeToggle className="w-full h-auto p-4 rounded-2xl bg-secondary/20" />
                     </div>
                   </div>
 

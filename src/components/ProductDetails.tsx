@@ -19,7 +19,8 @@ import {
   CheckCircle2,
   ChevronRight,
   ArrowRight,
-  Loader2
+  Loader2,
+  Plus
 } from 'lucide-react';
 import { FoodItem, useStore } from '@/app/lib/store';
 import { useFirestore, useCollection } from '@/firebase';
@@ -202,7 +203,3 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
     </Dialog>
   );
 };
-
-const Plus = ({ className }: { className?: string }) => (
-  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-);
