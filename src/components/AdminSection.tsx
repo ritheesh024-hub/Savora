@@ -126,35 +126,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
             read: false,
             createdAt: serverTimestamp()
           });
-
-          if (newStatus === 'delivered' && orderSnap.referralCode) {
-             const refQuery = query(collection(db, 'referrals'), where('orderId', '==', id), where('status', '==', 'pending'));
-             const refSnap = await getDocs(refQuery);
-             
-             if (!refSnap.empty) {
-                const referralDoc = refSnap.docs[0];
-                const code = orderSnap.referralCode;
-                const usersRef = collection(db, 'users');
-                const usersSnap = await getDocs(usersRef);
-                const referrerDoc = usersSnap.docs.find(d => `EB-${d.id.slice(0, 6).toUpperCase()}` === code);
-                
-                if (referrerDoc) {
-                   await updateDoc(doc(db, 'users', referrerDoc.id), {
-                      rewardCoins: increment(50),
-                      totalCoinsEarned: increment(50)
-                   });
-                   await addDoc(collection(db, 'users', referrerDoc.id, 'notifications'), {
-                      title: 'Referral Bonus Unlocked! 🎁',
-                      body: `Your friend finished their first meal. 50 Ezzy Coins added to your wallet.`,
-                      type: 'promo',
-                      link: '/rewards',
-                      read: false,
-                      createdAt: serverTimestamp()
-                   });
-                   await updateDoc(doc(db, 'referrals', referralDoc.id), { status: 'completed' });
-                }
-             }
-          }
         }
 
         playSound('success');
@@ -176,64 +147,108 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     return ['overview', 'users', 'billing', 'orders', 'products', 'reviews', 'coupons', 'notifications', 'archive', 'staff', 'settings'];
   }, [activeView]);
 
+  const getTabLabel = (tab: string) => {
+    switch(tab) {
+      case 'overview': return 'Analytics';
+      case 'billing': return 'Counter';
+      case 'products': return 'Inventory';
+      case 'notifications': return 'Broadcast';
+      case 'coupons': return 'Growth';
+      default: return tab.charAt(0).toUpperCase() + tab.slice(1);
+    }
+  };
+
   return (
     <div className="w-full">
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
-      <Tabs defaultValue={availableTabs[0]} className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+      <Tabs defaultValue={availableTabs[0]} className="flex flex-col lg:flex-row gap-4 lg:gap-12">
         <aside className="lg:w-72 shrink-0">
-          <div className="sticky top-28 space-y-6">
-            <div className="space-y-4">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground px-4 opacity-50">Operational Hub</h2>
-              <TabsList className="bg-white dark:bg-zinc-900 flex flex-col h-auto w-full p-2 rounded-[2.5rem] border shadow-sm space-y-1">
-                {availableTabs.map((tab) => (
-                  <TabsTrigger 
-                    key={tab}
-                    value={tab} 
-                    className="w-full justify-start px-6 py-4 rounded-[1.5rem] font-bold uppercase text-[10px] tracking-widest gap-4 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all group outline-none"
-                  >
-                    {tab === 'overview' && <BarChart3 className="w-4 h-4 group-hover:scale-110 transition-transform" />}
-                    {tab === 'users' && <Users className="w-4 h-4" />}
-                    {tab === 'billing' && <Receipt className="w-4 h-4" />}
-                    {tab === 'kitchen' && <ChefHat className="w-4 h-4" />}
-                    {tab === 'orders' && (
-                      <div className="flex items-center gap-4 flex-1">
-                        <ShoppingBag className="w-4 h-4" />
-                        <span>Live Feed</span>
-                        {orderGroups.pending.length > 0 && (
-                          <Badge className="ml-auto bg-white text-primary border-none text-[8px] h-5 w-5 p-0 flex items-center justify-center rounded-full animate-pulse shadow-sm">
-                            {orderGroups.pending.length}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                    {tab === 'archive' && <History className="w-4 h-4" />}
-                    {tab === 'products' && <Layers className="w-4 h-4" />}
-                    {tab === 'reviews' && <MessageSquare className="w-4 h-4" />}
-                    {tab === 'coupons' && <TicketPercent className="w-4 h-4" />}
-                    {tab === 'notifications' && <Megaphone className="w-4 h-4" />}
-                    {tab === 'staff' && <Fingerprint className="w-4 h-4" />}
-                    {tab === 'settings' && <Settings2 className="w-4 h-4" />}
-                    <span className="capitalize">{tab === 'overview' ? 'Analytics' : tab === 'billing' ? 'Counter' : tab === 'products' ? 'Inventory' : tab === 'notifications' ? 'Broadcast' : tab === 'coupons' ? 'Growth' : tab}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+          <div className="sticky top-20 lg:top-28 z-40 lg:z-auto">
+            {/* MOBILE NAVIGATION: HORIZONTAL SCROLL */}
+            <div className="lg:hidden -mx-4 px-4 bg-zinc-50 dark:bg-zinc-950 py-3 border-b overflow-hidden">
+               <TabsList className="bg-transparent h-auto flex flex-row p-0 space-x-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+                  {availableTabs.map((tab) => (
+                    <TabsTrigger 
+                      key={tab}
+                      value={tab} 
+                      className="h-11 px-6 rounded-full font-black uppercase text-[10px] tracking-widest gap-3 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl shadow-none border-none transition-all flex-shrink-0 snap-start bg-white dark:bg-zinc-900 border"
+                    >
+                      {tab === 'overview' && <BarChart3 className="w-3.5 h-3.5" />}
+                      {tab === 'users' && <Users className="w-3.5 h-3.5" />}
+                      {tab === 'billing' && <Receipt className="w-3.5 h-3.5" />}
+                      {tab === 'kitchen' && <ChefHat className="w-3.5 h-3.5" />}
+                      {tab === 'orders' && <ShoppingBag className="w-3.5 h-3.5" />}
+                      {tab === 'archive' && <History className="w-3.5 h-3.5" />}
+                      {tab === 'products' && <Layers className="w-3.5 h-3.5" />}
+                      {tab === 'reviews' && <MessageSquare className="w-3.5 h-3.5" />}
+                      {tab === 'coupons' && <TicketPercent className="w-3.5 h-3.5" />}
+                      {tab === 'notifications' && <Megaphone className="w-3.5 h-3.5" />}
+                      {tab === 'staff' && <Fingerprint className="w-3.5 h-3.5" />}
+                      {tab === 'settings' && <Settings2 className="w-3.5 h-3.5" />}
+                      {getTabLabel(tab)}
+                      {tab === 'orders' && orderGroups.pending.length > 0 && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                      )}
+                    </TabsTrigger>
+                  ))}
+               </TabsList>
             </div>
 
-            <Card className="rounded-[2rem] border-none shadow-xl bg-orange-gradient text-white p-6 relative overflow-hidden group">
-              <div className="absolute -right-4 -bottom-4 opacity-10 transform group-hover:rotate-12 transition-transform duration-1000"><Zap className="w-24 h-24" /></div>
-              <div className="relative z-10 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <p className="text-[9px] font-black uppercase tracking-widest opacity-80">Audio Alerts</p>
-                    <p className="text-[11px] font-bold">{isAdminMuted ? 'Muted' : 'Operational'}</p>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-10 w-10 bg-white/20 hover:bg-white/30 rounded-xl transition-all" onClick={toggleAdminMute}>
-                    {isAdminMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  </Button>
-                </div>
+            {/* DESKTOP NAVIGATION: VERTICAL SIDEBAR */}
+            <div className="hidden lg:block space-y-6">
+              <div className="space-y-4">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground px-4 opacity-50">Operational Hub</h2>
+                <TabsList className="bg-white dark:bg-zinc-900 flex flex-col h-auto w-full p-2 rounded-[2.5rem] border shadow-sm space-y-1">
+                  {availableTabs.map((tab) => (
+                    <TabsTrigger 
+                      key={tab}
+                      value={tab} 
+                      className="w-full justify-start px-6 py-4 rounded-[1.5rem] font-bold uppercase text-[10px] tracking-widest gap-4 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all group outline-none"
+                    >
+                      {tab === 'overview' && <BarChart3 className="w-4 h-4 group-hover:scale-110 transition-transform" />}
+                      {tab === 'users' && <Users className="w-4 h-4" />}
+                      {tab === 'billing' && <Receipt className="w-4 h-4" />}
+                      {tab === 'kitchen' && <ChefHat className="w-4 h-4" />}
+                      {tab === 'orders' && (
+                        <div className="flex items-center gap-4 flex-1">
+                          <ShoppingBag className="w-4 h-4" />
+                          <span>Live Feed</span>
+                          {orderGroups.pending.length > 0 && (
+                            <Badge className="ml-auto bg-white text-primary border-none text-[8px] h-5 w-5 p-0 flex items-center justify-center rounded-full animate-pulse shadow-sm">
+                              {orderGroups.pending.length}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      {tab === 'archive' && <History className="w-4 h-4" />}
+                      {tab === 'products' && <Layers className="w-4 h-4" />}
+                      {tab === 'reviews' && <MessageSquare className="w-4 h-4" />}
+                      {tab === 'coupons' && <TicketPercent className="w-4 h-4" />}
+                      {tab === 'notifications' && <Megaphone className="w-4 h-4" />}
+                      {tab === 'staff' && <Fingerprint className="w-4 h-4" />}
+                      {tab === 'settings' && <Settings2 className="w-4 h-4" />}
+                      {getTabLabel(tab)}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
               </div>
-            </Card>
+
+              <Card className="rounded-[2rem] border-none shadow-xl bg-orange-gradient text-white p-6 relative overflow-hidden group">
+                <div className="absolute -right-4 -bottom-4 opacity-10 transform group-hover:rotate-12 transition-transform duration-1000"><Zap className="w-24 h-24" /></div>
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] font-black uppercase tracking-widest opacity-80">Audio Alerts</p>
+                      <p className="text-[11px] font-bold">{isAdminMuted ? 'Muted' : 'Operational'}</p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-white/20 hover:bg-white/30 rounded-xl transition-all" onClick={toggleAdminMute}>
+                      {isAdminMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
         </aside>
 
