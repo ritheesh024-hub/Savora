@@ -111,7 +111,7 @@ export const NewOrderPopups = ({ pendingOrders, onViewDetails, onUpdateStatus }:
             <div className="flex gap-2">
               <Button 
                 onClick={() => {
-                  onUpdateStatus(order.id, 'Confirmed');
+                  onUpdateStatus(order.id, 'confirmed');
                   removeNotification(order.id);
                 }}
                 className="flex-1 rounded-xl h-10 font-black text-[9px] uppercase bg-primary"

@@ -9,14 +9,10 @@ import {
   History, 
   Search, 
   Eye, 
-  Filter, 
   Download, 
-  Loader2, 
   ShoppingBag,
   Clock,
   User,
-  CheckCircle2,
-  Ban,
   Utensils,
   Package
 } from 'lucide-react';
@@ -40,10 +36,11 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
         o.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         o.customerPhone?.includes(searchQuery);
       
+      const status = o.status?.toLowerCase();
       const matchesStatus = 
         statusFilter === 'all' || 
-        (statusFilter === 'delivered' && o.status === 'delivered') ||
-        (statusFilter === 'Cancelled' && o.status === 'Cancelled');
+        (statusFilter === 'delivered' && status === 'delivered') ||
+        (statusFilter === 'Cancelled' && status === 'cancelled');
 
       const matchesType = 
         typeFilter === 'all' || 
@@ -54,6 +51,26 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
       return matchesSearch && matchesStatus && matchesType;
     });
   }, [orders, searchQuery, statusFilter, typeFilter]);
+
+  const getStatusBadge = (status: string) => {
+    const s = (status || '').toLowerCase();
+    switch(s) {
+      case 'delivered':
+        return { label: 'DELIVERED', class: 'bg-emerald-50 text-emerald-600 border-emerald-100' };
+      case 'cancelled':
+        return { label: 'CANCELLED', class: 'bg-rose-50 text-rose-600 border-rose-100' };
+      case 'orderplaced':
+        return { label: 'PLACED', class: 'bg-blue-50 text-blue-600 border-blue-100' };
+      case 'confirmed':
+        return { label: 'CONFIRMED', class: 'bg-orange-50 text-orange-600 border-orange-100' };
+      case 'preparing':
+        return { label: 'PREPARING', class: 'bg-orange-50 text-orange-600 border-orange-100' };
+      case 'outfordelivery':
+        return { label: 'EN ROUTE', class: 'bg-amber-50 text-amber-600 border-amber-100' };
+      default:
+        return { label: (status || 'UNKNOWN').toUpperCase(), class: 'bg-zinc-50 text-zinc-600 border-zinc-100' };
+    }
+  };
 
   const handleExport = () => {
     const headers = ["OrderID", "Customer", "Phone", "Type", "Status", "Amount", "Date"];
@@ -145,67 +162,70 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => (
-                  <tr 
-                    key={order.id} 
-                    className="hover:bg-primary/5 transition-all group cursor-pointer"
-                    onClick={() => onViewDetails(order)}
-                  >
-                    <td className="px-10 py-6">
-                      <div className="flex flex-col">
-                        <span className="font-black text-primary italic">#{order.orderId}</span>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Clock className="w-3 h-3 opacity-30" />
-                          <span className="text-[8px] font-bold opacity-40 uppercase">
-                            {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'MMM dd, hh:mm a') : 'Legacy'}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-10 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center shrink-0">
-                          <User className="w-5 h-5 text-muted-foreground opacity-40" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-black text-sm uppercase tracking-tight truncate group-hover:text-primary transition-colors">{order.customerName || 'Anonymous'}</p>
-                          <p className="text-[9px] font-bold opacity-40">{order.customerPhone}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-10 py-6">
-                       <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-2">
-                            {order.orderType === 'Dine-In' ? <Utensils className="w-3 h-3 text-blue-500" /> : <Package className="w-3 h-3 text-orange-500" />}
-                            <span className="text-[9px] font-black uppercase tracking-widest">{order.orderType || 'Online'}</span>
+                filteredOrders.map((order) => {
+                  const statusInfo = getStatusBadge(order.status);
+                  return (
+                    <tr 
+                      key={order.id} 
+                      className="hover:bg-primary/5 transition-all group cursor-pointer"
+                      onClick={() => onViewDetails(order)}
+                    >
+                      <td className="px-10 py-6">
+                        <div className="flex flex-col">
+                          <span className="font-black text-primary italic">#{order.orderId}</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Clock className="w-3 h-3 opacity-30" />
+                            <span className="text-[8px] font-bold opacity-40 uppercase">
+                              {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'MMM dd, hh:mm a') : 'Legacy'}
+                            </span>
                           </div>
-                          <Badge className={cn(
-                            "border-none px-2 py-0.5 rounded text-[7px] font-black uppercase w-fit",
-                            order.status === 'delivered' ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-                          )}>
-                            {order.status === 'delivered' ? 'DELIVERED' : 'CANCELLED'}
-                          </Badge>
-                       </div>
-                    </td>
-                    <td className="px-10 py-6">
-                       <p className="font-black text-xl text-zinc-900 dark:text-white italic leading-none">₹{order.total}</p>
-                       <p className="text-[8px] font-black uppercase opacity-30 mt-1">{order.items?.length || 0} Units</p>
-                    </td>
-                    <td className="px-10 py-6 text-right">
-                       <Button 
-                         variant="ghost" 
-                         size="sm" 
-                         onClick={(e) => {
-                           e.stopPropagation();
-                           onViewDetails(order);
-                         }}
-                         className="h-10 px-6 rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 hover:bg-primary hover:text-white transition-all"
-                       >
-                         <Eye className="w-4 h-4" /> Manifest
-                       </Button>
-                    </td>
-                  </tr>
-                ))
+                        </div>
+                      </td>
+                      <td className="px-10 py-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center shrink-0">
+                            <User className="w-5 h-5 text-muted-foreground opacity-40" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-black text-sm uppercase tracking-tighter truncate group-hover:text-primary transition-colors">{order.customerName || 'Anonymous'}</p>
+                            <p className="text-[9px] font-bold opacity-40">{order.customerPhone}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-10 py-6">
+                         <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              {order.orderType === 'Dine-In' ? <Utensils className="w-3 h-3 text-blue-500" /> : <Package className="w-3 h-3 text-orange-500" />}
+                              <span className="text-[9px] font-black uppercase tracking-widest">{order.orderType || 'Online'}</span>
+                            </div>
+                            <Badge className={cn(
+                              "border px-2 py-0.5 rounded text-[7px] font-black uppercase w-fit shadow-sm",
+                              statusInfo.class
+                            )}>
+                              {statusInfo.label}
+                            </Badge>
+                         </div>
+                      </td>
+                      <td className="px-10 py-6">
+                         <p className="font-black text-xl text-zinc-900 dark:text-white italic leading-none">₹{order.total}</p>
+                         <p className="text-[8px] font-black uppercase opacity-30 mt-1">{order.items?.length || 0} Units</p>
+                      </td>
+                      <td className="px-10 py-6 text-right">
+                         <Button 
+                           variant="ghost" 
+                           size="sm" 
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             onViewDetails(order);
+                           }}
+                           className="h-10 px-6 rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 hover:bg-primary hover:text-white transition-all"
+                         >
+                           <Eye className="w-4 h-4" /> Manifest
+                         </Button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
