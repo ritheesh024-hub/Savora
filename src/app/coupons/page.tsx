@@ -70,7 +70,7 @@ export default function CouponsPage() {
                      <div className="absolute inset-0 bg-black/5" />
                      <div className="relative z-10 space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Up To</p>
-                        <h2 className="text-6xl font-black font-headline italic leading-none">{coupon.discount}{coupon.type === 'percent' ? '%' : '₹'}</h2>
+                        <h2 className="text-6xl font-black font-headline italic leading-none">{coupon.discount} %</h2>
                         <p className="text-[10px] font-black uppercase tracking-widest">OFFER</p>
                      </div>
                      <div className="absolute -left-4 -bottom-4 opacity-10 rotate-12"><TicketPercent className="w-32 h-32" /></div>

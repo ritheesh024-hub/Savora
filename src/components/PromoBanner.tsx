@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -21,21 +20,21 @@ export const PromoBanner = () => {
       id: 'student',
       code: 'STUDENT10',
       title: 'Academic Special',
-      description: 'FLAT 10% OFF on every order.',
+      description: 'FLAT 10 % OFF on every order.',
       gradient: 'from-[#FF6B00] to-[#FF8A00]'
     },
     {
       id: 'new-user',
       code: 'EZZYBITES15',
       title: 'Midnight Cravings',
-      description: '15% OFF your first late-night meal.',
+      description: '15 % OFF your first late-night meal.',
       gradient: 'from-[#6366F1] to-[#4F46E5]'
     },
     {
       id: 'weekend',
       code: 'WEEKEND20',
       title: 'Weekend Bonanza',
-      description: 'FLAT 20% OFF this Sunday only.',
+      description: 'FLAT 20 % OFF this Sunday only.',
       gradient: 'from-[#F43F5E] to-[#E11D48]'
     }
   ];

@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -111,7 +110,7 @@ export default function CheckoutPage() {
         setAppliedCoupon({ code, ...data });
         setAppliedReferral(null);
         setCouponInput('');
-        toast({ title: "Coupon Applied! 🎉", description: `${data.discount}${data.type === 'percent' ? '%' : '₹'} discount activated.` });
+        toast({ title: "Coupon Applied! 🎉", description: `${data.discount} ${data.type === 'percent' ? '%' : '₹'} discount activated.` });
       } else {
          throw new Error("Invalid promo code.");
       }

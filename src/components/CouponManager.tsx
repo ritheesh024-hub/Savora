@@ -134,7 +134,7 @@ export const CouponManager = () => {
                  <h4 className="font-black font-mono text-3xl tracking-tighter italic">{coupon.code}</h4>
               </div>
               <Badge className="bg-white/20 border-none font-black text-[10px] uppercase px-4 py-1.5 rounded-full tracking-widest backdrop-blur-md relative z-10">
-                {coupon.discount}{coupon.type === 'percent' ? '%' : '₹'} OFF
+                {coupon.discount} {coupon.type === 'percent' ? '%' : '₹'} OFF
               </Badge>
             </div>
             
