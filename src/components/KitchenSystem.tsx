@@ -25,11 +25,11 @@ interface KitchenSystemProps {
 }
 
 export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) => {
-  // Kitchen focuses on placed orders (to confirm) and confirmed orders (to prep/view)
+  // Kitchen focuses ONLY on active orders (to confirm) and confirmed orders (currently prepping)
+  // Delivered or Out for Delivery orders are handled by the Cashier/Rider and archived from the kitchen.
   const kitchenOrders = orders.filter(o => 
     o.status === 'orderPlaced' || o.status === 'confirmed'
   ).sort((a, b) => {
-    // Placed orders come first for kitchen to "Accept"
     if (a.status === 'orderPlaced' && b.status !== 'orderPlaced') return -1;
     if (a.status !== 'orderPlaced' && b.status === 'orderPlaced') return 1;
     return 0;
@@ -40,7 +40,6 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
-      {/* KITCHEN HUD */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-orange-gradient text-white p-10 relative overflow-hidden group">
            <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-125 transition-transform duration-1000 rotate-12">
@@ -86,7 +85,6 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
         </Card>
       </div>
 
-      {/* LIVE KDS BOARD */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {kitchenOrders.length === 0 ? (
           <div className="col-span-full py-48 text-center bg-white dark:bg-zinc-900 rounded-[4rem] border-2 border-dashed border-muted flex flex-col items-center justify-center gap-6">

@@ -57,7 +57,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const { playSound, isAdminMuted, toggleAdminMute } = useSound();
   const { logStaffAction } = useAnalytics();
   
-  // Memoize queries to prevent infinite re-renders in useCollection
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(500));
@@ -73,12 +72,12 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const [selectedOrderForView, setSelectedOrderForView] = useState<any>(null);
 
   const orderGroups = useMemo(() => {
-    const groups = { pending: [] as any[], preparing: [] as any[], completed: [] as any[] };
+    const groups = { pending: [] as any[], processing: [] as any[] };
     if (!realOrders) return groups;
     realOrders.forEach(o => {
+      // Terminal states (delivered, Cancelled) are excluded from the live grid
       if (o.status === 'orderPlaced') groups.pending.push(o);
-      else if (['confirmed', 'outForDelivery'].includes(o.status)) groups.preparing.push(o);
-      else if (['delivered', 'Cancelled'].includes(o.status)) groups.completed.push(o);
+      else if (['confirmed', 'outForDelivery'].includes(o.status)) groups.processing.push(o);
     });
     return groups;
   }, [realOrders]);
@@ -91,7 +90,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
     updateDoc(orderRef, updateData)
       .then(async () => {
-        // 1. Log staff action
         const staffRef = doc(db, 'admins', user.uid);
         updateDoc(staffRef, { 
           'stats.kitchenUpdates': increment(1), 
@@ -100,7 +98,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
         logStaffAction(user.uid, user.displayName || 'Staff', 'ORDER_STATUS_CHANGE', `Order #${id} changed to ${newStatus}`);
 
-        // 2. Trigger push notification for customer
         const orderSnap = realOrders.find(o => o.orderId === id);
         if (orderSnap?.userId) {
           const notifRef = collection(db, 'users', orderSnap.userId, 'notifications');
@@ -127,7 +124,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
             createdAt: serverTimestamp()
           });
 
-          // Referral Reward Check: If order is delivered and has a referral code
           if (newStatus === 'delivered' && orderSnap.referralCode) {
              const refQuery = query(collection(db, 'referrals'), where('orderId', '==', id), where('status', '==', 'pending'));
              const refSnap = await getDocs(refQuery);
@@ -135,18 +131,15 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
              if (!refSnap.empty) {
                 const referralDoc = refSnap.docs[0];
                 const code = orderSnap.referralCode;
-                // Find referrer
                 const usersRef = collection(db, 'users');
                 const usersSnap = await getDocs(usersRef);
                 const referrerDoc = usersSnap.docs.find(d => `EB-${d.id.slice(0, 6).toUpperCase()}` === code);
                 
                 if (referrerDoc) {
-                   // Reward Referrer
                    await updateDoc(doc(db, 'users', referrerDoc.id), {
                       rewardCoins: increment(50),
                       totalCoinsEarned: increment(50)
                    });
-                   // Notify Referrer
                    await addDoc(collection(db, 'users', referrerDoc.id, 'notifications'), {
                       title: 'Referral Bonus Unlocked! 🎁',
                       body: `Your friend finished their first meal. 50 Ezzy Coins added to your wallet.`,
@@ -155,7 +148,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                       read: false,
                       createdAt: serverTimestamp()
                    });
-                   // Close referral record
                    await updateDoc(doc(db, 'referrals', referralDoc.id), { status: 'completed' });
                 }
              }
@@ -186,7 +178,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
       <Tabs defaultValue={availableTabs[0]} className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-        {/* NAVIGATION SIDEBAR */}
         <aside className="lg:w-72 shrink-0">
           <div className="sticky top-28 space-y-6">
             <div className="space-y-4">
@@ -242,7 +233,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
           </div>
         </aside>
 
-        {/* MAIN CONTENT AREA */}
         <section className="flex-1 min-w-0 min-h-[80vh]">
           <AnimatePresence mode="wait">
             {availableTabs.map((tab) => (
@@ -271,7 +261,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         </section>
       </Tabs>
 
-      {/* GLOBAL ORDER PREVIEW DIALOG */}
       <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
         <DialogContent className="max-w-3xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
           <DialogHeader className="sr-only">
@@ -389,12 +378,11 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 const OrderGrid = ({ orderGroups, onOrderClick }: any) => {
   const categories = [
     { id: 'pending', label: 'Placed', icon: BellRing, color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/20' },
-    { id: 'preparing', label: 'Processing', icon: ChefHat, color: 'text-orange-500', bg: 'bg-orange-500/5', border: 'border-orange-500/20' },
-    { id: 'completed', label: 'Finalized', icon: BoxSelect, color: 'text-emerald-500', bg: 'bg-emerald-500/5', border: 'border-emerald-500/20' }
+    { id: 'processing', label: 'Processing', icon: ChefHat, color: 'text-orange-500', bg: 'bg-orange-500/5', border: 'border-orange-500/20' }
   ];
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
       {categories.map((cat) => (
         <div key={cat.id} className="space-y-6">
           <div className={cn("flex items-center justify-between px-6 py-4 rounded-[1.8rem] border bg-white dark:bg-zinc-900 shadow-sm", cat.border)}>
