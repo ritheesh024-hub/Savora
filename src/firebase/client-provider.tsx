@@ -22,8 +22,10 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
     initRef.current = true;
     
     const initialized = initializeFirebase();
-    setServices(initialized);
-    setMounted(true);
+    if (initialized.app) {
+      setServices(initialized);
+      setMounted(true);
+    }
   }, []);
 
   // 2. Handle theme syncing independently

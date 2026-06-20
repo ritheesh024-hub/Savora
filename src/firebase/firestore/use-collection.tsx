@@ -7,15 +7,12 @@ import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 
 /**
  * Robust hook for real-time Firestore collection streams.
- * Stabilized with path-based fingerprinting to prevent redundant re-subscriptions.
+ * Optimized to handle Next.js HMR and prevent "Unexpected state" errors.
  */
 export function useCollection<T = DocumentData>(query: Query<T> | null) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-
-  // Fingerprinting the query path to stabilize the dependency array
-  const queryFingerprint = query ? (query as any)._query?.path?.toString() || 'path-pending' : 'null';
 
   useEffect(() => {
     if (!query || typeof window === 'undefined') {
@@ -26,6 +23,7 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
 
     setLoading(true);
 
+    // Standard listener with explicit cleanup
     const unsubscribe = onSnapshot(
       query,
       (snapshot: QuerySnapshot<T>) => {
@@ -37,8 +35,9 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
         setLoading(false);
         setError(null);
       },
-      async (serverError) => {
-        const queryPath = (query as any)?._query?.path?.toString() || 'unknown collection';
+      (serverError) => {
+        // Attempt to extract path for context if available (query constraints may vary)
+        const queryPath = (query as any)._query?.path?.toString() || 'collection';
         const permissionError = new FirestorePermissionError({
           path: queryPath,
           operation: 'list',
@@ -50,9 +49,9 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
       }
     );
 
-    // Cleanup: Ensure the listener is closed before a new one starts
+    // Cleanup: Ensure the listener is closed before a new one starts or on unmount
     return () => unsubscribe();
-  }, [queryFingerprint]); 
+  }, [query]); // Rely on the stable query reference (memoized by caller)
 
   return { data, loading, error };
 }

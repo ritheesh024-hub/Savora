@@ -16,6 +16,10 @@ interface FirebaseInstances {
   auth: Auth;
 }
 
+declare global {
+  var __FIREBASE_INSTANCES__: FirebaseInstances | undefined;
+}
+
 export function initializeFirebase(): { 
   app: FirebaseApp | null; 
   db: Firestore | null; 
@@ -26,11 +30,9 @@ export function initializeFirebase(): {
   }
 
   try {
-    const g = globalThis as any;
-    
     // Check global cache first to prevent "Unexpected state" errors during HMR
-    if (g.__FIREBASE_SINGLETON__) {
-      return g.__FIREBASE_SINGLETON__;
+    if (globalThis.__FIREBASE_INSTANCES__) {
+      return globalThis.__FIREBASE_INSTANCES__;
     }
 
     // 1. Initialize or retrieve the App Registry
@@ -43,7 +45,7 @@ export function initializeFirebase(): {
     const instances: FirebaseInstances = { app, db, auth };
     
     // 3. Cache globally
-    g.__FIREBASE_SINGLETON__ = instances;
+    globalThis.__FIREBASE_INSTANCES__ = instances;
     
     return instances;
   } catch (error) {
