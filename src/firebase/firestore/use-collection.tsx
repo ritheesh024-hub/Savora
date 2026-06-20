@@ -36,7 +36,7 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
         setError(null);
       },
       (serverError) => {
-        // Attempt to extract path for context if available (query constraints may vary)
+        // Attempt to extract path for context if available
         const queryPath = (query as any)._query?.path?.toString() || 'collection';
         const permissionError = new FirestorePermissionError({
           path: queryPath,
