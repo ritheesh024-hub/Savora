@@ -43,7 +43,7 @@ export const StoreSettings = () => {
     freeDeliveryThreshold: 149,
     newOrderAlert: true,
     statusUpdates: true,
-    productionUrl: '' // Added for Vercel/Production connection
+    productionUrl: '' 
   });
 
   useEffect(() => {
@@ -88,7 +88,6 @@ export const StoreSettings = () => {
       .finally(() => setSaving(false));
   };
 
-  // Connect QR to Vercel/Production URL if available
   const publicBaseUrl = settings.productionUrl || origin;
   const menuUrl = `${publicBaseUrl}/menu`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(menuUrl)}`;
@@ -104,13 +103,13 @@ export const StoreSettings = () => {
   );
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="space-y-10 animate-in fade-in duration-700 max-w-6xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-2">
         <div className="space-y-1">
           <h2 className="text-4xl font-black font-headline uppercase tracking-tighter">Global <span className="text-primary italic">Config</span></h2>
-          <p className="text-muted-foreground text-sm font-medium leading-relaxed max-w-lg">Central control for timing, logistics, and identity parameters across the Ezzy ecosystem.</p>
+          <p className="text-muted-foreground text-sm font-medium leading-relaxed max-w-lg">Central control for timing, logistics, and identity parameters.</p>
         </div>
-        <Button onClick={handleSave} disabled={saving} className="rounded-2xl h-16 px-12 font-black uppercase tracking-widest text-[10px] gap-3 bg-primary text-white shadow-2xl shadow-primary/30">
+        <Button onClick={handleSave} disabled={saving} className="rounded-2xl h-16 px-12 font-black uppercase tracking-widest text-[10px] gap-3 bg-primary text-white shadow-2xl shadow-primary/30 w-full md:w-auto">
           {saving ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
           Commit Settings
         </Button>
@@ -123,8 +122,8 @@ export const StoreSettings = () => {
            <TabsTrigger value="digital" className="px-10 py-3.5 rounded-[1.5rem] gap-2 font-black uppercase text-[9px] tracking-[0.2em]"><QrCode className="w-4 h-4" /> Marketing</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="space-y-8 animate-in slide-in-from-bottom-2">
-           <div className="grid md:grid-cols-2 gap-10">
+        <TabsContent value="general" className="space-y-8 animate-in slide-in-from-bottom-2 focus:outline-none">
+           <div className="grid md:grid-cols-2 gap-8">
              <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-10">
                 <CardHeader className="px-0 pt-0 pb-8 border-b border-dashed mb-8"><CardTitle className="text-xl font-black font-headline uppercase tracking-tight">Public Brand Profile</CardTitle></CardHeader>
                 <div className="space-y-8">
@@ -167,7 +166,7 @@ export const StoreSettings = () => {
            </div>
         </TabsContent>
 
-        <TabsContent value="order" className="space-y-8 animate-in slide-in-from-bottom-2">
+        <TabsContent value="order" className="space-y-8 animate-in slide-in-from-bottom-2 focus:outline-none">
            <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-10 max-w-4xl">
               <div className="grid md:grid-cols-2 gap-12">
                  <div className="space-y-8">
@@ -210,33 +209,13 @@ export const StoreSettings = () => {
            </Card>
         </TabsContent>
 
-        <TabsContent value="digital" className="space-y-12 animate-in slide-in-from-bottom-2">
-          <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-10 max-w-2xl mx-auto">
-             <CardHeader className="px-0 pt-0 pb-8 border-b border-dashed mb-8">
-                <CardTitle className="text-xl font-black font-headline uppercase tracking-tight flex items-center gap-3">
-                  <LinkIcon className="w-5 h-5 text-primary" /> Hub Connection
-                </CardTitle>
-             </CardHeader>
-             <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Production Hub URL (e.g. Vercel)</Label>
-                <Input 
-                  placeholder="https://your-app.vercel.app" 
-                  value={settings.productionUrl} 
-                  onChange={e => setSettings({...settings, productionUrl: e.target.value})} 
-                  className="h-14 rounded-2xl bg-secondary/30 border-none font-bold" 
-                />
-                <p className="text-[9px] font-medium text-muted-foreground opacity-60 ml-1 italic">
-                  Used to generate the "Marketing QR Code" below. Leave empty to use the current browser domain.
-                </p>
-             </div>
-          </Card>
-
+        <TabsContent value="digital" className="space-y-12 animate-in slide-in-from-bottom-2 focus:outline-none">
           <Card className="rounded-[4rem] border-none shadow-3xl bg-white dark:bg-zinc-900 overflow-hidden max-w-2xl mx-auto p-12 flex flex-col items-center text-center space-y-10">
              <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 rounded-[4rem] blur-[80px] animate-pulse" />
                 <div className="relative bg-white p-10 rounded-[3rem] shadow-2xl border-8 border-secondary">
                    <img src={qrCodeUrl} alt="Store QR" className="w-64 h-64 grayscale group-hover:grayscale-0 transition-all duration-1000" />
-                   <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/60 rounded-[2rem] text-white">
+                   <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/60 rounded-[2rem] text-white cursor-pointer" onClick={() => window.open(qrCodeUrl, '_blank')}>
                       <Download className="w-12 h-12" />
                    </div>
                 </div>
@@ -254,16 +233,8 @@ export const StoreSettings = () => {
         </TabsContent>
       </Tabs>
 
-      <div className="bg-green-50 dark:bg-green-900/10 p-8 rounded-[3rem] border-2 border-dashed border-green-200 dark:border-green-800 flex items-center gap-6 mt-12">
-         <div className="w-16 h-16 bg-white dark:bg-zinc-800 rounded-[1.5rem] flex items-center justify-center text-green-600 shadow-xl shrink-0">
-           <ShieldCheck className="w-8 h-8" />
-         </div>
-         <div className="space-y-1">
-            <p className="text-[10px] font-black text-green-700 dark:text-green-400 uppercase tracking-widest">Integrity Verified</p>
-            <p className="text-sm font-medium text-green-600 dark:text-green-500 leading-relaxed italic">
-              All settings are provisioned via high-availability Firebase clusters. Updates are broadcasted to all customer clients in real-time (~200ms latency).
-            </p>
-         </div>
+      <div className="pt-10 text-center">
+         <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-20">Ezzy Bites • Configuration Cluster</p>
       </div>
     </div>
   );
