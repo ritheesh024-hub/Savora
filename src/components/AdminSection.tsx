@@ -183,7 +183,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
       <Tabs defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
-        <div className="lg:hidden sticky top-[70px] z-50 bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-3 px-4 w-full overflow-hidden">
+        <div className="lg:hidden sticky top-[70px] z-50 bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-3 px-4 w-full overflow-hidden shadow-sm">
            <TabsList className="bg-transparent h-auto flex flex-row flex-nowrap justify-start p-0 space-x-2 overflow-x-auto scrollbar-hide snap-x snap-proximity w-full border-none shadow-none">
               {availableTabs.map((tab) => (
                 <TabsTrigger 
