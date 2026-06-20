@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -77,7 +78,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     if (!realOrders) return groups;
     realOrders.forEach(o => {
       if (o.status === 'orderPlaced') groups.pending.push(o);
-      else if (['confirmed', 'outForDelivery'].includes(o.status)) groups.processing.push(o);
+      else if (['confirmed', 'preparing', 'outForDelivery'].includes(o.status)) groups.processing.push(o);
     });
     return groups;
   }, [realOrders]);
@@ -103,12 +104,14 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
           const notifRef = collection(db, 'users', orderSnap.userId, 'notifications');
           const titles: Record<string, string> = {
             'confirmed': 'Order Confirmed! ✅',
+            'preparing': 'Chef is on it! 👨‍🍳',
             'outForDelivery': 'Rider is Dispatched 🛵',
             'delivered': 'Enjoy your Bites! 🍱',
             'Cancelled': 'Order Cancelled ❌'
           };
           const bodies: Record<string, string> = {
             'confirmed': 'Your order has been accepted by the station.',
+            'preparing': 'Your premium bites are being handcrafted now.',
             'outForDelivery': 'Your premium bites are on the way to your sanctuary.',
             'delivered': 'Your order was successfully handed over. Thank you!',
             'Cancelled': 'We regret that your order was revoked. Contact support if needed.'
@@ -376,7 +379,7 @@ const OrderGrid = ({ orderGroups, onOrderClick }: any) => {
                   <Card 
                     className="rounded-[2rem] border-none shadow-sm hover:shadow-xl transition-all cursor-pointer bg-white dark:bg-zinc-900 overflow-hidden group active:scale-[0.98] border-l-4 border-l-transparent" 
                     onClick={() => onOrderClick(order)} 
-                    style={{ borderLeftColor: order.status === 'orderPlaced' ? '#ef4444' : (order.status === 'confirmed' || order.status === 'outForDelivery') ? '#f97316' : '#10b981' }}
+                    style={{ borderLeftColor: order.status === 'orderPlaced' ? '#ef4444' : (order.status === 'confirmed' || order.status === 'preparing' || order.status === 'outForDelivery') ? '#f97316' : '#10b981' }}
                   >
                     <div className="p-6 space-y-4">
                       <div className="flex justify-between items-start">

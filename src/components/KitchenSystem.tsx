@@ -25,17 +25,14 @@ interface KitchenSystemProps {
 }
 
 export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) => {
-  // Kitchen focuses ONLY on active orders (to confirm) and confirmed orders (currently prepping)
-  // Delivered or Out for Delivery orders are handled by the Cashier/Rider and archived from the kitchen.
   const kitchenOrders = orders.filter(o => 
-    o.status === 'orderPlaced' || o.status === 'confirmed'
+    o.status === 'orderPlaced' || o.status === 'confirmed' || o.status === 'preparing'
   ).sort((a, b) => {
-    if (a.status === 'orderPlaced' && b.status !== 'orderPlaced') return -1;
-    if (a.status !== 'orderPlaced' && b.status === 'orderPlaced') return 1;
-    return 0;
+    const order = ['preparing', 'confirmed', 'orderPlaced'];
+    return order.indexOf(a.status) - order.indexOf(b.status);
   });
 
-  const confirmedCount = kitchenOrders.filter(o => o.status === 'confirmed').length;
+  const activeCount = kitchenOrders.filter(o => o.status === 'preparing' || o.status === 'confirmed').length;
   const placedCount = kitchenOrders.filter(o => o.status === 'orderPlaced').length;
 
   return (
@@ -51,8 +48,8 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">In Cooking</span>
               </div>
               <div>
-                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none">{confirmedCount}</h3>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-80 italic">Confirmed Station</p>
+                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none">{activeCount}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-80 italic">Active Station</p>
               </div>
            </div>
         </Card>
@@ -93,7 +90,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
             </div>
             <div className="space-y-1">
               <h3 className="text-3xl font-black uppercase tracking-tighter italic">Station Clear</h3>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">All orders confirmed</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">All orders processed</p>
             </div>
           </div>
         ) : (
@@ -162,16 +159,27 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                     </div>
                   </div>
                   
-                  {order.status === 'orderPlaced' ? (
-                    <Button 
-                      onClick={() => onUpdateStatus(order.id, 'confirmed')}
-                      className="rounded-[1.5rem] h-18 px-10 bg-zinc-950 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-primary group"
-                    >
-                      <CheckCircle2 className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Confirm
-                    </Button>
-                  ) : (
-                    <Badge className="bg-orange-50 text-orange-600 border-none font-black text-[10px] uppercase px-4 py-2 rounded-xl">In Kitchen</Badge>
-                  )}
+                  <div className="flex gap-2">
+                    {order.status === 'orderPlaced' && (
+                      <Button 
+                        onClick={() => onUpdateStatus(order.id, 'confirmed')}
+                        className="rounded-[1.5rem] h-18 px-10 bg-zinc-950 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-primary group"
+                      >
+                        <CheckCircle2 className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Confirm
+                      </Button>
+                    )}
+                    {order.status === 'confirmed' && (
+                      <Button 
+                        onClick={() => onUpdateStatus(order.id, 'preparing')}
+                        className="rounded-[1.5rem] h-18 px-10 bg-orange-500 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-orange-600 group"
+                      >
+                        <ChefHat className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Start Prep
+                      </Button>
+                    )}
+                    {order.status === 'preparing' && (
+                      <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[10px] uppercase px-4 py-2 rounded-xl">Prep Ready</Badge>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

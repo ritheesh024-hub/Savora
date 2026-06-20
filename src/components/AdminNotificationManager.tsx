@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -49,7 +50,6 @@ export const AdminNotificationManager = () => {
 
     setLoading(true);
     try {
-      // 1. Fetch all registered users
       const usersSnap = await getDocs(collection(db, 'users'));
       const batch = writeBatch(db);
 
@@ -65,7 +65,6 @@ export const AdminNotificationManager = () => {
         });
       });
 
-      // 2. Log the broadcast
       const logRef = collection(db, 'broadcast_logs');
       await addDoc(logRef, {
         ...formData,

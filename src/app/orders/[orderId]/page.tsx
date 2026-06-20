@@ -41,7 +41,6 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   const [cancelling, setCancelling] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
 
-  // Cancellation Timer Logic (5 Minute Window)
   useEffect(() => {
     if (!order?.createdAt || (order.status !== 'orderPlaced' && order.status !== 'confirmed')) {
       setCanCancel(false);
@@ -98,8 +97,9 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   const statusMap: Record<string, number> = {
     'orderPlaced': 1,
     'confirmed': 2,
-    'outForDelivery': 3,
-    'delivered': 4,
+    'preparing': 3,
+    'outForDelivery': 4,
+    'delivered': 5,
     'Cancelled': 0
   };
 
@@ -108,8 +108,9 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   const steps = [
     { id: 1, title: 'Order Placed', statusKey: 'orderPlaced', icon: PackageCheck, desc: 'We have received your request.' },
     { id: 2, title: 'Confirmed', statusKey: 'confirmed', icon: CheckCircle2, desc: 'Kitchen is reviewing your items.' },
-    { id: 3, title: 'Out for Delivery', statusKey: 'outForDelivery', icon: Truck, desc: 'Our rider is heading to your sanctuary.' },
-    { id: 4, title: 'Delivered', statusKey: 'delivered', icon: CheckCircle2, desc: 'Bites received. Enjoy your meal!' }
+    { id: 3, title: 'Preparing Food', statusKey: 'preparing', icon: ChefHat, desc: 'Our chefs are crafting your meal.' },
+    { id: 4, title: 'Out for Delivery', statusKey: 'outForDelivery', icon: Truck, desc: 'Our rider is heading to your sanctuary.' },
+    { id: 5, title: 'Delivered', statusKey: 'delivered', icon: CheckCircle2, desc: 'Bites received. Enjoy your meal!' }
   ];
 
   if (loading) {
@@ -171,7 +172,6 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            {/* CANCELLATION BOX */}
             <AnimatePresence>
               {canCancel && order.status !== 'Cancelled' && (
                 <motion.div 
@@ -206,7 +206,6 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
               )}
             </AnimatePresence>
 
-            {/* TIMELINE CARD */}
             <Card className="rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900">
               <CardContent className="p-8 md:p-12">
                 {order.status === 'Cancelled' ? (
@@ -264,7 +263,6 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
               </CardContent>
             </Card>
 
-            {/* BREAKDOWN CARD */}
             <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8">
               <CardContent className="p-0 space-y-8">
                 <div className="flex items-center gap-3 border-b border-dashed pb-6">
@@ -300,7 +298,6 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
           </div>
 
           <div className="space-y-8">
-            {/* LOGISTICS NODE */}
             <Card className="rounded-[2.5rem] border-none shadow-xl bg-zinc-900 text-white overflow-hidden relative">
               <div className="absolute top-0 right-0 p-8 opacity-10"><Truck className="w-32 h-32 rotate-12" /></div>
               <CardContent className="p-8 space-y-8 relative z-10">
@@ -330,7 +327,6 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
               </CardContent>
             </Card>
 
-            {/* TRUST BOX */}
             <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8">
                <CardContent className="p-0 space-y-6">
                   <div className="flex items-center gap-3">
@@ -355,9 +351,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
         order={order} 
         isOpen={isReviewOpen} 
         onClose={() => setIsReviewOpen(false)} 
-        onSuccess={() => {
-           // Success handle...
-        }}
+        onSuccess={() => {}}
       />
       <WhatsAppButton />
     </div>

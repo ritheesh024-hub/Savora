@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -54,7 +55,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
     setMounted(true);
   }, []);
 
-  // Live Identity & Behavioral Data
   const usersQuery = useMemo(() => db ? query(collection(db, 'users')) : null, [db]);
   const { data: allUsers = [] } = useCollection<any>(usersQuery);
 
@@ -68,18 +68,17 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
   const { data: allReferrals = [] } = useCollection<any>(growthQuery);
 
   const metrics = useMemo(() => {
-    const delivered = orders.filter(o => o.status === 'Delivered');
+    const delivered = orders.filter(o => o.status === 'delivered');
     const todayRev = delivered.filter(o => o.createdAt?.toDate && isToday(o.createdAt.toDate())).reduce((acc, o) => acc + (Number(o.total) || 0), 0);
     const totalRev = delivered.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
     
-    // Status Aggregation
     const status = {
-      active: orders.filter(o => ['Pending', 'Confirmed', 'Preparing', 'Out for Delivery'].includes(o.status)).length,
+      active: orders.filter(o => ['orderPlaced', 'confirmed', 'preparing', 'outForDelivery'].includes(o.status)).length,
       delivered: delivered.length,
-      cancelled: orders.filter(o => o.status === 'Cancelled').length
+      cancelled: orders.filter(o => o.status === 'Cancelled').length,
+      preparing: orders.filter(o => o.status === 'preparing').length
     };
 
-    // Velocity Chart Data (Last 7 Days)
     const chartMap: Record<string, number> = {};
     const labels = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), i), 'MMM dd')).reverse();
     labels.forEach(l => chartMap[l] = 0);
@@ -92,7 +91,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
     const chartData = Object.entries(chartMap).map(([name, val]) => ({ name, val }));
 
-    // Growth Metrics
     const referralCount = allReferrals.length;
     const couponImpact = orders.filter(o => !!o.couponCode).length;
 
@@ -117,7 +115,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-20">
-      {/* KPI GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard label="Gross Today" value={`₹${metrics.todayRev}`} icon={IndianRupee} trend="+12%" color="text-emerald-500" bg="bg-emerald-50" />
         <KPICard label="Active Tickets" value={metrics.status.active} icon={Zap} trend="Live" color="text-orange-500" bg="bg-orange-50" />
@@ -125,7 +122,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
         <KPICard label="Avg. Ticket" value={`₹${metrics.avgOrder}`} icon={CreditCard} trend="Stable" color="text-primary" bg="bg-primary/5" />
       </div>
 
-      {/* GROWTH & LOYALTY HUD */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
          <Card className="rounded-[2.5rem] border-none shadow-xl bg-zinc-950 text-white p-10 relative overflow-hidden group">
             <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 transition-transform duration-1000 rotate-12">
@@ -173,7 +169,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* REVENUE VELOCITY */}
         <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 md:p-10 flex flex-col h-full overflow-hidden relative">
           <CardHeader className="px-0 pt-0 pb-10 flex flex-row items-center justify-between border-b border-dashed mb-10">
             <div className="space-y-1">
@@ -205,7 +200,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
           </div>
         </Card>
 
-        {/* SECURITY AUDIT */}
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 flex flex-col overflow-hidden">
           <CardHeader className="p-8 border-b bg-muted/5 flex flex-row items-center justify-between">
              <div className="flex items-center gap-4">
@@ -254,7 +248,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
         </Card>
       </div>
 
-      {/* OPERATIONAL INSIGHTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 space-y-10">
           <div className="space-y-1">
@@ -263,7 +256,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
           </div>
           <div className="space-y-6">
              <MetricBar label="Delivered" count={metrics.status.delivered} total={orders.length} color="bg-emerald-500" />
-             <MetricBar label="Preparing" count={metrics.status.active} total={orders.length} color="bg-orange-500" />
+             <MetricBar label="Preparing" count={metrics.status.preparing} total={orders.length} color="bg-orange-500" />
              <MetricBar label="Cancelled" count={metrics.status.cancelled} total={orders.length} color="bg-rose-500" />
           </div>
         </Card>
