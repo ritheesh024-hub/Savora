@@ -176,7 +176,7 @@ export const ProductManagement = () => {
           <p className="text-muted-foreground text-sm font-medium tracking-tight">Provision menu items and optimize visibility parameters.</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="h-16 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-3 bg-primary text-white shadow-3xl hover:scale-[1.02] transition-all">
-          <Plus className="w-5 h-5" /> Provision Dish
+          <Plus className="w-5 h-5" /> Add Coupon +
         </Button>
       </div>
 
@@ -286,7 +286,7 @@ export const ProductManagement = () => {
           </div>
 
           <DialogFooter className="p-10 bg-secondary/30 flex gap-4">
-             <Button variant="outline" className="h-16 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Abandon</Button>
+             <Button variant="outline" className="h-16 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Close</Button>
              <Button className="h-16 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all" onClick={handleSave} disabled={saveLoading}>
                {saveLoading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Save'}
              </Button>
