@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -22,7 +21,8 @@ import {
   MessageSquare,
   TrendingUp,
   Gift,
-  History
+  History,
+  LayoutDashboard
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -144,123 +144,135 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const availableTabs = useMemo(() => {
     if (activeView === 'kitchen') return ['kitchen'];
     if (activeView === 'cashier') return ['overview', 'billing', 'orders', 'archive'];
-    return ['overview', 'users', 'billing', 'orders', 'products', 'reviews', 'coupons', 'notifications', 'archive', 'staff', 'settings'];
+    return ['overview', 'users', 'billing', 'orders', 'products', 'staff', 'reviews', 'coupons', 'notifications', 'archive', 'settings'];
   }, [activeView]);
 
   const getTabLabel = (tab: string) => {
     switch(tab) {
       case 'overview': return 'Analytics';
       case 'billing': return 'Counter';
+      case 'orders': return 'Live Orders';
       case 'products': return 'Inventory';
       case 'notifications': return 'Broadcast';
-      case 'coupons': return 'Growth';
+      case 'coupons': return 'Coupons';
       default: return tab.charAt(0).toUpperCase() + tab.slice(1);
     }
   };
 
+  const getTabIcon = (tab: string, className?: string) => {
+    const iconClass = cn("w-4.5 h-4.5", className);
+    switch(tab) {
+      case 'overview': return <BarChart3 className={iconClass} />;
+      case 'users': return <Users className={iconClass} />;
+      case 'billing': return <Receipt className={iconClass} />;
+      case 'kitchen': return <ChefHat className={iconClass} />;
+      case 'orders': return <ShoppingBag className={iconClass} />;
+      case 'archive': return <History className={iconClass} />;
+      case 'products': return <Layers className={iconClass} />;
+      case 'reviews': return <MessageSquare className={iconClass} />;
+      case 'coupons': return <TicketPercent className={iconClass} />;
+      case 'notifications': return <Megaphone className={iconClass} />;
+      case 'staff': return <Fingerprint className={iconClass} />;
+      case 'settings': return <Settings2 className={iconClass} />;
+      default: return <BoxSelect className={iconClass} />;
+    }
+  };
+
   return (
-    <div className="w-full">
+    <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
-      <Tabs defaultValue={availableTabs[0]} className="flex flex-col lg:flex-row gap-4 lg:gap-12">
-        <aside className="lg:w-72 shrink-0">
-          <div className="sticky top-20 lg:top-28 z-40 lg:z-auto">
-            {/* MOBILE NAVIGATION: HORIZONTAL SCROLL */}
-            <div className="lg:hidden -mx-4 px-4 bg-zinc-50 dark:bg-zinc-950 py-3 border-b overflow-hidden">
-               <TabsList className="bg-transparent h-auto flex flex-row p-0 space-x-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
-                  {availableTabs.map((tab) => (
-                    <TabsTrigger 
-                      key={tab}
-                      value={tab} 
-                      className="h-11 px-6 rounded-full font-black uppercase text-[10px] tracking-widest gap-3 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl shadow-none border-none transition-all flex-shrink-0 snap-start bg-white dark:bg-zinc-900 border"
-                    >
-                      {tab === 'overview' && <BarChart3 className="w-3.5 h-3.5" />}
-                      {tab === 'users' && <Users className="w-3.5 h-3.5" />}
-                      {tab === 'billing' && <Receipt className="w-3.5 h-3.5" />}
-                      {tab === 'kitchen' && <ChefHat className="w-3.5 h-3.5" />}
-                      {tab === 'orders' && <ShoppingBag className="w-3.5 h-3.5" />}
-                      {tab === 'archive' && <History className="w-3.5 h-3.5" />}
-                      {tab === 'products' && <Layers className="w-3.5 h-3.5" />}
-                      {tab === 'reviews' && <MessageSquare className="w-3.5 h-3.5" />}
-                      {tab === 'coupons' && <TicketPercent className="w-3.5 h-3.5" />}
-                      {tab === 'notifications' && <Megaphone className="w-3.5 h-3.5" />}
-                      {tab === 'staff' && <Fingerprint className="w-3.5 h-3.5" />}
-                      {tab === 'settings' && <Settings2 className="w-3.5 h-3.5" />}
-                      {getTabLabel(tab)}
-                      {tab === 'orders' && orderGroups.pending.length > 0 && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                      )}
-                    </TabsTrigger>
-                  ))}
-               </TabsList>
-            </div>
+      <Tabs defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
+        {/* MOBILE NAVIGATION: HORIZONTAL SCROLL (REMAINS OPTIMIZED FOR MOBILE) */}
+        <div className="lg:hidden sticky top-[70px] z-50 bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-3 px-4">
+           <TabsList className="bg-transparent h-auto flex flex-row p-0 space-x-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+              {availableTabs.map((tab) => (
+                <TabsTrigger 
+                  key={tab}
+                  value={tab} 
+                  className="h-10 px-5 rounded-full font-black uppercase text-[9px] tracking-widest gap-2 data-[state=active]:bg-primary data-[state=active]:text-white shadow-none border-none transition-all flex-shrink-0 snap-start bg-zinc-100 dark:bg-zinc-800"
+                >
+                  {getTabIcon(tab, "w-3.5 h-3.5")}
+                  {getTabLabel(tab)}
+                  {tab === 'orders' && orderGroups.pending.length > 0 && (
+                    <div className="w-1 h-1 rounded-full bg-white animate-ping" />
+                  )}
+                </TabsTrigger>
+              ))}
+           </TabsList>
+        </div>
 
-            {/* DESKTOP NAVIGATION: VERTICAL SIDEBAR */}
-            <div className="hidden lg:block space-y-6">
-              <div className="space-y-4">
-                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground px-4 opacity-50">Operational Hub</h2>
-                <TabsList className="bg-white dark:bg-zinc-900 flex flex-col h-auto w-full p-2 rounded-[2.5rem] border shadow-sm space-y-1">
-                  {availableTabs.map((tab) => (
-                    <TabsTrigger 
-                      key={tab}
-                      value={tab} 
-                      className="w-full justify-start px-6 py-4 rounded-[1.5rem] font-bold uppercase text-[10px] tracking-widest gap-4 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all group outline-none"
-                    >
-                      {tab === 'overview' && <BarChart3 className="w-4 h-4 group-hover:scale-110 transition-transform" />}
-                      {tab === 'users' && <Users className="w-4 h-4" />}
-                      {tab === 'billing' && <Receipt className="w-4 h-4" />}
-                      {tab === 'kitchen' && <ChefHat className="w-4 h-4" />}
-                      {tab === 'orders' && (
-                        <div className="flex items-center gap-4 flex-1">
-                          <ShoppingBag className="w-4 h-4" />
-                          <span>Live Feed</span>
-                          {orderGroups.pending.length > 0 && (
-                            <Badge className="ml-auto bg-white text-primary border-none text-[8px] h-5 w-5 p-0 flex items-center justify-center rounded-full animate-pulse shadow-sm">
-                              {orderGroups.pending.length}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                      {tab === 'archive' && <History className="w-4 h-4" />}
-                      {tab === 'products' && <Layers className="w-4 h-4" />}
-                      {tab === 'reviews' && <MessageSquare className="w-4 h-4" />}
-                      {tab === 'coupons' && <TicketPercent className="w-4 h-4" />}
-                      {tab === 'notifications' && <Megaphone className="w-4 h-4" />}
-                      {tab === 'staff' && <Fingerprint className="w-4 h-4" />}
-                      {tab === 'settings' && <Settings2 className="w-4 h-4" />}
-                      {getTabLabel(tab)}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
-
-              <Card className="rounded-[2rem] border-none shadow-xl bg-orange-gradient text-white p-6 relative overflow-hidden group">
-                <div className="absolute -right-4 -bottom-4 opacity-10 transform group-hover:rotate-12 transition-transform duration-1000"><Zap className="w-24 h-24" /></div>
-                <div className="relative z-10 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <p className="text-[9px] font-black uppercase tracking-widest opacity-80">Audio Alerts</p>
-                      <p className="text-[11px] font-bold">{isAdminMuted ? 'Muted' : 'Operational'}</p>
+        {/* DESKTOP SIDEBAR - 220px (Icons only on small tablets, full on desktop) */}
+        <aside className="hidden lg:flex flex-col w-[220px] lg:w-[220px] md:w-[80px] bg-zinc-900/95 dark:bg-zinc-950/80 backdrop-blur-2xl border-r border-white/5 sticky top-[70px] h-[calc(100vh-70px)] shrink-0 transition-all duration-500 overflow-y-auto scrollbar-hide">
+          <div className="p-4 space-y-8 flex-1">
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 px-4 mb-4 lg:block hidden">Operations</p>
+              <TabsList className="bg-transparent flex flex-col h-auto w-full p-0 space-y-1.5">
+                {availableTabs.map((tab) => (
+                  <TabsTrigger 
+                    key={tab}
+                    value={tab} 
+                    className={cn(
+                      "w-full justify-start px-4 lg:px-5 py-3.5 rounded-[1.2rem] font-bold uppercase text-[10px] tracking-widest gap-4 transition-all group outline-none",
+                      "text-white/60 hover:text-white hover:bg-white/5",
+                      "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-primary/30"
+                    )}
+                  >
+                    <div className="shrink-0 flex items-center justify-center w-5 h-5">
+                      {getTabIcon(tab, "w-4.5 h-4.5 transition-transform group-hover:scale-110")}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-white/20 hover:bg-white/30 rounded-xl transition-all" onClick={toggleAdminMute}>
-                      {isAdminMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+                    <span className="lg:block hidden truncate flex-1 text-left">{getTabLabel(tab)}</span>
+                    {tab === 'orders' && orderGroups.pending.length > 0 && (
+                      <Badge className="ml-auto bg-white text-primary border-none text-[8px] h-4 w-4 p-0 flex items-center justify-center rounded-full animate-pulse lg:flex hidden">
+                        {orderGroups.pending.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
             </div>
+
+            <div className="lg:block hidden pt-4 border-t border-white/5">
+              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 px-4 mb-4">Diagnostics</p>
+              <div className="px-2">
+                <Card className="rounded-[1.5rem] border-none bg-white/5 p-4 relative overflow-hidden group">
+                  <div className="relative z-10 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <p className="text-[8px] font-black uppercase tracking-widest text-white/40">Audio Link</p>
+                        <p className="text-[10px] font-black text-white/80 uppercase">{isAdminMuted ? 'Muted' : 'Live'}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all" onClick={toggleAdminMute}>
+                        {isAdminMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 lg:block hidden">
+             <div className="bg-primary/10 rounded-2xl p-4 border border-primary/20">
+                <div className="flex items-center gap-3 text-primary mb-1">
+                  <Fingerprint className="w-4 h-4" />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Node Verified</span>
+                </div>
+                <p className="text-[8px] font-medium text-white/40 leading-relaxed uppercase">Operational environment strictly isolated and encrypted.</p>
+             </div>
           </div>
         </aside>
 
-        <section className="flex-1 min-w-0 min-h-[80vh]">
+        {/* MAIN WORKSPACE */}
+        <main className="flex-1 min-w-0 bg-zinc-50 dark:bg-zinc-950/50 overflow-y-auto scrollbar-hide relative">
           <AnimatePresence mode="wait">
             {availableTabs.map((tab) => (
-              <TabsContent key={tab} value={tab} className="mt-0 outline-none">
+              <TabsContent key={tab} value={tab} className="mt-0 outline-none p-6 md:p-8 lg:p-10">
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {tab === 'overview' && <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />}
                   {tab === 'users' && <UserManagement />}
@@ -278,9 +290,10 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               </TabsContent>
             ))}
           </AnimatePresence>
-        </section>
+        </main>
       </Tabs>
 
+      {/* GLOBAL ORDER DIALOG */}
       <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
         <DialogContent className="max-w-3xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
           <DialogHeader className="sr-only">
@@ -351,7 +364,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   className="rounded-[1.5rem] h-16 font-black uppercase text-[10px] tracking-widest px-10 border-2" 
                   onClick={() => setSelectedOrderForView(null)}
                 >
-                  Close
+                  Dismiss
                 </Button>
               </DialogFooter>
             </div>
@@ -369,54 +382,54 @@ const OrderGrid = ({ orderGroups, onOrderClick }: any) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start max-w-7xl">
       {categories.map((cat) => (
         <div key={cat.id} className="space-y-6">
-          <div className={cn("flex items-center justify-between px-6 py-4 rounded-[1.8rem] border bg-white dark:bg-zinc-900 shadow-sm", cat.border)}>
-            <div className="flex items-center gap-3">
-              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", cat.bg, cat.color)}>
-                <cat.icon className="w-5 h-5" />
+          <div className={cn("flex items-center justify-between px-8 py-5 rounded-[2rem] border bg-white dark:bg-zinc-900 shadow-sm transition-all", cat.border)}>
+            <div className="flex items-center gap-4">
+              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner", cat.bg, cat.color)}>
+                <cat.icon className="w-6 h-6" />
               </div>
-              <h3 className="font-black uppercase tracking-tight text-xs">{cat.label}</h3>
+              <h3 className="font-black uppercase tracking-tight text-sm italic">{cat.label} Board</h3>
             </div>
-            <Badge variant="secondary" className="rounded-full h-7 min-w-[28px] px-2 flex items-center justify-center font-black text-[10px]">{orderGroups[cat.id].length}</Badge>
+            <Badge variant="secondary" className="rounded-full h-8 min-w-[32px] px-3 flex items-center justify-center font-black text-[11px] bg-zinc-100 dark:bg-zinc-800">{orderGroups[cat.id].length}</Badge>
           </div>
           
           <div className="space-y-4">
             {orderGroups[cat.id].length === 0 ? (
-              <div className="py-12 text-center opacity-20 bg-secondary/10 rounded-[2.5rem] border-2 border-dashed">
-                <cat.icon className="w-8 h-8 mx-auto mb-2" />
-                <p className="text-[9px] font-black uppercase tracking-widest">Board Clear</p>
+              <div className="py-20 text-center opacity-20 bg-secondary/10 rounded-[3rem] border-2 border-dashed flex flex-col items-center justify-center gap-4">
+                <cat.icon className="w-10 h-10 opacity-10" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] italic">Station Idle</p>
               </div>
             ) : (
               orderGroups[cat.id].map((order: any) => (
-                <motion.div key={order.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <motion.div key={order.id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                   <Card 
-                    className="rounded-[2rem] border-none shadow-sm hover:shadow-xl transition-all cursor-pointer bg-white dark:bg-zinc-900 overflow-hidden group active:scale-[0.98] border-l-4 border-l-transparent" 
+                    className="rounded-[2.5rem] border-none shadow-sm hover:shadow-2xl transition-all cursor-pointer bg-white dark:bg-zinc-900 overflow-hidden group active:scale-[0.98] border-l-[6px] border-l-transparent" 
                     onClick={() => onOrderClick(order)} 
                     style={{ borderLeftColor: order.status === 'orderPlaced' ? '#ef4444' : (order.status === 'confirmed' || order.status === 'preparing' || order.status === 'outForDelivery') ? '#f97316' : '#10b981' }}
                   >
-                    <div className="p-6 space-y-4">
+                    <div className="p-8 space-y-5">
                       <div className="flex justify-between items-start">
-                        <div className="space-y-0.5">
-                          <p className="text-[9px] font-black uppercase text-primary italic">#{order.orderId}</p>
-                          <h4 className="text-base font-black uppercase tracking-tighter truncate max-w-[140px]">{order.customerName}</h4>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black uppercase text-primary italic tracking-tight">Ticket #{order.orderId}</p>
+                          <h4 className="text-xl font-black uppercase tracking-tighter truncate max-w-[180px] leading-none group-hover:text-primary transition-colors">{order.customerName}</h4>
                         </div>
                         <div className="text-right">
-                          <p className="text-[8px] font-black uppercase opacity-30 mb-0.5">Gross</p>
-                          <p className="text-lg font-black text-primary italic leading-none">₹{order.total}</p>
+                          <p className="text-[9px] font-black uppercase opacity-30 mb-0.5 tracking-widest">Settlement</p>
+                          <p className="text-2xl font-black text-primary italic leading-none">₹{order.total}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between pt-4 border-t border-dashed opacity-60">
+                      <div className="flex items-center justify-between pt-5 border-t border-dashed opacity-60">
                         <Badge className={cn(
-                          "px-2 py-0.5 text-[7px] uppercase font-black border-none",
+                          "px-3 py-1 text-[8px] uppercase font-black border-none rounded-md shadow-sm",
                           order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 
                           order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-orange-700'
                         )}>{order.status}</Badge>
-                        <div className="flex items-center gap-1.5 text-[8px] font-black uppercase">
-                          <Clock className="w-3 h-3" />
-                          {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Live'}
+                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">
+                          <Clock className="w-3.5 h-3.5 text-primary opacity-40" />
+                          {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Live Now'}
                         </div>
                       </div>
                     </div>
