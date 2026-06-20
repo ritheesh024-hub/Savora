@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -10,51 +11,71 @@ import {
   Bell, 
   Send, 
   Users, 
-  Smartphone, 
   Loader2,
   TicketPercent,
   Megaphone,
-  History
+  History,
+  Smartphone
 } from 'lucide-react';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, addDoc, serverTimestamp, writeBatch, doc, getDocs } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export const AdminNotificationManager = () => {
   const db = useFirestore();
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
-    body: '',
+    message: '',
+    targetAudience: 'all',
     type: 'promo' as 'promo' | 'system',
     link: '/menu'
   });
 
   const logsQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'broadcast_logs'), orderBy('timestamp', 'desc'), limit(10));
+    return query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(20));
   }, [db]);
 
   const { data: logs, loading: logsLoading } = useCollection<any>(logsQuery);
 
   const handleSendBroadcast = async () => {
-    if (!db || !formData.title || !formData.body) {
-      toast({ variant: "destructive", title: "Incomplete Payload", description: "Title and Body are required." });
+    if (!db || !user || !formData.title || !formData.message) {
+      toast({ variant: "destructive", title: "Incomplete Details", description: "Title and Message are required." });
       return;
     }
 
     setLoading(true);
     try {
+      // 1. Fetch all users to distribute the notification
       const usersSnap = await getDocs(collection(db, 'users'));
       const batch = writeBatch(db);
 
+      // 2. Create the master log record
+      const notificationData = {
+        title: formData.title,
+        message: formData.message,
+        targetAudience: formData.targetAudience,
+        type: formData.type,
+        link: formData.link,
+        isActive: true,
+        createdBy: user.uid,
+        createdAt: serverTimestamp()
+      };
+
+      const masterLogRef = await addDoc(collection(db, 'notifications'), notificationData);
+
+      // 3. Populate user inboxes
       usersSnap.docs.forEach(userDoc => {
-        const notifRef = doc(collection(db, 'users', userDoc.id, 'notifications'));
-        batch.set(notifRef, {
+        const userNotifRef = doc(collection(db, 'user_notifications', userDoc.id));
+        batch.set(userNotifRef, {
           title: formData.title,
-          body: formData.body,
+          message: formData.message,
           type: formData.type,
           link: formData.link,
           read: false,
@@ -62,18 +83,17 @@ export const AdminNotificationManager = () => {
         });
       });
 
-      const logRef = collection(db, 'broadcast_logs');
-      await addDoc(logRef, {
-        ...formData,
-        recipientCount: usersSnap.size,
-        timestamp: serverTimestamp()
-      });
-
       await batch.commit();
-      toast({ title: "Broadcast Successful 🚀", description: `Sent to ${usersSnap.size} customers.` });
-      setFormData({ title: '', body: '', type: 'promo', link: '/menu' });
+      
+      toast({ title: "Broadcast Sent! 🚀", description: `Delivered to ${usersSnap.size} active users.` });
+      setFormData({ title: '', message: '', targetAudience: 'all', type: 'promo', link: '/menu' });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Broadcast Failed", description: e.message });
+      console.error(e);
+      toast({ variant: "destructive", title: "Transmission Failed", description: e.message });
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'notifications',
+        operation: 'create',
+      } as any));
     } finally {
       setLoading(false);
     }
@@ -83,8 +103,8 @@ export const AdminNotificationManager = () => {
     <div className="space-y-10 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
         <div className="space-y-1">
-          <h2 className="text-4xl font-black font-headline uppercase tracking-tighter italic">Push <span className="text-primary">Engine</span></h2>
-          <p className="text-muted-foreground text-sm font-medium tracking-tight">Broadcast real-time marketing and system updates to all users.</p>
+          <h2 className="text-4xl font-black font-headline uppercase tracking-tighter italic">Broadcast <span className="text-primary">Engine</span></h2>
+          <p className="text-muted-foreground text-sm font-medium tracking-tight">Send high-priority in-app notifications to your customer base.</p>
         </div>
       </div>
 
@@ -126,8 +146,8 @@ export const AdminNotificationManager = () => {
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Payload Content</Label>
               <Textarea 
-                value={formData.body} 
-                onChange={e => setFormData({...formData, body: e.target.value})}
+                value={formData.message} 
+                onChange={e => setFormData({...formData, message: e.target.value})}
                 className="min-h-[140px] rounded-[2rem] bg-secondary/30 dark:bg-zinc-800 border-none px-6 py-6 font-medium text-lg leading-relaxed" 
                 placeholder="Compose your high-converting copy here..."
               />
@@ -165,7 +185,7 @@ export const AdminNotificationManager = () => {
            <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8">
               <CardHeader className="px-0 pt-0 pb-6 border-b border-dashed mb-6 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-3">
-                  <History className="w-4 h-4 text-primary" /> Transmission Log
+                  <History className="w-4 h-4 text-primary" /> Global Logs
                 </CardTitle>
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </CardHeader>
@@ -175,20 +195,20 @@ export const AdminNotificationManager = () => {
                 ) : logs.length === 0 ? (
                    <div className="py-20 text-center opacity-20">
                      <Bell className="w-10 h-10 mx-auto mb-2" />
-                     <p className="text-[10px] font-black uppercase tracking-widest">No history recorded</p>
+                     <p className="text-[10px] font-black uppercase tracking-widest">No signals recorded</p>
                    </div>
                 ) : logs.map((log: any, i: number) => (
                   <div key={i} className="p-5 bg-zinc-50 dark:bg-zinc-800/50 rounded-3xl border group hover:border-primary/20 transition-all">
                      <div className="flex justify-between items-start mb-2">
                         <span className="text-[10px] font-black uppercase text-primary truncate max-w-[150px]">{log.title}</span>
-                        <span className="text-[7px] font-black uppercase opacity-30">{log.timestamp?.toDate ? format(log.timestamp.toDate(), 'MMM dd, p') : 'Pending'}</span>
+                        <span className="text-[7px] font-black uppercase opacity-30">{log.createdAt?.toDate ? format(log.createdAt.toDate(), 'MMM dd, p') : 'Pending'}</span>
                      </div>
-                     <p className="text-[9px] font-medium text-muted-foreground line-clamp-2 leading-relaxed mb-4">"{log.body}"</p>
+                     <p className="text-[9px] font-medium text-muted-foreground line-clamp-2 leading-relaxed mb-4">"{log.message}"</p>
                      <div className="flex items-center justify-between pt-3 border-t border-dashed">
                         <div className="flex items-center gap-1.5 text-[8px] font-black uppercase opacity-60">
-                           <Users className="w-3 h-3" /> {log.recipientCount} Nodes
+                           <Users className="w-3 h-3" /> Audience: {log.targetAudience}
                         </div>
-                        <Badge className="bg-emerald-50 text-emerald-600 border-none text-[6px] font-black px-1.5 h-4">Delivered</Badge>
+                        <Badge className="bg-emerald-50 text-emerald-600 border-none text-[6px] font-black px-1.5 h-4">Deployed</Badge>
                      </div>
                   </div>
                 ))}
@@ -203,9 +223,8 @@ export const AdminNotificationManager = () => {
                  </div>
                  <div className="space-y-1">
                    <h4 className="text-xl font-black uppercase tracking-tighter leading-none italic">Growth Tactics</h4>
-                   <p className="text-[10px] font-medium text-white/70 leading-relaxed uppercase tracking-widest">Coupons with push notifications yield <span className="text-white font-black">2.4x</span> higher conversion than static banners.</p>
+                   <p className="text-[10px] font-medium text-white/70 leading-relaxed uppercase tracking-widest">In-app signals drive <span className="text-white font-black">40% more</span> instant checkouts than passive banners.</p>
                  </div>
-                 <Button variant="ghost" className="w-full bg-white/20 hover:bg-white/30 text-white border-none rounded-xl font-black uppercase text-[9px] tracking-widest gap-2">Explore Analytics <History className="w-3 h-3" /></Button>
               </div>
            </Card>
         </div>

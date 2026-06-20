@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -15,7 +16,6 @@ import {
   ShoppingBag, 
   TicketPercent, 
   Settings, 
-  Clock, 
   ChevronRight,
   Inbox,
   Sparkles
@@ -36,7 +36,7 @@ export const NotificationCenter = ({ children }: { children: React.ReactNode }) 
     }
   };
 
-  const getIcon = (type: string) => {
+  const getIcon = (type?: string) => {
     switch (type) {
       case 'order': return <ShoppingBag className="w-4 h-4 text-primary" />;
       case 'promo': return <TicketPercent className="w-4 h-4 text-emerald-500" />;
@@ -112,7 +112,7 @@ export const NotificationCenter = ({ children }: { children: React.ReactNode }) 
                       </span>
                     </div>
                     <p className="text-[11px] font-medium leading-relaxed text-muted-foreground line-clamp-2">
-                      {notif.body}
+                      {notif.message}
                     </p>
                     {notif.orderId && (
                       <div className="pt-2 flex items-center gap-2">

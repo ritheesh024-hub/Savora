@@ -36,15 +36,6 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow write: if isOwner(userId) || isAdmin();
-      
-      match /notifications/{notifId} {
-        allow read: if isOwner(userId);
-        allow write: if isOwner(userId) || isAdmin();
-      }
-      
-      match /permissions/{permId} {
-        allow read, write: if isOwner(userId);
-      }
     }
 
     match /orders/{orderId} {
@@ -67,6 +58,16 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /notifications/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /user_notifications/{userId}/{id} {
+      allow read: if isOwner(userId);
+      allow write: if isAdmin() || isOwner(userId);
+    }
+
     match /coupons/{id} {
       allow read: if true;
       allow write: if isAdmin();
@@ -87,10 +88,6 @@ service cloud.firestore {
     match /login_events/{id} {
       allow create: if isAuthenticated();
       allow read: if isAdmin();
-    }
-
-    match /broadcast_logs/{id} {
-      allow read, write: if isAdmin();
     }
 
     match /settings/{id} {

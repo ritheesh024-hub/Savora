@@ -1,12 +1,12 @@
+
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   collection, 
   query, 
   orderBy, 
   limit, 
-  addDoc, 
   doc, 
   updateDoc, 
   serverTimestamp, 
@@ -18,8 +18,8 @@ import { useFirestore, useUser } from '@/firebase';
 export interface AppNotification {
   id: string;
   title: string;
-  body: string;
-  type: 'order' | 'promo' | 'system';
+  message: string;
+  type?: 'order' | 'promo' | 'system';
   link?: string;
   read: boolean;
   createdAt: any;
@@ -34,15 +34,15 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Fetch & Listen to Notifications (In-App Only)
   useEffect(() => {
     if (!db || !user?.uid) {
       setLoading(false);
       return;
     }
 
+    // LISTENING TO user_notifications/{userId}
     const q = query(
-      collection(db, 'users', user.uid, 'notifications'),
+      collection(db, 'user_notifications', user.uid),
       orderBy('createdAt', 'desc'),
       limit(50)
     );
@@ -62,23 +62,11 @@ export function useNotifications() {
     });
 
     return () => unsubscribe();
-  }, [db, user?.uid]); // Use UID string to stabilize dependency
+  }, [db, user?.uid]);
 
-  // Trigger Notification (Internal Logic)
-  const sendNotification = useCallback(async (uid: string, data: Omit<AppNotification, 'id' | 'createdAt' | 'read'>) => {
-    if (!db) return;
-    const notifRef = collection(db, 'users', uid, 'notifications');
-    addDoc(notifRef, {
-      ...data,
-      read: false,
-      createdAt: serverTimestamp()
-    });
-  }, [db]);
-
-  // Mark Read
   const markAsRead = useCallback(async (notifId: string) => {
     if (!db || !user?.uid) return;
-    const notifRef = doc(db, 'users', user.uid, 'notifications', notifId);
+    const notifRef = doc(db, 'user_notifications', user.uid, notifId);
     updateDoc(notifRef, { read: true });
   }, [db, user?.uid]);
 
@@ -89,7 +77,7 @@ export function useNotifications() {
 
     const batch = writeBatch(db);
     unread.forEach(n => {
-      const ref = doc(db, 'users', user.uid!, 'notifications', n.id);
+      const ref = doc(db, 'user_notifications', user.uid!, n.id);
       batch.update(ref, { read: true });
     });
     await batch.commit();
@@ -99,7 +87,6 @@ export function useNotifications() {
     notifications,
     unreadCount,
     loading,
-    sendNotification,
     markAsRead,
     markAllAsRead
   };

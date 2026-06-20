@@ -185,6 +185,7 @@
           "enum": [
             "orderPlaced",
             "confirmed",
+            "preparing",
             "outForDelivery",
             "delivered",
             "Cancelled"
@@ -261,6 +262,30 @@
         "userId",
         "rating"
       ]
+    },
+    "GlobalNotification": {
+      "title": "Global Notification",
+      "description": "Record of a broadcast sent by admin",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "targetAudience": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      }
+    },
+    "UserNotification": {
+      "title": "User Notification",
+      "description": "Individual notification in user's inbox",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -289,6 +314,14 @@
     "/reviews/{reviewId}": {
       "schema": "#/backend/entities/Review",
       "description": "Public and audited user reviews"
+    },
+    "/notifications/{id}": {
+      "schema": "#/backend/entities/GlobalNotification",
+      "description": "Admin broadcast logs"
+    },
+    "/user_notifications/{userId}/{id}": {
+      "schema": "#/backend/entities/UserNotification",
+      "description": "User specific in-app notifications"
     }
   }
 }
