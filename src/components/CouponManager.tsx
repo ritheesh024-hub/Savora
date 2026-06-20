@@ -9,26 +9,31 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { 
   TicketPercent, Plus, Trash2, 
-  Loader2, Calendar, Percent, 
-  Info, AlertCircle, CheckCircle2,
-  IndianRupee, Hash
+  Loader2, Edit2, Info, AlertCircle, 
+  CheckCircle2, IndianRupee, Hash,
+  Calendar, Percent
 } from 'lucide-react';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, doc, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { 
+  collection, query, doc, setDoc, deleteDoc, 
+  serverTimestamp, updateDoc, getDoc, orderBy 
+} from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const CouponManager = () => {
   const db = useFirestore();
-  const couponsQuery = useMemo(() => db ? query(collection(db, 'coupons')) : null, [db]);
+  const couponsQuery = useMemo(() => db ? query(collection(db, 'coupons'), orderBy('createdAt', 'desc')) : null, [db]);
   const { data: coupons, loading } = useCollection<any>(couponsQuery);
 
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<any | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  
   const [formData, setFormData] = useState({
     code: '',
     discount: '10',
@@ -36,15 +41,49 @@ export const CouponManager = () => {
     isActive: true,
     expiryDate: '',
     minOrderValue: '0',
+    usageLimit: '0',
     description: 'Special offer for our elite community.'
   });
 
-  const handleAddCoupon = async () => {
-    if (!db || !formData.code || !formData.discount) return;
+  const handleOpenModal = (coupon: any = null) => {
+    if (coupon) {
+      setEditingCoupon(coupon);
+      setFormData({
+        code: coupon.code || '',
+        discount: String(coupon.discount || '10'),
+        type: (coupon.type as 'percent' | 'flat') || 'percent',
+        isActive: coupon.isActive ?? true,
+        expiryDate: coupon.expiryDate || '',
+        minOrderValue: String(coupon.minOrderValue || '0'),
+        usageLimit: String(coupon.usageLimit || '0'),
+        description: coupon.description || 'Special offer for our elite community.'
+      });
+    } else {
+      setEditingCoupon(null);
+      setFormData({
+        code: '',
+        discount: '10',
+        type: 'percent',
+        isActive: true,
+        expiryDate: '',
+        minOrderValue: '0',
+        usageLimit: '0',
+        description: 'Special offer for our elite community.'
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!db || !formData.code || !formData.discount) {
+      toast({ variant: "destructive", title: "Missing Identity", description: "Bounty Code and Discount Value are required." });
+      return;
+    }
     
     setSubmitting(true);
     const code = formData.code.trim().toUpperCase();
     const couponRef = doc(db, 'coupons', code);
+    
     const couponData = {
       code,
       discount: Number(formData.discount),
@@ -52,25 +91,47 @@ export const CouponManager = () => {
       isActive: formData.isActive,
       expiryDate: formData.expiryDate || null,
       minOrderValue: Number(formData.minOrderValue || 0),
+      usageLimit: Number(formData.usageLimit || 0),
       description: formData.description,
-      usageCount: 0,
-      createdAt: serverTimestamp()
+      usageCount: editingCoupon?.usageCount || 0,
+      updatedAt: serverTimestamp(),
+      createdAt: editingCoupon?.createdAt || serverTimestamp()
     };
 
-    setDoc(couponRef, couponData)
-      .then(() => {
-        toast({ title: "Coupon Created", description: `Code ${code} is now active.` });
-        setIsAddDialogOpen(false);
-        setFormData({ code: '', discount: '10', type: 'percent', isActive: true, expiryDate: '', minOrderValue: '0', description: 'Special offer for our elite community.' });
-      })
-      .catch(async (error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: couponRef.path,
-          operation: 'create',
-          requestResourceData: couponData
-        }));
-      })
-      .finally(() => setSubmitting(false));
+    try {
+      // If we are editing and the code (document ID) has changed
+      if (editingCoupon && editingCoupon.code !== code) {
+        // 1. Check if new code already exists
+        const checkSnap = await getDoc(couponRef);
+        if (checkSnap.exists()) {
+          throw new Error(`The code ${code} is already in use by another node.`);
+        }
+        // 2. Create new doc and delete old one
+        await setDoc(couponRef, couponData);
+        await deleteDoc(doc(db, 'coupons', editingCoupon.code));
+      } else {
+        // Standard Add or Update (same ID)
+        await setDoc(couponRef, couponData, { merge: true });
+      }
+
+      toast({ 
+        title: editingCoupon ? "Registry Updated" : "Bounty Provisioned", 
+        description: `Code ${code} is now operational.` 
+      });
+      setIsModalOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      const message = error.message || "Operation failed.";
+      toast({ variant: "destructive", title: "Sync Failed", description: message });
+      
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: couponRef.path,
+        operation: editingCoupon ? 'update' : 'create',
+        requestResourceData: couponData
+      }));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const toggleCoupon = (code: string, currentState: boolean) => {
@@ -97,13 +158,13 @@ export const CouponManager = () => {
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
+    <div className="space-y-10 animate-in fade-in duration-700 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
         <div className="space-y-1">
           <h2 className="text-4xl font-black font-headline uppercase tracking-tighter italic">Offer <span className="text-primary">Engine</span></h2>
           <p className="text-muted-foreground text-sm font-medium tracking-tight">Provision promotional codes and scale your growth velocity.</p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)} className="h-16 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-3 bg-primary text-white shadow-3xl hover:scale-[1.02] transition-all">
+        <Button onClick={() => handleOpenModal()} className="h-16 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-3 bg-primary text-white shadow-3xl hover:scale-[1.02] transition-all">
           <Plus className="w-5 h-5" /> Provision Bounty
         </Button>
       </div>
@@ -148,7 +209,7 @@ export const CouponManager = () => {
                    </div>
                    <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border">
                       <p className="text-[7px] font-black uppercase opacity-40 mb-1">Redemptions</p>
-                      <p className="text-xs font-black">{coupon.usageCount || 0} Uses</p>
+                      <p className="text-xs font-black">{coupon.usageCount || 0} / {coupon.usageLimit > 0 ? coupon.usageLimit : '∞'}</p>
                    </div>
                 </div>
               </div>
@@ -160,22 +221,31 @@ export const CouponManager = () => {
                      {coupon.isActive ? 'Active' : 'Dormant'}
                    </span>
                 </div>
-                <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl bg-rose-50 border-none hover:bg-rose-600 hover:text-white transition-all text-rose-600" onClick={() => handleDelete(coupon.code)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl bg-secondary/50 border-none hover:bg-primary hover:text-white transition-all text-primary" onClick={() => handleOpenModal(coupon)}>
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl bg-rose-50 border-none hover:bg-rose-600 hover:text-white transition-all text-rose-600" onClick={() => handleDelete(coupon.code)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-2xl rounded-[3.5rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
           <div className="p-10 bg-primary text-white shrink-0 relative overflow-hidden">
              <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
              <DialogHeader className="relative z-10">
-                <DialogTitle className="text-4xl font-black font-headline uppercase tracking-tighter leading-none italic">Provision <span className="opacity-80">Bounty</span></DialogTitle>
-                <p className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">New Growth Node Entry</p>
+                <DialogTitle className="text-4xl font-black font-headline uppercase tracking-tighter leading-none italic">
+                  {editingCoupon ? 'Modify' : 'Provision'} <span className="opacity-80">Bounty</span>
+                </DialogTitle>
+                <DialogDescription className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">
+                  {editingCoupon ? 'Syncing Profile Updates' : 'New Growth Node Entry'}
+                </DialogDescription>
              </DialogHeader>
           </div>
 
@@ -218,28 +288,43 @@ export const CouponManager = () => {
                       <Input type="number" value={formData.minOrderValue} onChange={e => setFormData({...formData, minOrderValue: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-black px-6" />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Expiration Node</Label>
-                    <Input type="date" value={formData.expiryDate} onChange={e => setFormData({...formData, expiryDate: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold px-6" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Expiration Node</Label>
+                      <Input type="date" value={formData.expiryDate} onChange={e => setFormData({...formData, expiryDate: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold px-6" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Usage Limit (0=∞)</Label>
+                      <Input type="number" value={formData.usageLimit} onChange={e => setFormData({...formData, usageLimit: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-black px-6" />
+                    </div>
                   </div>
                </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Public Description</Label>
-              <Input 
-                placeholder="Student Special Offer" 
-                value={formData.description} 
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6"
-              />
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Public Description</Label>
+                <Input 
+                  placeholder="Student Special Offer" 
+                  value={formData.description} 
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6"
+                />
+              </div>
+              <div className="flex items-center justify-between p-6 bg-secondary/30 dark:bg-zinc-800 rounded-[1.5rem]">
+                 <div className="flex gap-4 items-center">
+                    <CheckCircle2 className={cn("w-5 h-5", formData.isActive ? "text-emerald-500" : "text-zinc-400")} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Global Availability Status</span>
+                 </div>
+                 <Switch checked={formData.isActive} onCheckedChange={(v) => setFormData({...formData, isActive: v})} />
+              </div>
             </div>
           </div>
 
           <DialogFooter className="p-10 bg-secondary/30 flex gap-4">
-             <Button variant="outline" className="h-18 flex-1 rounded-[1.8rem] font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsAddDialogOpen(false)}>Abandon</Button>
-             <Button className="h-18 flex-1 rounded-[1.8rem] font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all" onClick={handleAddCoupon} disabled={submitting}>
-               {submitting ? <Loader2 className="animate-spin w-5 h-5" /> : 'Launch Node'}
+             <Button variant="outline" className="h-18 flex-1 rounded-[1.8rem] font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Abandon</Button>
+             <Button className="h-18 flex-1 rounded-[1.8rem] font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all" onClick={handleSave} disabled={submitting}>
+               {submitting ? <Loader2 className="animate-spin w-5 h-5" /> : editingCoupon ? 'Commit Sync' : 'Launch Node'}
              </Button>
           </DialogFooter>
         </DialogContent>
