@@ -179,18 +179,21 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   };
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+    <div className="flex-1 flex-col lg:flex-row min-h-0 overflow-hidden flex">
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
       <Tabs defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* MOBILE NAVIGATION: HORIZONTAL SCROLL (REMAINS OPTIMIZED FOR MOBILE) */}
-        <div className="lg:hidden sticky top-[70px] z-50 bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-3 px-4">
-           <TabsList className="bg-transparent h-auto flex flex-row p-0 space-x-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+        {/* MOBILE NAVIGATION: HORIZONTAL SCROLL OPTIMIZED */}
+        <div className="lg:hidden sticky top-[70px] z-50 bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-3 px-4 w-full overflow-hidden">
+           <TabsList className="bg-transparent h-auto flex flex-row flex-nowrap justify-start p-0 space-x-2 overflow-x-auto scrollbar-hide snap-x snap-proximity w-full border-none shadow-none">
               {availableTabs.map((tab) => (
                 <TabsTrigger 
                   key={tab}
                   value={tab} 
-                  className="h-10 px-5 rounded-full font-black uppercase text-[9px] tracking-widest gap-2 data-[state=active]:bg-primary data-[state=active]:text-white shadow-none border-none transition-all flex-shrink-0 snap-start bg-zinc-100 dark:bg-zinc-800"
+                  className={cn(
+                    "h-10 px-5 rounded-full font-black uppercase text-[9px] tracking-widest gap-2 transition-all flex-shrink-0 snap-start bg-zinc-100 dark:bg-zinc-800 whitespace-nowrap border-none",
+                    "data-[state=active]:bg-primary data-[state=active]:text-white shadow-none"
+                  )}
                 >
                   {getTabIcon(tab, "w-3.5 h-3.5")}
                   {getTabLabel(tab)}
@@ -202,12 +205,12 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
            </TabsList>
         </div>
 
-        {/* DESKTOP SIDEBAR - 220px (Icons only on small tablets, full on desktop) */}
+        {/* DESKTOP SIDEBAR - 220px */}
         <aside className="hidden lg:flex flex-col w-[220px] lg:w-[220px] md:w-[80px] bg-zinc-900/95 dark:bg-zinc-950/80 backdrop-blur-2xl border-r border-white/5 sticky top-[70px] h-[calc(100vh-70px)] shrink-0 transition-all duration-500 overflow-y-auto scrollbar-hide">
           <div className="p-4 space-y-8 flex-1">
             <div className="space-y-1">
               <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 px-4 mb-4 lg:block hidden">Operations</p>
-              <TabsList className="bg-transparent flex flex-col h-auto w-full p-0 space-y-1.5">
+              <TabsList className="bg-transparent flex flex-col h-auto w-full p-0 space-y-1.5 border-none shadow-none">
                 {availableTabs.map((tab) => (
                   <TabsTrigger 
                     key={tab}
@@ -215,7 +218,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                     className={cn(
                       "w-full justify-start px-4 lg:px-5 py-3.5 rounded-[1.2rem] font-bold uppercase text-[10px] tracking-widest gap-4 transition-all group outline-none",
                       "text-white/60 hover:text-white hover:bg-white/5",
-                      "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-primary/30"
+                      "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-primary/30 border-none"
                     )}
                   >
                     <div className="shrink-0 flex items-center justify-center w-5 h-5">
