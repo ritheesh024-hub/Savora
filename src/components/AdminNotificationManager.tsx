@@ -22,6 +22,7 @@ import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, limit, addDoc, serverTimestamp, writeBatch, doc, getDocs } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export const AdminNotificationManager = () => {
   const db = useFirestore();
