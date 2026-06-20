@@ -10,7 +10,8 @@ import {
   ShieldCheck, QrCode, Download, 
   ExternalLink, Phone, Mail, 
   MapPin, CreditCard, Truck,
-  BellRing, Globe, Settings2
+  BellRing, Globe, Settings2,
+  Link as LinkIcon
 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -41,7 +42,8 @@ export const StoreSettings = () => {
     deliveryCharge: 40,
     freeDeliveryThreshold: 149,
     newOrderAlert: true,
-    statusUpdates: true
+    statusUpdates: true,
+    productionUrl: '' // Added for Vercel/Production connection
   });
 
   useEffect(() => {
@@ -86,7 +88,9 @@ export const StoreSettings = () => {
       .finally(() => setSaving(false));
   };
 
-  const menuUrl = `${origin}/menu`;
+  // Connect QR to Vercel/Production URL if available
+  const publicBaseUrl = settings.productionUrl || origin;
+  const menuUrl = `${publicBaseUrl}/menu`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(menuUrl)}`;
 
   if (loading) return (
@@ -206,7 +210,27 @@ export const StoreSettings = () => {
            </Card>
         </TabsContent>
 
-        <TabsContent value="digital" className="space-y-8 animate-in slide-in-from-bottom-2">
+        <TabsContent value="digital" className="space-y-12 animate-in slide-in-from-bottom-2">
+          <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-10 max-w-2xl mx-auto">
+             <CardHeader className="px-0 pt-0 pb-8 border-b border-dashed mb-8">
+                <CardTitle className="text-xl font-black font-headline uppercase tracking-tight flex items-center gap-3">
+                  <LinkIcon className="w-5 h-5 text-primary" /> Hub Connection
+                </CardTitle>
+             </CardHeader>
+             <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Production Hub URL (e.g. Vercel)</Label>
+                <Input 
+                  placeholder="https://your-app.vercel.app" 
+                  value={settings.productionUrl} 
+                  onChange={e => setSettings({...settings, productionUrl: e.target.value})} 
+                  className="h-14 rounded-2xl bg-secondary/30 border-none font-bold" 
+                />
+                <p className="text-[9px] font-medium text-muted-foreground opacity-60 ml-1 italic">
+                  Used to generate the "Marketing QR Code" below. Leave empty to use the current browser domain.
+                </p>
+             </div>
+          </Card>
+
           <Card className="rounded-[4rem] border-none shadow-3xl bg-white dark:bg-zinc-900 overflow-hidden max-w-2xl mx-auto p-12 flex flex-col items-center text-center space-y-10">
              <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 rounded-[4rem] blur-[80px] animate-pulse" />
