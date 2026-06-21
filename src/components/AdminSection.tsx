@@ -195,11 +195,11 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   }
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+    <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-visible">
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
       <Tabs defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
-        <div className="lg:hidden sticky top-[70px] z-[90] bg-white dark:bg-zinc-950 border-b shadow-sm w-full overflow-hidden shrink-0">
+        <div className="lg:hidden sticky top-[70px] z-[90] bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b shadow-sm w-full overflow-hidden shrink-0">
            <TabsList className="bg-transparent h-auto flex flex-row flex-nowrap justify-start p-3 space-x-2 overflow-x-auto scrollbar-hide snap-x w-full border-none">
               {availableTabs.map((tab) => (
                 <TabsTrigger 
@@ -270,7 +270,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 bg-zinc-50 dark:bg-zinc-950/50 overflow-y-auto scrollbar-hide relative z-0">
+        <main className="flex-1 min-w-0 bg-zinc-50 dark:bg-zinc-950/50 overflow-visible relative z-0">
           <AnimatePresence mode="wait">
             {availableTabs.map((tab) => (
               <TabsContent key={tab} value={tab} className="mt-0 outline-none p-4 md:p-8 lg:p-10">

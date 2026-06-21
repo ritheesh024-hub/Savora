@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useAuth, useFirestore } from '@/firebase';
 import { AdminSection } from '@/components/AdminSection';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, LogOut, Loader2, ShieldCheck, UserCog, ChefHat, Receipt, Moon, Sun } from 'lucide-react';
+import { ShoppingBag, LogOut, Loader2, ShieldCheck, UserCog, ChefHat, Receipt } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { doc, getDoc } from 'firebase/firestore';
@@ -15,7 +15,7 @@ import {
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
+  DropdownMenuSeparator, 
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { motion } from 'framer-motion';
@@ -131,7 +131,7 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-x-hidden">
       {/* FIXED TOP HEADER - 70px - Z-100 */}
       <header className="h-[70px] border-b bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md sticky top-0 z-[100] px-4 md:px-8 flex items-center justify-between shadow-sm shrink-0">
         <div className="flex items-center gap-6">
@@ -194,7 +194,7 @@ function DashboardContent() {
         </div>
       </header>
 
-      {/* DASHBOARD BODY - NO EXTRA MARGIN */}
+      {/* DASHBOARD BODY */}
       <AdminSection assignedRole={assignedRole as StaffRole} activeView={activeView as StaffRole} />
     </div>
   );

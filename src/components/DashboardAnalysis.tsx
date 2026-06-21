@@ -15,10 +15,6 @@ import {
   Zap,
   Loader2,
   Users,
-  TrendingUp,
-  TrendingDown,
-  ChefHat,
-  BellRing,
   Calendar as CalendarIcon,
   Download,
   Printer,
@@ -27,11 +23,8 @@ import {
   ArrowDownRight,
   Target,
   ShoppingBag,
-  Ban,
   PieChart,
-  BarChart,
-  Activity,
-  Sparkles
+  Activity
 } from 'lucide-react';
 import {
   XAxis,
@@ -43,7 +36,6 @@ import {
   Area,
   PieChart as RePieChart,
   Pie,
-  Cell,
   Cell as ReCell
 } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -60,9 +52,9 @@ import {
   eachDayOfInterval,
   eachHourOfInterval,
   isSameDay,
-  isSameHour
+  isSameHour,
+  endOfMonth
 } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface DashboardAnalysisProps {
   orders: any[];
@@ -219,17 +211,17 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
   return (
     <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700 pb-20 no-print">
-      {/* FILTER BAR - COMPACT PILLS */}
-      <div className="sticky top-0 lg:static z-[80] bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-3xl -mx-4 md:-mx-10 px-4 md:px-10 py-4 border-b lg:border-none">
+      {/* FILTER BAR - NON-STICKY ON MOBILE TO PREVENT LAYERING */}
+      <div className="bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-3xl lg:static -mx-4 md:-mx-10 px-4 md:px-10 py-4 border-b lg:border-none">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide pb-1 w-full md:w-auto">
             {(['today', 'yesterday', 'week', 'month', 'last_month'] as RangeType[]).map((r) => (
               <Button
                 key={r}
                 onClick={() => setRangeType(r)}
                 variant={rangeType === r ? 'default' : 'outline'}
                 className={cn(
-                  "h-9 px-4 rounded-full font-black uppercase text-[8px] md:text-[9px] tracking-widest transition-all",
+                  "h-9 px-4 rounded-full font-black uppercase text-[8px] md:text-[9px] tracking-widest transition-all shrink-0",
                   rangeType === r ? "bg-primary text-white shadow-lg shadow-primary/20 border-none" : "bg-white dark:bg-zinc-900"
                 )}
               >
@@ -242,7 +234,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                 <Button
                   variant={rangeType === 'custom' ? 'default' : 'outline'}
                   className={cn(
-                    "h-9 px-4 rounded-full font-black uppercase text-[8px] md:text-[9px] tracking-widest gap-2",
+                    "h-9 px-4 rounded-full font-black uppercase text-[8px] md:text-[9px] tracking-widest gap-2 shrink-0",
                     rangeType === 'custom' ? "bg-primary text-white border-none" : "bg-white dark:bg-zinc-900"
                   )}
                 >
@@ -250,7 +242,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                   Custom
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 rounded-[2rem] border-none shadow-3xl" align="start">
+              <PopoverContent className="w-auto p-0 rounded-[2rem] border-none shadow-3xl z-[150]" align="start">
                 <Calendar
                   mode="range"
                   selected={{ from: dateRange.from, to: dateRange.to }}
@@ -290,18 +282,18 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
         {/* REVENUE TREND CHART */}
         <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden relative border">
-          <CardHeader className="p-8 border-b border-dashed flex flex-row items-center justify-between">
+          <CardHeader className="p-6 md:p-8 border-b border-dashed flex flex-row items-center justify-between">
             <div className="space-y-1">
                <div className="flex items-center gap-2 text-primary">
                  <Activity className="w-4 h-4" />
-                 <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter italic">Revenue Velocity</CardTitle>
+                 <CardTitle className="text-lg md:text-xl font-black font-headline uppercase tracking-tighter italic">Revenue Velocity</CardTitle>
                </div>
                <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Performance Heatmap</p>
             </div>
-            <Badge className="bg-primary/5 text-primary border-none px-3 py-1 rounded-full font-black text-[8px] uppercase tracking-widest">LIVE DATA</Badge>
+            <Badge className="bg-primary/5 text-primary border-none px-3 py-1 rounded-full font-black text-[8px] uppercase tracking-widest hidden sm:flex">LIVE DATA</Badge>
           </CardHeader>
-          <CardContent className="p-8">
-            <div className="h-[300px] w-full">
+          <CardContent className="p-4 md:p-8">
+            <div className="h-[250px] md:h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={metrics.chartData}>
                   <defs>
@@ -311,13 +303,13 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 8, fontWeight: 900, fill: '#94a3b8'}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 8, fontWeight: 900, fill: '#94a3b8'}} tickFormatter={(v) => `₹${v}`} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 7, fontWeight: 900, fill: '#94a3b8'}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 7, fontWeight: 900, fill: '#94a3b8'}} tickFormatter={(v) => `₹${v}`} />
                   <Tooltip 
                     contentStyle={{borderRadius: '1rem', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', fontWeight: 900, fontSize: 10}}
                     formatter={(v: any) => [`₹${v}`, 'Revenue']}
                   />
-                  <Area type="monotone" dataKey="val" stroke="#f97316" strokeWidth={4} fill="url(#colorVal)" animationDuration={1500} />
+                  <Area type="monotone" dataKey="val" stroke="#f97316" strokeWidth={3} fill="url(#colorVal)" animationDuration={1500} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -325,38 +317,38 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
         </Card>
 
         {/* STATUS DISTRIBUTION CHART */}
-        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 flex flex-col h-full border">
-          <div className="space-y-1 mb-8">
-            <h4 className="text-xl font-black font-headline uppercase tracking-tighter italic">Status <span className="text-primary">Ledger</span></h4>
+        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-6 md:p-8 flex flex-col h-full border">
+          <div className="space-y-1 mb-6 md:mb-8">
+            <h4 className="text-lg md:text-xl font-black font-headline uppercase tracking-tighter italic">Status <span className="text-primary">Ledger</span></h4>
             <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Node Distribution</p>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center">
             {metrics.pieData.length > 0 ? (
               <>
-                <div className="h-[200px] w-full">
+                <div className="h-[180px] md:h-[200px] w-full">
                    <ResponsiveContainer width="100%" height="100%">
                       <RePieChart>
-                         <Pie data={metrics.pieData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                         <Pie data={metrics.pieData} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
                             {metrics.pieData.map((entry, index) => <ReCell key={`cell-${index}`} fill={entry.color} />)}
                          </Pie>
                          <Tooltip />
                       </RePieChart>
                    </ResponsiveContainer>
                 </div>
-                <div className="grid grid-cols-1 w-full gap-3 mt-6">
+                <div className="grid grid-cols-1 w-full gap-2 mt-4 md:mt-6">
                    {metrics.pieData.map((d, i) => (
-                     <div key={i} className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl">
-                        <div className="flex items-center gap-3">
-                           <div className="w-2 h-2 rounded-full" style={{ background: d.color }} />
-                           <span className="text-[9px] font-black uppercase tracking-widest">{d.name}</span>
+                     <div key={i} className="flex items-center justify-between p-2.5 bg-secondary/30 rounded-xl">
+                        <div className="flex items-center gap-2">
+                           <div className="w-1.5 h-1.5 rounded-full" style={{ background: d.color }} />
+                           <span className="text-[8px] font-black uppercase tracking-widest">{d.name}</span>
                         </div>
-                        <span className="text-xs font-black">{d.value}</span>
+                        <span className="text-[10px] font-black">{d.value}</span>
                      </div>
                    ))}
                 </div>
               </>
             ) : (
-               <div className="py-20 text-center opacity-20"><PieChart className="w-12 h-12 mx-auto mb-3" /><p className="text-[9px] font-black uppercase">No Flow Detected</p></div>
+               <div className="py-12 md:py-20 text-center opacity-20"><PieChart className="w-10 h-10 mx-auto mb-3" /><p className="text-[8px] font-black uppercase">No Flow Detected</p></div>
             )}
           </div>
         </Card>
@@ -364,41 +356,41 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
       {/* RECENT ORDERS SNIPPET */}
       <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden border">
-        <CardHeader className="p-8 border-b border-dashed flex flex-row items-center justify-between">
+        <CardHeader className="p-6 md:p-8 border-b border-dashed flex flex-row items-center justify-between">
            <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><ShoppingBag className="w-5 h-5" /></div>
-              <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter italic">Recent <span className="text-primary">Signals</span></CardTitle>
+              <CardTitle className="text-lg md:text-xl font-black font-headline uppercase tracking-tighter italic">Recent <span className="text-primary">Signals</span></CardTitle>
            </div>
         </CardHeader>
         <div className="overflow-x-auto scrollbar-hide">
            <table className="w-full text-left">
               <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
-                 <tr className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">
-                    <th className="px-8 py-4">Ticket</th>
-                    <th className="px-8 py-4">Identity</th>
-                    <th className="px-8 py-4">Gross</th>
-                    <th className="px-8 py-4">State</th>
-                    <th className="px-8 py-4 text-right">Node</th>
+                 <tr className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">
+                    <th className="px-6 py-4">Ticket</th>
+                    <th className="px-6 py-4">Identity</th>
+                    <th className="px-6 py-4">Gross</th>
+                    <th className="px-6 py-4">State</th>
+                    <th className="px-6 py-4 text-right">Node</th>
                  </tr>
               </thead>
               <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
                  {metrics.recent.map((ord, i) => (
                     <tr key={i} className="hover:bg-primary/[0.02] transition-colors">
-                       <td className="px-8 py-4 font-black text-[10px] text-primary italic">#{ord.orderId}</td>
-                       <td className="px-8 py-4 font-black text-[10px] uppercase truncate max-w-[120px]">{ord.customerName}</td>
-                       <td className="px-8 py-4 font-black text-[11px] italic">₹{ord.total}</td>
-                       <td className="px-8 py-4">
-                          <Badge variant="outline" className="text-[7px] font-black uppercase border-none bg-secondary/50 px-2 py-0.5 rounded-md">
+                       <td className="px-6 py-4 font-black text-[9px] text-primary italic">#{ord.orderId}</td>
+                       <td className="px-6 py-4 font-black text-[9px] uppercase truncate max-w-[100px]">{ord.customerName}</td>
+                       <td className="px-6 py-4 font-black text-[10px] italic">₹{ord.total}</td>
+                       <td className="px-6 py-4">
+                          <Badge variant="outline" className="text-[6px] font-black uppercase border-none bg-secondary/50 px-2 py-0.5 rounded-md">
                              {ord.status}
                           </Badge>
                        </td>
-                       <td className="px-8 py-4 text-right">
-                          <ChevronRight className="w-3.5 h-3.5 ml-auto text-muted-foreground opacity-30" />
+                       <td className="px-6 py-4 text-right">
+                          <ChevronRight className="w-3 h-3 ml-auto text-muted-foreground opacity-30" />
                        </td>
                     </tr>
                  ))}
                  {metrics.recent.length === 0 && (
-                   <tr><td colSpan={5} className="py-12 text-center text-[9px] font-black uppercase opacity-20">No orders in this range</td></tr>
+                   <tr><td colSpan={5} className="py-8 text-center text-[8px] font-black uppercase opacity-20">No orders in this range</td></tr>
                  )}
               </tbody>
            </table>
@@ -406,7 +398,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       </Card>
       
       <div className="pt-10 text-center">
-         <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-20">Ezzy Bites • Quantum Analytics Engine v3.0</p>
+         <p className="text-[8px] font-black uppercase tracking-[0.4em] opacity-20">Ezzy Bites • Quantum Analytics Engine v3.0</p>
       </div>
     </div>
   );
@@ -415,24 +407,24 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 const KPICard = ({ label, value, icon: Icon, trend, color, bg, period }: any) => {
   const isPositive = trend >= 0;
   return (
-    <Card className="rounded-[1.8rem] border-none shadow-sm bg-white dark:bg-zinc-900 p-6 group transition-all duration-500 overflow-hidden relative border hover:shadow-2xl">
+    <Card className="rounded-[1.8rem] border-none shadow-sm bg-white dark:bg-zinc-900 p-5 md:p-6 group transition-all duration-500 overflow-hidden relative border hover:shadow-2xl">
       <div className="absolute -right-4 -top-4 w-16 h-16 bg-secondary/30 rounded-full blur-2xl group-hover:bg-primary/5 transition-colors" />
-      <div className="flex justify-between items-start mb-6">
-        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner relative z-10", bg, color)}>
-          <Icon className="w-6 h-6" />
+      <div className="flex justify-between items-start mb-4 md:mb-6">
+        <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shadow-inner relative z-10", bg, color)}>
+          <Icon className="w-5 h-5 md:w-6 md:h-6" />
         </div>
         <div className={cn(
-          "flex items-center gap-1 px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-tight",
+          "flex items-center gap-1 px-2 py-0.5 md:px-2.5 md:py-1 rounded-full border text-[7px] md:text-[9px] font-black uppercase tracking-tight",
           isPositive ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
         )}>
-          {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+          {isPositive ? <ArrowUpRight className="w-2.5 h-2.5 md:w-3 md:h-3" /> : <ArrowDownRight className="w-2.5 h-2.5 md:w-3 md:h-3" />}
           {Math.abs(trend)}%
         </div>
       </div>
-      <div className="relative z-10 space-y-1">
-        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">{label}</p>
-        <h3 className="text-3xl font-black font-headline tracking-tighter italic leading-none">{value}</h3>
-        <p className="text-[7px] font-black uppercase opacity-30 tracking-widest pt-1">vs Previous {period}</p>
+      <div className="relative z-10 space-y-0.5 md:space-y-1">
+        <p className="text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">{label}</p>
+        <h3 className="text-2xl md:text-3xl font-black font-headline tracking-tighter italic leading-none">{value}</h3>
+        <p className="text-[6px] md:text-[7px] font-black uppercase opacity-30 tracking-widest pt-1">vs Previous {period}</p>
       </div>
     </Card>
   );
