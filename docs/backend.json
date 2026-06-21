@@ -23,11 +23,38 @@
         "name": {
           "type": "string"
         },
+        "username": {
+          "type": "string"
+        },
         "phone": {
           "type": "string"
         },
+        "gender": {
+          "type": "string",
+          "enum": ["Male", "Female", "Other"]
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "format": "date"
+        },
         "photoUrl": {
           "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "pincode": {
+          "type": "string"
+        },
+        "joiningDate": {
+          "type": "string",
+          "format": "date"
         },
         "status": {
           "type": "string",
