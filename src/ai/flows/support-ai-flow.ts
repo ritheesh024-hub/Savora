@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Automated Support Assistant for Ezzy Bites.
@@ -32,7 +33,6 @@ export async function ezzySupportAI(input: SupportAIInput): Promise<SupportAIOut
 
 const prompt = ai.definePrompt({
   name: 'ezzySupportPrompt',
-  // Model inherited from global ai config to prevent 404 URL mapping errors
   input: { schema: SupportAIInputSchema },
   output: { schema: SupportAIOutputSchema },
   prompt: `You are "Ezzy AI", the official automated support assistant for "Ezzy Bites", a premium fast food cafe.
@@ -72,11 +72,14 @@ const supportAIFlow = ai.defineFlow(
   },
   async (input) => {
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error('AI Assistant is currently unavailable.');
+      }
       const { output } = await prompt(input);
       if (!output) throw new Error('AI failed to generate a response.');
       return output;
     } catch (error) {
-      console.error('🔥 [Ezzy AI] Flow Execution Error:', error);
+      console.error('🔥 [Ezzy AI] Support Flow Execution Error:', error);
       throw error;
     }
   }

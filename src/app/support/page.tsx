@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -112,7 +113,7 @@ export default function SupportPage() {
 
       addMessage('assistant', response.reply, 'text', response.suggestedActions);
     } catch (e) {
-      console.error("🔥 [Ezzy AI] Flow Error:", e);
+      console.error("🔥 [Ezzy AI] UI Error:", e);
       addMessage('assistant', "Sorry, I'm currently unavailable. Please try again later.");
     } finally {
       setIsTyping(false);

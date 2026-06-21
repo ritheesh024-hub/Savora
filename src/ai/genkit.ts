@@ -8,12 +8,18 @@ import { googleAI } from '@genkit-ai/google-genai';
 
 const apiKey = process.env.GEMINI_API_KEY;
 
+if (!apiKey) {
+  console.warn('⚠️ [Ezzy AI] Warning: GEMINI_API_KEY is missing from environment variables.');
+} else {
+  console.log('✅ [Ezzy AI] Initializing Gemini logic node with production credentials.');
+}
+
 export const ai = genkit({
   plugins: [
     googleAI({
       apiKey: apiKey,
     }),
   ],
-  // Use the fully qualified stable model identifier for Gemini 1.5 Flash
-  model: 'googleai/gemini-1.5-flash-latest',
+  // Use the fully qualified stable model identifier to prevent 404 mapping errors
+  model: 'googleai/gemini-1.5-flash',
 });

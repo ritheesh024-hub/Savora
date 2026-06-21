@@ -1,11 +1,10 @@
-
 'use server';
 /**
  * @fileOverview A Genkit flow for providing personalized meal recommendations based on current weather, time of day, and user mood.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const ContextualMealRecommendationsInputSchema = z.object({
   weather: z.string().describe('Current weather conditions.'),
@@ -49,6 +48,9 @@ const contextualMealRecommendationsFlow = ai.defineFlow(
   },
   async (input) => {
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error('AI Service is currently unavailable.');
+      }
       const { output } = await mealRecommendationPrompt(input);
       if (!output) throw new Error('Failed to get recommendations.');
       return output;
