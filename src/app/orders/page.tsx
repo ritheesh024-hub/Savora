@@ -1,8 +1,9 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, query, where, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,15 +23,17 @@ export default function OrdersHistoryPage() {
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     
+    // Authenticated User Search
     if (user) {
+      // Note: Removed orderBy('createdAt') to avoid index requirement for new apps
       return query(
         collection(db, 'orders'),
         where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc'),
         limit(50)
       );
     }
     
+    // Guest Phone Search
     if (searchTriggered && phoneNumber.length === 10) {
       return query(
         collection(db, 'orders'),
@@ -43,6 +46,16 @@ export default function OrdersHistoryPage() {
   }, [db, user, phoneNumber, searchTriggered]);
 
   const { data: rawOrders, loading: ordersLoading, error } = useCollection<any>(ordersQuery);
+
+  // In-memory sorting as a fallback for missing Firestore composite indices
+  const orders = useMemo(() => {
+    if (!rawOrders) return [];
+    return [...rawOrders].sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+      return dateB - dateA;
+    });
+  }, [rawOrders]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +78,7 @@ export default function OrdersHistoryPage() {
             </div>
             <h1 className="text-3xl md:text-4xl font-black font-headline tracking-tighter">My <span className="text-primary italic">Orders</span></h1>
             <p className="text-muted-foreground font-medium text-sm">
-              {user ? `Welcome back, ${user.displayName?.split(' ')[0]}!` : 'Track your delicious history.'}
+              {user ? `Welcome back, ${user.displayName?.split(' ')[0] || 'Member'}!` : 'Track your delicious history.'}
             </p>
           </div>
 
@@ -123,8 +136,8 @@ export default function OrdersHistoryPage() {
                 <Button onClick={() => window.location.reload()} variant="outline" className="rounded-xl font-black uppercase text-[10px]">Retry Sync</Button>
               </div>
             ) : (user || searchTriggered) ? (
-              rawOrders && rawOrders.length > 0 ? (
-                rawOrders.map((order: any) => (
+              orders && orders.length > 0 ? (
+                orders.map((order: any) => (
                   <Link key={order.id} href={`/orders/${order.orderId}`}>
                     <Card className="rounded-[2rem] border-none shadow-soft hover:shadow-2xl transition-all mb-6 group bg-white dark:bg-zinc-900 overflow-hidden active:scale-[0.98]">
                       <CardContent className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6">

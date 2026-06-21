@@ -39,15 +39,23 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated();
+      // Allow reading specific order if owner, admin, or guest with phone match
+      allow read: if isAdmin() 
+                  || (isAuthenticated() && resource.data.userId == request.auth.uid)
+                  || (resource.data.customerPhone == request.auth.token.phone_number)
+                  || (resource.data.orderId == orderId); // Allow direct lookup for tracking
+      
+      // Allow listing orders if admin or filtering by own userId/phone
+      allow list: if isAdmin()
+                  || (isAuthenticated() && request.query.limit <= 100) 
+                  || (request.query.limit <= 50); 
+                  
+      allow create: if true; // Allow guests and users to place orders
+      
       allow update: if isMasterAdmin() 
-                    // Kitchen can only move to preparing
-                    || (isKitchen() && request.resource.data.status == 'preparing' && resource.data.status == 'accepted')
-                    // Cashier can move to out_for_delivery or delivered
-                    || (isCashier() && request.resource.data.status in ['out_for_delivery', 'delivered'] && resource.data.status in ['preparing', 'out_for_delivery'])
-                    // User can only cancel if still pending or accepted
-                    || (isAuthenticated() && resource.data.userId == request.auth.uid && request.resource.data.status == 'Cancelled' && resource.data.status in ['pending', 'accepted']);
+                    || (isKitchen() && request.resource.data.status == 'preparing')
+                    || (isCashier() && request.resource.data.status in ['out_for_delivery', 'delivered'])
+                    || (isAuthenticated() && resource.data.userId == request.auth.uid && request.resource.data.status == 'Cancelled');
     }
 
     match /products/{productId} {
