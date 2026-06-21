@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingBag, ChevronRight, Clock, Loader2, PackageX, History, User, AlertCircle } from 'lucide-react';
+import { ShoppingBag, ChevronRight, Clock, Loader2, PackageX, History, User, AlertCircle, Truck, ChefHat, CheckCircle2, Package } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { AuthModal } from '@/components/AuthModal';
@@ -22,7 +22,6 @@ export default function OrdersHistoryPage() {
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     
-    // Authenticated User Search
     if (user) {
       return query(
         collection(db, 'orders'),
@@ -31,7 +30,6 @@ export default function OrdersHistoryPage() {
       );
     }
     
-    // Guest Phone Search
     if (searchTriggered && phoneNumber.length === 10) {
       return query(
         collection(db, 'orders'),
@@ -58,6 +56,18 @@ export default function OrdersHistoryPage() {
     e.preventDefault();
     if (phoneNumber.length === 10) {
       setSearchTriggered(true);
+    }
+  };
+
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'pending': return { label: 'Order Placed', icon: Package, color: 'bg-blue-500' };
+      case 'accepted': return { label: 'Confirmed', icon: CheckCircle2, color: 'bg-indigo-500' };
+      case 'preparing': return { label: 'Preparing', icon: ChefHat, color: 'bg-orange-500' };
+      case 'out_for_delivery': return { label: 'Out for Delivery', icon: Truck, color: 'bg-amber-500' };
+      case 'delivered': return { label: 'Delivered', icon: CheckCircle2, color: 'bg-emerald-500' };
+      case 'Cancelled': return { label: 'Cancelled', icon: PackageX, color: 'bg-rose-500' };
+      default: return { label: status, icon: ShoppingBag, color: 'bg-zinc-500' };
     }
   };
 
@@ -134,46 +144,49 @@ export default function OrdersHistoryPage() {
               </div>
             ) : (user || searchTriggered) ? (
               orders && orders.length > 0 ? (
-                orders.map((order: any) => (
-                  <Link key={order.id} href={`/orders/${order.orderId}`}>
-                    <Card className="rounded-2xl border-none shadow-sm hover:shadow-lg transition-all group bg-white dark:bg-zinc-900 overflow-hidden active:scale-[0.98]">
-                      <CardContent className="p-4 md:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 md:gap-6">
-                        <div className="flex items-center gap-4 w-full sm:w-auto">
-                          <div className="w-12 h-12 bg-primary/5 rounded-xl flex items-center justify-center text-primary shrink-0 group-hover:scale-105 transition-transform">
-                            <ShoppingBag className="w-5 h-5" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <h4 className="font-black text-base tracking-tight">#{order.orderId}</h4>
-                              <Badge className={cn(
-                                "text-[7px] uppercase font-black px-1.5 py-0.5 rounded-[4px] border-none",
-                                order.status === 'delivered' ? 'bg-emerald-500 text-white' : 
-                                order.status === 'Cancelled' ? 'bg-rose-500 text-white' : 
-                                'bg-orange-500 text-white'
-                              )}>
-                                {order.status.replace(/_/g, ' ')}
-                              </Badge>
+                orders.map((order: any) => {
+                  const statusInfo = getStatusDisplay(order.status);
+                  const StatusIcon = statusInfo.icon;
+                  return (
+                    <Link key={order.id} href={`/orders/${order.orderId}`}>
+                      <Card className="rounded-2xl border-none shadow-sm hover:shadow-lg transition-all group bg-white dark:bg-zinc-900 overflow-hidden active:scale-[0.98]">
+                        <CardContent className="p-4 md:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 md:gap-6">
+                          <div className="flex items-center gap-4 w-full sm:w-auto">
+                            <div className="w-12 h-12 bg-primary/5 rounded-xl flex items-center justify-center text-primary shrink-0 group-hover:scale-105 transition-transform">
+                              <ShoppingBag className="w-5 h-5" />
                             </div>
-                            <p className="text-[9px] font-bold text-muted-foreground flex items-center gap-1.5 uppercase tracking-tight">
-                              <Clock className="w-3 h-3 opacity-40" /> 
-                              {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Syncing...'}
-                            </p>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <h4 className="font-black text-base tracking-tight">#{order.orderId}</h4>
+                                <Badge className={cn(
+                                  "text-[7px] uppercase font-black px-1.5 py-0.5 rounded-[4px] border-none text-white gap-1",
+                                  statusInfo.color
+                                )}>
+                                  <StatusIcon className="w-2.5 h-2.5" />
+                                  {statusInfo.label}
+                                </Badge>
+                              </div>
+                              <p className="text-[9px] font-bold text-muted-foreground flex items-center gap-1.5 uppercase tracking-tight">
+                                <Clock className="w-3 h-3 opacity-40" /> 
+                                {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Syncing...'}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between w-full sm:w-auto gap-6 sm:gap-8 pt-3 sm:pt-0 border-t sm:border-none border-zinc-50 dark:border-zinc-800">
-                          <div className="text-left sm:text-right">
-                            <p className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-0.5">Total</p>
-                            <p className="text-xl font-black text-primary italic leading-none">₹{order.total}</p>
+                          
+                          <div className="flex items-center justify-between w-full sm:w-auto gap-6 sm:gap-8 pt-3 sm:pt-0 border-t sm:border-none border-zinc-50 dark:border-zinc-800">
+                            <div className="text-left sm:text-right">
+                              <p className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-0.5">Total</p>
+                              <p className="text-xl font-black text-primary italic leading-none">₹{order.total}</p>
+                            </div>
+                            <div className="w-9 h-9 rounded-full bg-secondary dark:bg-zinc-800 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
+                              <ChevronRight className="w-4 h-4" />
+                            </div>
                           </div>
-                          <div className="w-9 h-9 rounded-full bg-secondary dark:bg-zinc-800 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
-                            <ChevronRight className="w-4 h-4" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  )
+                })
               ) : (
                 <div className="py-20 text-center space-y-6 bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border">
                   <div className="w-16 h-16 bg-secondary dark:bg-zinc-800 rounded-2xl flex items-center justify-center mx-auto opacity-20">

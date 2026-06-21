@@ -13,7 +13,8 @@ import {
   AlertCircle,
   Flame,
   Activity,
-  CheckCircle2
+  CheckCircle2,
+  PackageCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -21,14 +22,15 @@ import { format } from 'date-fns';
 interface KitchenSystemProps {
   orders: any[];
   onUpdateStatus: (id: string, status: string) => void;
+  activeView?: string;
 }
 
-export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) => {
-  // Kitchen protocol: Only accepted or preparing orders
+export const KitchenSystem = ({ orders, onUpdateStatus, activeView }: KitchenSystemProps) => {
+  // Kitchen protocol: Pending (to accept), accepted (to prepare), or preparing (to dispatch)
   const kitchenOrders = (orders || []).filter(o => 
-    o.status === 'accepted' || o.status === 'preparing'
+    ['pending', 'accepted', 'preparing'].includes(o.status)
   ).sort((a, b) => {
-    const orderPriority = ['preparing', 'accepted'];
+    const orderPriority = ['preparing', 'accepted', 'pending'];
     return orderPriority.indexOf(a.status) - orderPriority.indexOf(b.status);
   });
 
@@ -58,7 +60,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
            <div className="relative z-10 flex flex-col h-full justify-between gap-8">
               <div className="flex items-center gap-3 bg-primary/10 text-primary w-fit px-4 py-2 rounded-full border border-primary/10">
                  <BellRing className="w-4 h-4 animate-bounce" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Accepted Queue</span>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Queue Load</span>
               </div>
               <div>
                 <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-primary">{activeCount - preparingCount}</h3>
@@ -72,11 +74,11 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
            <div className="relative z-10 flex flex-col h-full justify-between gap-8">
               <div className="flex items-center gap-3 bg-white/10 w-fit px-4 py-2 rounded-full border border-white/10">
                  <Activity className="w-4 h-4 text-emerald-400" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Kitchen Load</span>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Total Pulse</span>
               </div>
               <div>
                 <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-emerald-400">{activeCount}</h3>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40 italic">Total Active Tickets</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40 italic">Tickets In Loop</p>
               </div>
            </div>
         </Card>
@@ -99,11 +101,13 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
               key={order.id} 
               className={cn(
                 "rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-all duration-1000",
+                order.status === 'pending' ? "ring-8 ring-blue-500/5 border-2 border-blue-500/20" : 
                 order.status === 'accepted' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20 shadow-orange-500/10"
               )}
             >
               <div className={cn(
                 "p-8 flex justify-between items-center",
+                order.status === 'pending' ? "bg-blue-600 text-white" :
                 order.status === 'accepted' ? "bg-primary text-white" : "bg-orange-gradient text-white shadow-lg"
               )}>
                 <div className="flex items-center gap-4">
@@ -116,7 +120,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                   </div>
                 </div>
                 <Badge className="bg-white/20 border-none font-black text-[9px] uppercase px-4 py-1.5 rounded-full tracking-widest backdrop-blur-sm">
-                  {order.orderType || 'Retail'}
+                  {order.status.toUpperCase()}
                 </Badge>
               </div>
 
@@ -154,12 +158,28 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                   </div>
                   
                   <div className="flex gap-2">
+                    {order.status === 'pending' && (
+                      <Button 
+                        onClick={() => onUpdateStatus(order.id, 'accepted')}
+                        className="rounded-[1.5rem] h-16 px-10 bg-blue-600 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-blue-700 group"
+                      >
+                        <PackageCheck className="w-5 h-5" /> Accept Order
+                      </Button>
+                    )}
                     {order.status === 'accepted' && (
                       <Button 
                         onClick={() => onUpdateStatus(order.id, 'preparing')}
                         className="rounded-[1.5rem] h-16 px-10 bg-orange-500 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-orange-600 group"
                       >
                         <ChefHat className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Start Cooking
+                      </Button>
+                    )}
+                    {order.status === 'preparing' && (
+                      <Button 
+                        onClick={() => onUpdateStatus(order.id, 'out_for_delivery')}
+                        className="rounded-[1.5rem] h-16 px-10 bg-emerald-600 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-emerald-700 group"
+                      >
+                        <Truck className="w-5 h-5" /> Ready for Pickup
                       </Button>
                     )}
                   </div>

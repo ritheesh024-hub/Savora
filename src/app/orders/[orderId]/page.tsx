@@ -6,7 +6,7 @@ import {
   CheckCircle2, MapPin, Phone, MessageSquare, 
   Truck, ChefHat, PackageCheck, Loader2, 
   AlertCircle, Ban, Clock, ShoppingBag,
-  ArrowLeft, Info, HelpCircle, Star, Bot
+  ArrowLeft, Info, HelpCircle, Star, Bot, Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -105,7 +105,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   const statusLevel = order ? statusMap[order.status] || 1 : 1;
 
   const steps = [
-    { id: 1, title: 'Order Placed', statusKey: 'pending', icon: PackageCheck, desc: 'We have received your request.' },
+    { id: 1, title: 'Order Placed', statusKey: 'pending', icon: Package, desc: 'We have received your request.' },
     { id: 2, title: 'Confirmed', statusKey: 'accepted', icon: CheckCircle2, desc: 'Kitchen is reviewing your items.' },
     { id: 3, title: 'Preparing Food', statusKey: 'preparing', icon: ChefHat, desc: 'Our chefs are crafting your meal.' },
     { id: 4, title: 'Out for Delivery', statusKey: 'out_for_delivery', icon: Truck, desc: 'Our rider is heading to you.' },

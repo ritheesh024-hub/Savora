@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection } from '@/firebase';
 import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp, addDoc } from 'firebase/firestore';
 import { DashboardAnalysis } from './DashboardAnalysis';
 import { BillingSystem } from './BillingSystem';
@@ -239,7 +239,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               <TabsList className="bg-transparent flex flex-col h-auto w-full p-0 space-y-1 border-none">
                 {availableTabs.map((tab) => (
                   <TabsTrigger 
-                    key={tab}
+                    key={tab} 
                     value={tab} 
                     className={cn(
                       "w-full justify-start px-4 py-2.5 rounded-xl font-bold uppercase text-[9px] tracking-widest gap-3 transition-all group outline-none",
@@ -291,7 +291,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   {tab === 'overview' && <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />}
                   {tab === 'users' && <UserManagement />}
                   {tab === 'billing' && <BillingSystem products={dbMenu || []} orders={realOrders || []} />}
-                  {tab === 'kitchen' && <KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} />}
+                  {tab === 'kitchen' && <KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} activeView={activeView} />}
                   {tab === 'products' && <ProductManagement />}
                   {tab === 'reviews' && <ReviewManager />}
                   {tab === 'coupons' && <CouponManager />}
@@ -365,7 +365,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               </div>
 
               <DialogFooter className="p-4 md:p-6 bg-zinc-50 dark:bg-zinc-900 border-t flex flex-col sm:flex-row gap-2">
-                {selectedOrderForView.status === 'pending' && (activeView === 'admin' || activeView === 'cashier') && (
+                {selectedOrderForView.status === 'pending' && (activeView === 'admin' || activeView === 'kitchen') && (
                   <Button 
                     className="flex-1 rounded-xl h-12 bg-primary text-white font-black uppercase text-[9px] tracking-widest shadow-lg shadow-primary/20" 
                     onClick={() => handleUpdateStatus(selectedOrderForView.id, 'accepted')}
@@ -454,13 +454,21 @@ const OrderGrid = ({ orderGroups, onOrderClick, activeView, handleUpdateStatus }
                         </div>
                       </div>
 
-                      {order.status === 'pending' && (activeView === 'admin' || activeView === 'cashier') && (
+                      {order.status === 'pending' && (activeView === 'admin' || activeView === 'kitchen') && (
                          <div className="pt-2 flex gap-1.5">
                             <Button size="sm" className="flex-1 rounded-lg h-8 font-black uppercase text-[7px] bg-primary" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'accepted'); }}>
                                Accept
                             </Button>
                             <Button variant="outline" size="sm" className="flex-1 rounded-lg h-8 font-black uppercase text-[7px] border-2" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'Cancelled'); }}>
                                Reject
+                            </Button>
+                         </div>
+                      )}
+
+                      {order.status === 'out_for_delivery' && (activeView === 'admin' || activeView === 'cashier') && (
+                         <div className="pt-2 flex gap-1.5">
+                            <Button size="sm" className="flex-1 rounded-lg h-8 font-black uppercase text-[7px] bg-emerald-600" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'delivered'); }}>
+                               Complete Delivery
                             </Button>
                          </div>
                       )}
