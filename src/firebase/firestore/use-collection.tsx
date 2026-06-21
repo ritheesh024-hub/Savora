@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -46,13 +47,30 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
             setLoading(false);
             setError(null);
           },
-          async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-              path: 'collection_stream',
-              operation: 'list',
-            } satisfies SecurityRuleContext);
+          async (serverError: any) => {
+            // Only emit the global permission error if it's actually a permission issue
+            if (serverError.code === 'permission-denied') {
+              // Try to extract a useful path from the query object if possible
+              let path = 'collection';
+              try {
+                // Accessing internal path for better error reporting in dev
+                // This uses internal fields which might be unstable, but helpful for debugging
+                const internalQuery = (query as any)._query;
+                if (internalQuery && internalQuery.path) {
+                  path = internalQuery.path.toArray().join('/');
+                }
+              } catch (e) {
+                // fallback
+              }
 
-            errorEmitter.emit('permission-error', permissionError);
+              const permissionError = new FirestorePermissionError({
+                path: path,
+                operation: 'list',
+              } satisfies SecurityRuleContext);
+
+              errorEmitter.emit('permission-error', permissionError);
+            }
+            
             setError(serverError);
             setLoading(false);
           }

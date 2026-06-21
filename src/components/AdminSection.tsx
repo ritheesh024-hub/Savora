@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -20,7 +21,8 @@ import {
   History,
   LayoutDashboard,
   Truck,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -182,14 +184,23 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   };
 
   if (ordersError) {
+    const isPermissionError = (ordersError as any).code === 'permission-denied';
     return (
       <div className="p-20 text-center space-y-4">
         <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-rose-600">
-           <Fingerprint className="w-8 h-8" />
+           {isPermissionError ? <Fingerprint className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
         </div>
-        <h3 className="text-xl font-black uppercase tracking-tighter">Permission Denied</h3>
-        <p className="text-muted-foreground text-sm max-w-md mx-auto">Your identity node has not been fully verified for order access. Please contact the fleet commander.</p>
-        <Button variant="outline" onClick={() => window.location.reload()} className="rounded-xl px-8 font-black uppercase text-[10px]">Retry Node Sync</Button>
+        <h3 className="text-xl font-black uppercase tracking-tighter">
+          {isPermissionError ? 'Permission Denied' : 'Data Sync Issue'}
+        </h3>
+        <p className="text-muted-foreground text-sm max-w-md mx-auto">
+          {isPermissionError 
+            ? "Your identity node has not been fully verified for order access. Please contact the fleet commander."
+            : "An unexpected error occurred while syncing with the cloud ledger. Please check your connection or console for index requirements."}
+        </p>
+        <Button variant="outline" onClick={() => window.location.reload()} className="rounded-xl px-8 font-black uppercase text-[10px]">
+          Retry Node Sync
+        </Button>
       </div>
     );
   }
@@ -301,7 +312,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
       <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
         <DialogContent className="max-w-3xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
-          <DialogHeader className="p-8 border-b bg-muted/5 sr-only">
+          <DialogHeader className="p-8 border-b bg-muted/5">
              <DialogTitle>Order Manifest: #{selectedOrderForView?.orderId}</DialogTitle>
              <DialogDescription>Detailed itemized view and customer logistics for order #{selectedOrderForView?.orderId}</DialogDescription>
           </DialogHeader>
