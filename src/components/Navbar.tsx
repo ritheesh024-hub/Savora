@@ -114,11 +114,11 @@ export const Navbar = () => {
     <nav className={cn(
       "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
       scrolled 
-        ? "bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-2 shadow-xl" 
-        : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-4"
+        ? "bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-1.5 shadow-xl" 
+        : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-2.5"
     )}>
       <div className="container mx-auto px-4">
-        <div className="h-12 flex items-center justify-between gap-4">
+        <div className="h-10 flex items-center justify-between gap-4">
           <Link href="/" className="transition-transform active:scale-95">
             <Logo 
               variant={scrolled ? 'dark' : (mounted && isDarkMode ? 'dark' : 'light')} 
@@ -130,7 +130,7 @@ export const Navbar = () => {
           <div className="flex-1 max-w-md hidden md:block">
             <form onSubmit={(e) => { e.preventDefault(); router.push(`/menu?q=${navSearch}`); }} className="relative group">
               <Search className={cn(
-                "absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors z-10",
+                "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10",
                 scrolled ? "text-muted-foreground" : "text-white/40"
               )} />
               <Input 
@@ -139,7 +139,7 @@ export const Navbar = () => {
                 placeholder="Search premium bites..." 
                 suppressHydrationWarning
                 className={cn(
-                  "w-full h-10 pl-10 pr-4 rounded-xl border-none transition-all font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
+                  "w-full h-9 pl-10 pr-4 rounded-xl border-none transition-all font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
                   scrolled 
                     ? "bg-secondary/60 focus:bg-white dark:bg-zinc-900 !text-foreground" 
                     : "bg-white/10 !text-white placeholder:text-white/40 focus:bg-white/20 backdrop-blur-xl"
@@ -152,12 +152,12 @@ export const Navbar = () => {
             {mounted && user && (
               <NotificationCenter>
                 <Button variant="ghost" size="icon" className={cn(
-                  "rounded-full w-10 h-10 transition-all relative",
+                  "rounded-full w-9 h-9 transition-all relative",
                   scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
                 )}>
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-4.5 h-4.5" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
+                    <span className="absolute top-0.5 right-0.5 w-3 h-3 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
                       {unreadCount}
                     </span>
                   )}
@@ -165,7 +165,7 @@ export const Navbar = () => {
               </NotificationCenter>
             )}
 
-            <ThemeToggle className="hidden md:flex h-9 w-9" />
+            <ThemeToggle className="hidden md:flex h-8 w-8" />
             
             <div className="hidden md:flex items-center gap-4">
               {mounted && !userLoading && (
@@ -173,7 +173,7 @@ export const Navbar = () => {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="outline-none rounded-xl ring-offset-background focus:ring-4 focus:ring-primary/20 transition-all active:scale-90 overflow-hidden shadow-lg">
-                        <Avatar className="h-9 w-9 rounded-xl border-2 border-background">
+                        <Avatar className="h-8 w-8 rounded-xl border-2 border-background">
                           <AvatarImage src={customerProfile?.photoUrl || user.photoURL || ''} alt={user.displayName || 'Member'} />
                           <AvatarFallback className="bg-orange-gradient text-white font-black text-[10px] rounded-xl">
                             {(customerProfile?.name || user.displayName || 'EB').slice(0, 2).toUpperCase()}
@@ -213,7 +213,7 @@ export const Navbar = () => {
                 ) : (
                   <Button 
                     onClick={() => setIsAuthModalOpen(true)}
-                    className="rounded-full px-6 h-10 font-black uppercase text-[10px] tracking-widest bg-orange-gradient text-white shadow-xl shadow-primary/20 transform hover:scale-105 transition-all"
+                    className="rounded-full px-5 h-9 font-black uppercase text-[10px] tracking-widest bg-orange-gradient text-white shadow-xl shadow-primary/20 transform hover:scale-105 transition-all"
                   >
                     Login
                   </Button>
@@ -224,12 +224,12 @@ export const Navbar = () => {
             {mounted && (
               <CartDrawer>
                 <Button variant="ghost" size="icon" className={cn(
-                  "rounded-full w-10 h-10 transition-all relative",
+                  "rounded-full w-9 h-9 transition-all relative",
                   scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
                 )}>
-                  <ShoppingBag className="w-5 h-5" />
+                  <ShoppingBag className="w-4.5 h-4.5" />
                   {cart.length > 0 && (
-                    <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
+                    <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
                       {cart.reduce((acc, i) => acc + i.quantity, 0)}
                     </span>
                   )}
@@ -241,7 +241,7 @@ export const Navbar = () => {
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className={cn(
-                    "rounded-full w-10 h-10 transition-transform active:scale-90",
+                    "rounded-full w-9 h-9 transition-transform active:scale-90",
                     scrolled ? "text-foreground" : (mounted && isDarkMode ? "text-foreground" : "text-white")
                   )}>
                     <Menu className="w-5 h-5" />
