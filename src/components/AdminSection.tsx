@@ -61,7 +61,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   
   const ordersQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(1000));
+    return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(500));
   }, [db]);
 
   const { data: realOrders, loading: ordersLoading, error: ordersError } = useCollection<any>(ordersQuery);
@@ -156,10 +156,11 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     switch(tab) {
       case 'overview': return 'Analytics';
       case 'billing': return 'Counter';
-      case 'orders': return 'Live Orders';
-      case 'products': return 'Inventory';
-      case 'notifications': return 'Broadcast';
-      case 'coupons': return 'Coupons';
+      case 'orders': return 'Live';
+      case 'products': return 'Menu';
+      case 'notifications': return 'Signals';
+      case 'coupons': return 'Bounty';
+      case 'archive': return 'Ledger';
       default: return tab.charAt(0).toUpperCase() + tab.slice(1);
     }
   };
@@ -186,19 +187,19 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   if (ordersError) {
     const isPermissionError = (ordersError as any).code === 'permission-denied';
     return (
-      <div className="p-20 text-center space-y-4">
+      <div className="p-10 md:p-20 text-center space-y-4">
         <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-rose-600">
            {isPermissionError ? <Fingerprint className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
         </div>
         <h3 className="text-xl font-black uppercase tracking-tighter">
           {isPermissionError ? 'Permission Denied' : 'Data Sync Issue'}
         </h3>
-        <p className="text-muted-foreground text-sm max-w-md mx-auto">
+        <p className="text-muted-foreground text-[10px] md:text-sm max-w-md mx-auto uppercase font-bold tracking-tight">
           {isPermissionError 
-            ? "Your identity node has not been fully verified for order access. Please contact the fleet commander."
-            : "An unexpected error occurred while syncing with the cloud ledger. Please check your connection or console for index requirements."}
+            ? "Your identity node has not been fully verified for order access."
+            : "Data sync interrupted. Check connection."}
         </p>
-        <Button variant="outline" onClick={() => window.location.reload()} className="rounded-xl px-8 font-black uppercase text-[10px]">
+        <Button variant="outline" onClick={() => window.location.reload()} className="rounded-xl h-10 px-8 font-black uppercase text-[9px] border-2">
           Retry Node Sync
         </Button>
       </div>
@@ -211,47 +212,47 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       
       <Tabs defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
         <div className="lg:hidden sticky top-[70px] z-[90] bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b shadow-sm w-full overflow-hidden shrink-0">
-           <TabsList className="bg-transparent h-auto flex flex-row flex-nowrap justify-start p-3 space-x-2 overflow-x-auto scrollbar-hide snap-x w-full border-none">
+           <TabsList className="bg-transparent h-auto flex flex-row flex-nowrap justify-start p-2 space-x-1.5 overflow-x-auto scrollbar-hide snap-x w-full border-none">
               {availableTabs.map((tab) => (
                 <TabsTrigger 
                   key={tab}
                   value={tab} 
                   className={cn(
-                    "h-10 px-5 rounded-full font-black uppercase text-[9px] tracking-widest gap-2 transition-all shrink-0 snap-start bg-secondary/50 border-none whitespace-nowrap",
-                    "data-[state=active]:bg-primary data-[state=active]:text-white shadow-lg shadow-primary/20"
+                    "h-9 px-4 rounded-full font-black uppercase text-[8px] tracking-widest transition-all shrink-0 snap-start bg-secondary/60 border-none whitespace-nowrap",
+                    "data-[state=active]:bg-primary data-[state=active]:text-white shadow-md"
                   )}
                 >
-                  {getTabIcon(tab, "w-3.5 h-3.5")}
+                  {getTabIcon(tab, "w-3 h-3 mr-1.5")}
                   {getTabLabel(tab)}
                   {tab === 'orders' && orderGroups.pending.length > 0 && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    <div className="w-1 h-1 rounded-full bg-white ml-1 animate-pulse" />
                   )}
                 </TabsTrigger>
               ))}
            </TabsList>
         </div>
 
-        <aside className="hidden lg:flex flex-col w-[220px] bg-zinc-900/95 dark:bg-zinc-950/80 backdrop-blur-2xl border-r border-white/5 sticky top-[70px] h-[calc(100vh-70px)] shrink-0 z-40 overflow-y-auto scrollbar-hide">
-          <div className="p-4 space-y-8 flex-1">
+        <aside className="hidden lg:flex flex-col w-[200px] bg-zinc-900/95 dark:bg-zinc-950/80 backdrop-blur-2xl border-r border-white/5 sticky top-[70px] h-[calc(100vh-70px)] shrink-0 z-40 overflow-y-auto scrollbar-hide">
+          <div className="p-3 space-y-6 flex-1">
             <div className="space-y-1">
-              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 px-4 mb-4">Operations</p>
-              <TabsList className="bg-transparent flex flex-col h-auto w-full p-0 space-y-1.5 border-none">
+              <p className="text-[8px] font-black uppercase tracking-[0.4em] text-white/20 px-3 mb-2">Operations</p>
+              <TabsList className="bg-transparent flex flex-col h-auto w-full p-0 space-y-1 border-none">
                 {availableTabs.map((tab) => (
                   <TabsTrigger 
                     key={tab}
                     value={tab} 
                     className={cn(
-                      "w-full justify-start px-5 py-3.5 rounded-[1.2rem] font-bold uppercase text-[10px] tracking-widest gap-4 transition-all group outline-none",
-                      "text-white/60 hover:text-white hover:bg-white/5",
-                      "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-primary/30 border-none"
+                      "w-full justify-start px-4 py-2.5 rounded-xl font-bold uppercase text-[9px] tracking-widest gap-3 transition-all group outline-none",
+                      "text-white/40 hover:text-white hover:bg-white/5",
+                      "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl border-none"
                     )}
                   >
-                    <div className="shrink-0 flex items-center justify-center w-5 h-5">
-                      {getTabIcon(tab, "w-5 h-5 transition-transform group-hover:scale-110")}
+                    <div className="shrink-0 flex items-center justify-center w-4 h-4">
+                      {getTabIcon(tab, "w-4 h-4 transition-transform group-hover:scale-110")}
                     </div>
                     <span className="truncate flex-1 text-left">{getTabLabel(tab)}</span>
                     {tab === 'orders' && orderGroups.pending.length > 0 && (
-                      <Badge className="ml-auto bg-white text-primary border-none text-[8px] h-4 w-4 p-0 flex items-center justify-center rounded-full animate-pulse">
+                      <Badge className="ml-auto bg-white text-primary border-none text-[7px] h-3.5 w-3.5 p-0 flex items-center justify-center rounded-full animate-pulse">
                         {orderGroups.pending.length}
                       </Badge>
                     )}
@@ -260,22 +261,18 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               </TabsList>
             </div>
 
-            <div className="pt-4 border-t border-white/5">
-              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 px-4 mb-4">Diagnostics</p>
-              <div className="px-2">
-                <Card className="rounded-[1.5rem] border-none bg-white/5 p-4 relative overflow-hidden group">
-                  <div className="relative z-10 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <p className="text-[8px] font-black uppercase tracking-widest text-white/40">Audio Link</p>
-                        <p className="text-[10px] font-black text-white/80 uppercase">{isAdminMuted ? 'Muted' : 'Live'}</p>
-                      </div>
-                      <button onClick={toggleAdminMute} className="h-9 w-9 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all flex items-center justify-center">
-                        {isAdminMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
+            <div className="pt-3 border-t border-white/5">
+              <p className="text-[8px] font-black uppercase tracking-[0.4em] text-white/20 px-3 mb-2">System</p>
+              <div className="px-1">
+                <div className="rounded-xl bg-white/5 p-2 flex items-center justify-between group">
+                  <div className="space-y-0.5 ml-2">
+                    <p className="text-[7px] font-black uppercase tracking-widest text-white/30">Audio</p>
+                    <p className="text-[8px] font-black text-white/60 uppercase">{isAdminMuted ? 'Muted' : 'Live'}</p>
                   </div>
-                </Card>
+                  <button onClick={toggleAdminMute} className="h-8 w-8 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all flex items-center justify-center">
+                    {isAdminMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -284,12 +281,12 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         <main className="flex-1 min-w-0 bg-zinc-50 dark:bg-zinc-950/50 overflow-visible relative z-0">
           <AnimatePresence mode="wait">
             {availableTabs.map((tab) => (
-              <TabsContent key={tab} value={tab} className="mt-0 outline-none p-4 md:p-8 lg:p-10">
+              <TabsContent key={tab} value={tab} className="mt-0 outline-none p-3 md:p-6 lg:p-8">
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.2 }}
                 >
                   {tab === 'overview' && <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />}
                   {tab === 'users' && <UserManagement />}
@@ -311,66 +308,66 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       </Tabs>
 
       <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
-        <DialogContent className="max-w-3xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
-          <DialogHeader className="p-8 border-b bg-muted/5">
-             <DialogTitle>Order Manifest: #{selectedOrderForView?.orderId}</DialogTitle>
-             <DialogDescription>Detailed itemized view and customer logistics for order #{selectedOrderForView?.orderId}</DialogDescription>
+        <DialogContent className="max-w-2xl rounded-[2rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
+          <DialogHeader className="p-5 md:p-6 border-b bg-muted/5">
+             <DialogTitle className="text-lg font-black uppercase tracking-tight leading-none">Manifest: #{selectedOrderForView?.orderId}</DialogTitle>
           </DialogHeader>
           
           {selectedOrderForView && (
             <div className="flex flex-col">
-              <div className={cn("p-8 md:p-10 text-white relative overflow-hidden", selectedOrderForView.status === 'Cancelled' ? "bg-rose-600" : "bg-primary")}>
+              <div className={cn("p-6 md:p-8 text-white relative overflow-hidden", selectedOrderForView.status === 'Cancelled' ? "bg-rose-600" : "bg-primary")}>
                 <div className="absolute inset-0 bg-black/5" />
-                <div className="relative z-10 space-y-2">
-                   <Badge className="bg-white/20 border-none font-black text-[9px] uppercase px-3 py-1 rounded-full">{selectedOrderForView.orderType || 'Online'}</Badge>
-                   <h2 className="text-2xl md:text-4xl font-black font-headline uppercase tracking-tighter italic leading-none">#{selectedOrderForView.orderId}</h2>
+                <div className="relative z-10">
+                   <Badge className="bg-white/20 border-none font-black text-[7px] uppercase px-2 py-0.5 rounded-md mb-2">{selectedOrderForView.orderType || 'Online'}</Badge>
+                   <h2 className="text-xl md:text-3xl font-black font-headline uppercase tracking-tighter italic leading-none">#{selectedOrderForView.orderId}</h2>
                 </div>
-                <div className="absolute bottom-8 right-8 md:bottom-10 md:right-10 text-right">
-                  <p className="text-[9px] font-black uppercase opacity-70 tracking-[0.2em] mb-1">Settlement</p>
-                  <p className="text-3xl md:text-5xl font-black font-headline italic leading-none">₹{selectedOrderForView.total}</p>
+                <div className="absolute bottom-6 right-6 md:bottom-8 md:right-8 text-right">
+                  <p className="text-[7px] font-black uppercase opacity-60 tracking-widest mb-0.5">Payable</p>
+                  <p className="text-2xl md:text-4xl font-black font-headline italic leading-none">₹{selectedOrderForView.total}</p>
                 </div>
               </div>
 
-              <div className="p-8 md:p-10 space-y-10 max-h-[60vh] overflow-y-auto scrollbar-hide">
-                <div className="grid md:grid-cols-2 gap-10">
-                  <div className="space-y-6">
-                    <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.4em] flex items-center gap-2 border-b pb-2">
-                      <Layers className="w-4 h-4" /> Manifest Identity
+              <div className="p-6 md:p-8 space-y-8 max-h-[50vh] overflow-y-auto scrollbar-hide">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <h5 className="text-[9px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2 border-b pb-2">
+                      <Layers className="w-3 h-3" /> Items
                     </h5>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {selectedOrderForView.items?.map((item: any, i: number) => (
-                        <div key={i} className="bg-secondary/30 dark:bg-zinc-800/50 p-4 rounded-[1.2rem] border border-transparent hover:border-primary/10 transition-all">
-                          <div className="flex justify-between items-center mb-1">
-                             <span className="text-sm font-black uppercase tracking-tight truncate flex-1 pr-4">{item.name}</span>
-                             <span className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-700 flex items-center justify-center font-black text-xs shadow-sm text-primary">x{item.quantity}</span>
-                          </div>
+                        <div key={i} className="bg-secondary/40 dark:bg-zinc-800/50 p-3 rounded-xl border border-transparent flex justify-between items-center">
+                           <span className="text-[11px] font-bold uppercase truncate flex-1 pr-3">{item.name}</span>
+                           <span className="w-6 h-6 rounded-lg bg-white dark:bg-zinc-700 flex items-center justify-center font-black text-[10px] text-primary shadow-sm shrink-0">x{item.quantity}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.4em] flex items-center gap-2 border-b pb-2">
-                      <User className="w-4 h-4" /> Logistics Node
+                  <div className="space-y-4">
+                    <h5 className="text-[9px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2 border-b pb-2">
+                      <User className="w-3 h-3" /> Recipient
                     </h5>
-                    <div className="bg-zinc-50 dark:bg-zinc-800/50 p-6 rounded-[1.8rem] space-y-6 border">
-                        <div className="flex gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-700 flex items-center justify-center shrink-0 shadow-sm"><User className="w-5 h-5 text-primary" /></div>
+                    <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl space-y-4 border">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-700 flex items-center justify-center shrink-0 shadow-sm"><User className="w-4 h-4 text-primary" /></div>
                           <div className="min-w-0">
-                            <p className="text-[10px] font-black uppercase opacity-40 mb-0.5">Recipient</p>
-                            <p className="text-sm font-black uppercase truncate">{selectedOrderForView.customerName}</p>
-                            <p className="text-[10px] font-bold opacity-60">{selectedOrderForView.customerPhone}</p>
+                            <p className="text-[11px] font-black uppercase truncate leading-tight">{selectedOrderForView.customerName}</p>
+                            <p className="text-[9px] font-bold opacity-50 tracking-tight">{selectedOrderForView.customerPhone}</p>
                           </div>
+                        </div>
+                        <div className="pt-3 border-t border-dashed">
+                           <p className="text-[8px] font-black uppercase opacity-30 mb-1">Destination</p>
+                           <p className="text-[10px] font-medium leading-relaxed italic opacity-80">{selectedOrderForView.address}</p>
                         </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <DialogFooter className="p-6 md:p-8 bg-zinc-50 dark:bg-zinc-900 border-t flex flex-col sm:flex-row gap-3">
+              <DialogFooter className="p-4 md:p-6 bg-zinc-50 dark:bg-zinc-900 border-t flex flex-col sm:flex-row gap-2">
                 {selectedOrderForView.status === 'pending' && (activeView === 'admin' || activeView === 'cashier') && (
                   <Button 
-                    className="flex-1 rounded-[1.5rem] h-14 md:h-16 bg-primary text-white font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20" 
+                    className="flex-1 rounded-xl h-12 bg-primary text-white font-black uppercase text-[9px] tracking-widest shadow-lg shadow-primary/20" 
                     onClick={() => handleUpdateStatus(selectedOrderForView.id, 'accepted')}
                   >
                     Accept Order
@@ -378,7 +375,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                 )}
                 {selectedOrderForView.status === 'out_for_delivery' && (activeView === 'admin' || activeView === 'cashier') && (
                   <Button 
-                    className="flex-1 rounded-[1.5rem] h-14 md:h-16 bg-emerald-600 text-white font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-emerald-600/20" 
+                    className="flex-1 rounded-xl h-12 bg-emerald-600 text-white font-black uppercase text-[9px] tracking-widest shadow-lg shadow-emerald-600/20" 
                     onClick={() => handleUpdateStatus(selectedOrderForView.id, 'delivered')}
                   >
                     Mark Delivered
@@ -386,7 +383,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                 )}
                 <Button 
                   variant="outline" 
-                  className="rounded-[1.5rem] h-14 md:h-16 font-black uppercase text-[10px] tracking-widest px-10 border-2" 
+                  className="rounded-xl h-12 font-black uppercase text-[9px] tracking-widest px-8 border-2" 
                   onClick={() => setSelectedOrderForView(null)}
                 >
                   Close
@@ -402,79 +399,70 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
 const OrderGrid = ({ orderGroups, onOrderClick, activeView, handleUpdateStatus }: any) => {
   const categories = [
-    { id: 'pending', label: 'New Tickets', icon: BellRing, color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/20' },
+    { id: 'pending', label: 'New', icon: BellRing, color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/20' },
     { id: 'processing', label: 'In Flow', icon: ChefHat, color: 'text-orange-500', bg: 'bg-orange-500/5', border: 'border-orange-500/20' }
   ];
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8 items-start max-w-7xl">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 items-start max-w-7xl">
       {categories.map((cat) => (
-        <div key={cat.id} className="space-y-4 md:space-y-6">
-          <div className={cn("flex items-center justify-between px-6 py-4 md:px-8 md:py-5 rounded-[1.5rem] md:rounded-[2rem] border bg-white dark:bg-zinc-900 shadow-sm transition-all", cat.border)}>
-            <div className="flex items-center gap-4">
-              <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shadow-inner", cat.bg, cat.color)}>
-                <cat.icon className="w-5 h-5 md:w-6 md:h-6" />
+        <div key={cat.id} className="space-y-3 md:space-y-4">
+          <div className={cn("flex items-center justify-between px-5 py-3 rounded-2xl border bg-white dark:bg-zinc-900 shadow-sm", cat.border)}>
+            <div className="flex items-center gap-3">
+              <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shadow-inner", cat.bg, cat.color)}>
+                <cat.icon className="w-4 h-4" />
               </div>
-              <h3 className="font-black uppercase tracking-tight text-xs md:text-sm italic">{cat.label} Board</h3>
+              <h3 className="font-black uppercase tracking-tight text-[10px] md:text-[11px] italic">{cat.label} Board</h3>
             </div>
-            <Badge variant="secondary" className="rounded-full h-8 min-w-[32px] px-3 flex items-center justify-center font-black text-[11px] bg-zinc-100 dark:bg-zinc-800">{orderGroups[cat.id].length}</Badge>
+            <Badge variant="secondary" className="rounded-lg h-6 min-w-[24px] px-2 flex items-center justify-center font-black text-[9px] bg-zinc-100 dark:bg-zinc-800">{orderGroups[cat.id].length}</Badge>
           </div>
           
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
             {orderGroups[cat.id].length === 0 ? (
-              <div className="py-16 md:py-20 text-center opacity-20 bg-secondary/10 rounded-[2rem] md:rounded-[3rem] border-2 border-dashed flex flex-col items-center justify-center gap-4">
-                <cat.icon className="w-8 h-8 md:w-10 md:h-10 opacity-10" />
-                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] italic">Station Idle</p>
+              <div className="col-span-full py-12 text-center opacity-20 bg-secondary/10 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3">
+                <cat.icon className="w-6 h-6 opacity-10" />
+                <p className="text-[8px] font-black uppercase tracking-widest italic">Station Idle</p>
               </div>
             ) : (
               orderGroups[cat.id].map((order: any) => (
-                <motion.div key={order.id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                <motion.div key={order.id} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                   <Card 
-                    className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-sm hover:shadow-2xl transition-all cursor-pointer bg-white dark:bg-zinc-900 overflow-hidden group border-l-[6px] border-l-transparent" 
+                    className="rounded-2xl border-none shadow-sm hover:shadow-lg transition-all cursor-pointer bg-white dark:bg-zinc-900 overflow-hidden group border-l-4 border-l-transparent" 
                     onClick={() => onOrderClick(order)} 
                     style={{ borderLeftColor: order.status === 'pending' ? '#ef4444' : '#f97316' }}
                   >
-                    <div className="p-6 md:p-8 space-y-4 md:space-y-5">
+                    <div className="p-4 md:p-5 space-y-3">
                       <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <p className="text-[9px] md:text-[10px] font-black uppercase text-primary italic tracking-tight">Ticket #{order.orderId}</p>
-                          <h4 className="text-lg md:text-xl font-black uppercase tracking-tighter truncate max-w-[150px] md:max-w-[180px] leading-none group-hover:text-primary transition-colors">{order.customerName}</h4>
+                        <div className="space-y-0.5">
+                          <p className="text-[8px] font-black uppercase text-primary italic tracking-tight">#{order.orderId}</p>
+                          <h4 className="text-sm font-black uppercase tracking-tighter truncate max-w-[120px] leading-none group-hover:text-primary transition-colors">{order.customerName}</h4>
                         </div>
                         <div className="text-right">
-                          <p className="text-[8px] md:text-[9px] font-black uppercase opacity-30 mb-0.5 tracking-widest">Gross</p>
-                          <p className="text-xl md:text-2xl font-black text-primary italic leading-none">₹{order.total}</p>
+                          <p className="text-[10px] font-black text-primary italic leading-none">₹{order.total}</p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between pt-4 md:pt-5 border-t border-dashed opacity-60">
-                        <div className="flex gap-2">
-                           <Badge className={cn(
-                             "px-2 py-0.5 md:px-3 md:py-1 text-[7px] md:text-[8px] uppercase font-black border-none rounded-md shadow-sm",
-                             order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 
-                             order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-orange-700'
-                           )}>{order.status.replace(/_/g, ' ')}</Badge>
-                        </div>
-                        <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black uppercase tracking-widest">
-                          <Clock className="w-3 h-3 md:w-3.5 md:h-3.5 text-primary opacity-40" />
-                          {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Live Now'}
+                      <div className="flex items-center justify-between pt-3 border-t border-dashed opacity-60">
+                         <Badge className={cn(
+                           "px-1.5 py-0.5 text-[6px] uppercase font-black border-none rounded-md",
+                           order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 
+                           order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-orange-700'
+                         )}>{order.status.replace(/_/g, ' ')}</Badge>
+                        <div className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest">
+                          <Clock className="w-2.5 h-2.5 text-primary opacity-40" />
+                          {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Live'}
                         </div>
                       </div>
 
                       {order.status === 'pending' && (activeView === 'admin' || activeView === 'cashier') && (
-                         <div className="pt-3 md:pt-4 flex gap-2">
-                            <Button size="sm" className="flex-1 rounded-xl h-9 md:h-10 font-black uppercase text-[7px] md:text-[8px] bg-primary" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'accepted'); }}>
-                               Accept Ticket
+                         <div className="pt-2 flex gap-1.5">
+                            <Button size="sm" className="flex-1 rounded-lg h-8 font-black uppercase text-[7px] bg-primary" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'accepted'); }}>
+                               Accept
                             </Button>
-                            <Button variant="outline" size="sm" className="flex-1 rounded-xl h-9 md:h-10 font-black uppercase text-[7px] md:text-[8px] border-2" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'Cancelled'); }}>
+                            <Button variant="outline" size="sm" className="flex-1 rounded-lg h-8 font-black uppercase text-[7px] border-2" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'Cancelled'); }}>
                                Reject
                             </Button>
                          </div>
-                      )}
-                      
-                      {order.status === 'out_for_delivery' && (activeView === 'admin' || activeView === 'cashier') && (
-                        <Button size="sm" className="w-full rounded-xl h-9 md:h-10 font-black uppercase text-[7px] md:text-[8px] bg-emerald-600" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'delivered'); }}>
-                          Complete Delivery
-                        </Button>
                       )}
                     </div>
                   </Card>
