@@ -113,8 +113,8 @@ export default function SupportPage() {
 
       addMessage('assistant', response.reply, 'text', response.suggestedActions);
     } catch (e) {
-      console.error("AI Flow Error:", e);
-      addMessage('assistant', 'Ezzy AI Assistant is currently unavailable. Please try again later or use the contact options.');
+      console.error("🔥 [Ezzy AI] Flow Error:", e);
+      addMessage('assistant', "Sorry, I'm currently unavailable. Please try again later.");
     } finally {
       setIsTyping(false);
     }
@@ -137,7 +137,8 @@ export default function SupportPage() {
           const response = await ezzySupportAI({ message: cat.label, category: cat.label });
           addMessage('assistant', response.reply, 'text', response.suggestedActions);
         } catch (err) {
-          addMessage('assistant', 'Ezzy AI logic node is currently offline. Please try again.');
+          console.error("🔥 [Ezzy AI] Category Selection Error:", err);
+          addMessage('assistant', "Sorry, I'm currently unavailable. Please try again later.");
         }
         setIsTyping(false);
       }, 500);

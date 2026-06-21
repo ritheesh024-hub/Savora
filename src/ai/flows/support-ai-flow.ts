@@ -71,8 +71,13 @@ const supportAIFlow = ai.defineFlow(
     outputSchema: SupportAIOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
-    if (!output) throw new Error('AI failed to generate a response.');
-    return output;
+    try {
+      const { output } = await prompt(input);
+      if (!output) throw new Error('AI failed to generate a response.');
+      return output;
+    } catch (error) {
+      console.error('🔥 [Ezzy AI] Flow Execution Error:', error);
+      throw error;
+    }
   }
 );
