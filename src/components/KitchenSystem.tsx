@@ -1,4 +1,3 @@
-
 "use client"
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,11 +24,12 @@ interface KitchenSystemProps {
 }
 
 export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) => {
-  const kitchenOrders = orders.filter(o => 
+  // Ensure the kitchen sees all actionable orders: Newly Placed, Confirmed, and Preparing
+  const kitchenOrders = (orders || []).filter(o => 
     o.status === 'orderPlaced' || o.status === 'confirmed' || o.status === 'preparing'
   ).sort((a, b) => {
-    const order = ['preparing', 'confirmed', 'orderPlaced'];
-    return order.indexOf(a.status) - order.indexOf(b.status);
+    const orderPriority = ['preparing', 'confirmed', 'orderPlaced'];
+    return orderPriority.indexOf(a.status) - orderPriority.indexOf(b.status);
   });
 
   const activeCount = kitchenOrders.filter(o => o.status === 'preparing' || o.status === 'confirmed').length;

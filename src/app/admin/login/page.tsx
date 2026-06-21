@@ -21,7 +21,7 @@ import {
   ChevronLeft, Eye, EyeOff, Home
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { doc, setDoc, getDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, addDoc, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -104,19 +104,14 @@ export default function AdminLoginPage() {
         const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
         uid = userCredential.user.uid;
       } catch (signInError: any) {
-        // If Master Admin attempt fails due to missing account, try to create it
-        if (isPrimary && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential' || signInError.code === 'auth/invalid-email')) {
+        if (isPrimary && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
            try {
              const createCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
              uid = createCredential.user.uid;
              toast({ title: "Master Setup Complete", description: "Identity registry initialized." });
            } catch (createError: any) {
              if (createError.code === 'auth/email-already-in-use') {
-                toast({ 
-                  variant: "destructive", 
-                  title: "Auth Failed", 
-                  description: "Incorrect password for Master Admin." 
-                });
+                toast({ variant: "destructive", title: "Auth Failed", description: "Incorrect password for Master Admin." });
                 setLoading(false);
                 return;
              }
@@ -127,7 +122,9 @@ export default function AdminLoginPage() {
         }
       }
 
+      // --- STAFF IDENTITY LINKING (CRITICAL FIX) ---
       const adminRef = doc(db, 'admins', uid);
+      const adminSnap = await getDoc(adminRef);
       
       if (isPrimary) {
         const adminData = { 
@@ -143,14 +140,47 @@ export default function AdminLoginPage() {
         };
         await setDoc(adminRef, adminData, { merge: true });
       } else {
-        const adminSnap = await getDoc(adminRef);
-        if (!adminSnap.exists() || adminSnap.data().status === 'disabled') {
-           await signOut(auth);
-           toast({ variant: "destructive", title: "Access Denied", description: "Invalid staff record." });
-           setLoading(false);
-           return;
+        // If doc at UID doesn't exist, search for placeholder by email
+        if (!adminSnap.exists()) {
+          const q = query(collection(db, 'admins'), where('email', '==', normalizedEmail));
+          const placeholderSnap = await getDocs(q);
+          
+          if (!placeholderSnap.empty) {
+            const placeholderDoc = placeholderSnap.docs[0];
+            const staffData = placeholderDoc.data();
+            const oldId = placeholderDoc.id;
+
+            // Migrate placeholder to UID path to satisfy Security Rules
+            await setDoc(adminRef, {
+              ...staffData,
+              id: uid,
+              uid: uid,
+              status: 'active',
+              onlineStatus: 'online',
+              lastLoginAt: serverTimestamp()
+            });
+
+            // Clean up placeholder if IDs differ
+            if (oldId !== uid) {
+              await deleteDoc(doc(db, 'admins', oldId));
+            }
+          } else {
+            // No record found by email either
+            await signOut(auth);
+            toast({ variant: "destructive", title: "Access Denied", description: "Unauthorized email address." });
+            setLoading(false);
+            return;
+          }
+        } else {
+          // Standard login for existing linked staff
+          if (adminSnap.data().status === 'disabled') {
+            await signOut(auth);
+            toast({ variant: "destructive", title: "Access Revoked", description: "Account disabled." });
+            setLoading(false);
+            return;
+          }
+          await setDoc(adminRef, { lastLoginAt: serverTimestamp(), onlineStatus: 'online' }, { merge: true });
         }
-        await setDoc(adminRef, { lastLoginAt: serverTimestamp(), onlineStatus: 'online' }, { merge: true });
       }
 
       await logStaffLogin(uid, normalizedEmail, isPrimary ? 'admin' : (selectedRole || 'staff'));

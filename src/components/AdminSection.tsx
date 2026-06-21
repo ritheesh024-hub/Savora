@@ -27,7 +27,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp, addDoc, getDocs, where } from 'firebase/firestore';
+import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp, addDoc } from 'firebase/firestore';
 import { DashboardAnalysis } from './DashboardAnalysis';
 import { BillingSystem } from './BillingSystem';
 import { StoreSettings } from './StoreSettings';
@@ -59,11 +59,13 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const { playSound, isAdminMuted, toggleAdminMute } = useSound();
   const { logStaffAction } = useAnalytics();
   
+  // Real-time order listener for live dashboard synchronization
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(1000));
   }, [db]);
-  const { data: realOrders } = useCollection<any>(ordersQuery);
+
+  const { data: realOrders, loading: ordersLoading, error: ordersError } = useCollection<any>(ordersQuery);
 
   const menuQuery = useMemo(() => {
     if (!db) return null;
@@ -73,10 +75,12 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
   const [selectedOrderForView, setSelectedOrderForView] = useState<any>(null);
 
+  // Grouping orders for live visual boards
   const orderGroups = useMemo(() => {
     const groups = { pending: [] as any[], processing: [] as any[] };
     if (!realOrders) return groups;
     realOrders.forEach(o => {
+      // 'orderPlaced' acts as the entry level 'Pending' state
       if (o.status === 'orderPlaced') groups.pending.push(o);
       else if (['confirmed', 'preparing', 'outForDelivery'].includes(o.status)) groups.processing.push(o);
     });
@@ -99,7 +103,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
         logStaffAction(user.uid, user.displayName || 'Staff', 'ORDER_STATUS_CHANGE', `Order #${id} changed to ${newStatus}`);
 
-        const orderSnap = realOrders.find(o => o.orderId === id);
+        const orderSnap = realOrders.find(o => o.orderId === id || o.id === id);
         if (orderSnap?.userId) {
           const notifRef = collection(db, 'user_notifications', orderSnap.userId, 'items');
           const titles: Record<string, string> = {
@@ -121,8 +125,8 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
             title: titles[newStatus] || `Update: ${newStatus}`,
             message: messages[newStatus] || `Your order status changed to ${newStatus}.`,
             type: 'order',
-            orderId: id,
-            ctaLink: `/orders/${id}`,
+            orderId: orderSnap.orderId || id,
+            ctaLink: `/orders/${orderSnap.orderId || id}`,
             read: false,
             createdAt: serverTimestamp()
           });
@@ -177,6 +181,19 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       default: return <BoxSelect className={iconClass} />;
     }
   };
+
+  if (ordersError) {
+    return (
+      <div className="p-20 text-center space-y-4">
+        <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-rose-600">
+           <Fingerprint className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-black uppercase tracking-tighter">Permission Denied</h3>
+        <p className="text-muted-foreground text-sm max-w-md mx-auto">Your identity node has not been fully verified for order access. Please contact the fleet commander.</p>
+        <Button variant="outline" onClick={() => window.location.reload()} className="rounded-xl px-8 font-black uppercase text-[10px]">Retry Node Sync</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex-col lg:flex-row min-h-0 overflow-hidden flex">
