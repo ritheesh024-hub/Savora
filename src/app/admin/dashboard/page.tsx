@@ -33,10 +33,14 @@ function DashboardContent() {
   const [assignedRole, setAssignedRole] = useState<StaffRole | null>(null);
   const [activeView, setActiveView] = useState<StaffRole | null>(null);
   const [checkingRole, setCheckingRole] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
-
   const requestedView = searchParams.get('view') as StaffRole;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     async function checkRole() {
@@ -49,7 +53,8 @@ function DashboardContent() {
 
       if (!db || !auth) return;
 
-      if (user.email === PRIMARY_ADMIN_EMAIL) {
+      // Master Admin Bypass
+      if (user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase()) {
         setAssignedRole('admin');
         if (['admin', 'cashier', 'kitchen'].includes(requestedView)) {
           setActiveView(requestedView);
@@ -110,7 +115,7 @@ function DashboardContent() {
     setActiveView(role);
   };
 
-  if (userLoading || checkingRole || !activeView) {
+  if (!mounted || userLoading || checkingRole || !activeView) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-6 text-center">
         <motion.div 
@@ -158,13 +163,18 @@ function DashboardContent() {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="rounded-xl h-11 px-3 md:px-4 gap-3 hover:bg-secondary/80 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-all">
+              <Button 
+                variant="ghost" 
+                className="rounded-xl h-11 px-3 md:px-4 gap-3 hover:bg-secondary/80 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+              >
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                   <UserCog className="w-4 h-4" />
                 </div>
                 <div className="hidden md:flex flex-col items-start text-left mr-2">
                    <p className="text-[10px] font-black uppercase tracking-tight leading-none mb-1">Identity</p>
-                   <p className="text-[9px] font-bold opacity-50 truncate max-w-[100px]">{user?.email?.split('@')[0]}</p>
+                   <p className="text-[9px] font-bold opacity-50 truncate max-w-[100px]">
+                     {user?.email?.split('@')[0] || 'Staff'}
+                   </p>
                 </div>
               </Button>
             </DropdownMenuTrigger>
@@ -179,14 +189,14 @@ function DashboardContent() {
                 <>
                   <DropdownMenuSeparator className="opacity-10" />
                   <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Switch Logic</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => switchView('admin')} className="rounded-xl gap-3 py-3 font-bold cursor-pointer hover:bg-primary/5 transition-all"><ShieldCheck className="w-4 h-4 text-primary" /> Administrator</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => switchView('cashier')} className="rounded-xl gap-3 py-3 font-bold cursor-pointer hover:bg-primary/5 transition-all"><Receipt className="w-4 h-4 text-blue-500" /> POS Cashier</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => switchView('kitchen')} className="rounded-xl gap-3 py-3 font-bold cursor-pointer hover:bg-primary/5 transition-all"><ChefHat className="w-4 h-4 text-orange-500" /> Kitchen Station</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => switchView('admin')} className="rounded-xl gap-3 py-3 font-bold cursor-pointer hover:bg-primary/5 transition-all"><ShieldCheck className="w-4 h-4 text-primary" /> Administrator</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => switchView('cashier')} className="rounded-xl gap-3 py-3 font-bold cursor-pointer hover:bg-primary/5 transition-all"><Receipt className="w-4 h-4 text-blue-500" /> POS Cashier</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => switchView('kitchen')} className="rounded-xl gap-3 py-3 font-bold cursor-pointer hover:bg-primary/5 transition-all"><ChefHat className="w-4 h-4 text-orange-500" /> Kitchen Station</DropdownMenuItem>
                 </>
               )}
               
               <DropdownMenuSeparator className="opacity-10" />
-              <DropdownMenuItem onClick={handleLogout} className="rounded-xl gap-3 py-3 font-bold text-destructive cursor-pointer hover:bg-destructive/5 transition-all">
+              <DropdownMenuItem onSelect={handleLogout} className="rounded-xl gap-3 py-3 font-bold text-destructive cursor-pointer hover:bg-destructive/5 transition-all">
                 <LogOut className="w-4 h-4" /> Terminate Session
               </DropdownMenuItem>
             </DropdownMenuContent>

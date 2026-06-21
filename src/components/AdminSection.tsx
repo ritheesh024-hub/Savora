@@ -210,7 +210,8 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-visible">
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
-      <Tabs defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
+      {/* KEY={activeView} ensures that switching roles re-initializes the Tabs component correctly */}
+      <Tabs key={activeView} defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
         <div className="lg:hidden sticky top-[70px] z-[90] bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b shadow-sm w-full overflow-hidden shrink-0">
            <TabsList className="bg-transparent h-auto flex flex-row flex-nowrap justify-start p-2 space-x-1.5 overflow-x-auto scrollbar-hide snap-x w-full border-none">
               {availableTabs.map((tab) => (
