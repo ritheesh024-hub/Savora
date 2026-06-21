@@ -24,16 +24,17 @@ interface KitchenSystemProps {
 }
 
 export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) => {
-  // Ensure the kitchen sees all actionable orders: Newly Placed, Confirmed, and Preparing
+  // Requirement: Kitchen should only see accepted/preparing orders.
+  // We exclude 'orderPlaced' (Pending) and terminal states.
   const kitchenOrders = (orders || []).filter(o => 
-    o.status === 'orderPlaced' || o.status === 'confirmed' || o.status === 'preparing'
+    o.status === 'confirmed' || o.status === 'preparing'
   ).sort((a, b) => {
-    const orderPriority = ['preparing', 'confirmed', 'orderPlaced'];
+    const orderPriority = ['preparing', 'confirmed'];
     return orderPriority.indexOf(a.status) - orderPriority.indexOf(b.status);
   });
 
-  const activeCount = kitchenOrders.filter(o => o.status === 'preparing' || o.status === 'confirmed').length;
-  const placedCount = kitchenOrders.filter(o => o.status === 'orderPlaced').length;
+  const activeCount = kitchenOrders.length;
+  const preparingCount = kitchenOrders.filter(o => o.status === 'preparing').length;
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
@@ -48,7 +49,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">In Cooking</span>
               </div>
               <div>
-                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none">{activeCount}</h3>
+                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none">{preparingCount}</h3>
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-80 italic">Active Station</p>
               </div>
            </div>
@@ -61,8 +62,8 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">Queue</span>
               </div>
               <div>
-                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-primary">{placedCount}</h3>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40 italic">New Arrivals</p>
+                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-primary">{activeCount - preparingCount}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40 italic">Awaiting Prep</p>
               </div>
            </div>
         </Card>
@@ -99,12 +100,12 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
               key={order.id} 
               className={cn(
                 "rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-all duration-700",
-                order.status === 'orderPlaced' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20 shadow-orange-500/10"
+                order.status === 'confirmed' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20 shadow-orange-500/10"
               )}
             >
               <div className={cn(
                 "p-8 flex justify-between items-center",
-                order.status === 'orderPlaced' ? "bg-primary text-white" : "bg-orange-gradient text-white shadow-lg"
+                order.status === 'confirmed' ? "bg-primary text-white" : "bg-orange-gradient text-white shadow-lg"
               )}>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20">
@@ -152,22 +153,14 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
 
                 <div className="flex items-center justify-between pt-10 border-t border-dashed border-zinc-100 dark:border-zinc-800">
                   <div className="flex flex-col gap-1">
-                    <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Arrival</p>
+                    <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Accepted</p>
                     <div className="flex items-center gap-2 text-xs font-black uppercase">
                        <Timer className="w-4 h-4 text-primary" />
-                       {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'hh:mm a') : 'Just now'}
+                       {order.acceptedAt?.toDate ? format(order.acceptedAt.toDate(), 'hh:mm a') : 'Just now'}
                     </div>
                   </div>
                   
                   <div className="flex gap-2">
-                    {order.status === 'orderPlaced' && (
-                      <Button 
-                        onClick={() => onUpdateStatus(order.id, 'confirmed')}
-                        className="rounded-[1.5rem] h-18 px-10 bg-zinc-950 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-primary group"
-                      >
-                        <CheckCircle2 className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Confirm
-                      </Button>
-                    )}
                     {order.status === 'confirmed' && (
                       <Button 
                         onClick={() => onUpdateStatus(order.id, 'preparing')}
@@ -177,7 +170,12 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                       </Button>
                     )}
                     {order.status === 'preparing' && (
-                      <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[10px] uppercase px-4 py-2 rounded-xl">Prep Ready</Badge>
+                      <Button 
+                        onClick={() => onUpdateStatus(order.id, 'outForDelivery')}
+                        className="rounded-[1.5rem] h-18 px-10 bg-emerald-600 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-emerald-700 group"
+                      >
+                        <Truck className="w-5 h-5 group-hover:translate-x-1 transition-transform" /> Prep Ready
+                      </Button>
                     )}
                   </div>
                 </div>

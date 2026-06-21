@@ -45,7 +45,7 @@ export const NewOrderPopups = ({ pendingOrders, onViewDetails, onUpdateStatus }:
       newOrders.forEach(order => {
         shownOrderIds.current.add(order.id);
         setActiveNotifications(prev => [order, ...prev]);
-        playSound('ping');
+        playSound('ping'); // Alarm triggers here
       });
     }
   }, [pendingOrders, playSound]);
