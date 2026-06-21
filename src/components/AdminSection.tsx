@@ -22,7 +22,9 @@ import {
   TrendingUp,
   Gift,
   History,
-  LayoutDashboard
+  LayoutDashboard,
+  Truck,
+  CheckCircle2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -59,7 +61,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const { playSound, isAdminMuted, toggleAdminMute } = useSound();
   const { logStaffAction } = useAnalytics();
   
-  // Real-time order listener for live dashboard synchronization
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(1000));
@@ -75,14 +76,12 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
   const [selectedOrderForView, setSelectedOrderForView] = useState<any>(null);
 
-  // Grouping orders for live visual boards
   const orderGroups = useMemo(() => {
     const groups = { pending: [] as any[], processing: [] as any[] };
     if (!realOrders) return groups;
     realOrders.forEach(o => {
-      // 'orderPlaced' acts as the entry level 'Pending' state
-      if (o.status === 'orderPlaced') groups.pending.push(o);
-      else if (['confirmed', 'preparing', 'outForDelivery'].includes(o.status)) groups.processing.push(o);
+      if (o.status === 'pending') groups.pending.push(o);
+      else if (['accepted', 'preparing', 'out_for_delivery'].includes(o.status)) groups.processing.push(o);
     });
     return groups;
   }, [realOrders]);
@@ -90,14 +89,18 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const handleUpdateStatus = (id: string, newStatus: string) => {
     if (!db || !user) return;
     const orderRef = doc(db, 'orders', id);
-    const updateData: any = { status: newStatus };
-    if (newStatus === 'confirmed') updateData.acceptedAt = serverTimestamp();
+    const updateData: any = { 
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    };
+    
+    if (newStatus === 'accepted') updateData.acceptedAt = serverTimestamp();
+    if (newStatus === 'delivered') updateData.deliveredAt = serverTimestamp();
 
     updateDoc(orderRef, updateData)
       .then(async () => {
         const staffRef = doc(db, 'admins', user.uid);
         updateDoc(staffRef, { 
-          'stats.kitchenUpdates': increment(1), 
           'stats.ordersHandled': increment(1) 
         }).catch(() => {});
 
@@ -105,18 +108,18 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
         const orderSnap = realOrders.find(o => o.orderId === id || o.id === id);
         if (orderSnap?.userId) {
-          const notifRef = collection(db, 'user_notifications', orderSnap.userId, 'items');
+          const notifRef = collection(db, 'user_notifications', orderSnap.userId, 'messages');
           const titles: Record<string, string> = {
-            'confirmed': 'Order Confirmed! ✅',
+            'accepted': 'Order Confirmed! ✅',
             'preparing': 'Chef is on it! 👨‍🍳',
-            'outForDelivery': 'Rider is Dispatched 🛵',
+            'out_for_delivery': 'Rider is Dispatched 🛵',
             'delivered': 'Enjoy your Bites! 🍱',
             'Cancelled': 'Order Cancelled ❌'
           };
           const messages: Record<string, string> = {
-            'confirmed': 'Your order has been accepted by the station.',
-            'preparing': 'Your premium bites are being handcrafted now.',
-            'outForDelivery': 'Your premium bites are on the way to your sanctuary.',
+            'accepted': 'Your order has been accepted by the station.',
+            'preparing': 'Kitchen started preparing your order.',
+            'out_for_delivery': 'Your order is out for delivery.',
             'delivered': 'Your order was successfully handed over. Thank you!',
             'Cancelled': 'We regret that your order was revoked. Contact support if needed.'
           };
@@ -302,7 +305,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   {tab === 'staff' && <StaffManagement />}
                   {tab === 'settings' && <StoreSettings />}
                   {tab === 'archive' && <ArchiveSystem orders={realOrders || []} onViewDetails={(o) => setSelectedOrderForView(o)} />}
-                  {tab === 'orders' && <OrderGrid orderGroups={orderGroups} onOrderClick={setSelectedOrderForView} />}
+                  {tab === 'orders' && <OrderGrid orderGroups={orderGroups} onOrderClick={setSelectedOrderForView} activeView={activeView} handleUpdateStatus={handleUpdateStatus} />}
                 </motion.div>
               </TabsContent>
             ))}
@@ -367,12 +370,20 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               </div>
 
               <DialogFooter className="p-8 bg-zinc-50 dark:bg-zinc-900 border-t flex gap-3">
-                {selectedOrderForView.status === 'orderPlaced' && (
+                {selectedOrderForView.status === 'pending' && (activeView === 'admin' || activeView === 'cashier') && (
                   <Button 
                     className="flex-1 rounded-[1.5rem] h-16 bg-primary text-white font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20" 
-                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'confirmed')}
+                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'accepted')}
                   >
-                    Confirm Order
+                    Accept Order
+                  </Button>
+                )}
+                {selectedOrderForView.status === 'out_for_delivery' && (activeView === 'admin' || activeView === 'cashier') && (
+                  <Button 
+                    className="flex-1 rounded-[1.5rem] h-16 bg-emerald-600 text-white font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-emerald-600/20" 
+                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'delivered')}
+                  >
+                    Mark Delivered
                   </Button>
                 )}
                 <Button 
@@ -380,7 +391,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   className="rounded-[1.5rem] h-16 font-black uppercase text-[10px] tracking-widest px-10 border-2" 
                   onClick={() => setSelectedOrderForView(null)}
                 >
-                  Dismiss
+                  Close
                 </Button>
               </DialogFooter>
             </div>
@@ -391,10 +402,10 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   );
 };
 
-const OrderGrid = ({ orderGroups, onOrderClick }: any) => {
+const OrderGrid = ({ orderGroups, onOrderClick, activeView, handleUpdateStatus }: any) => {
   const categories = [
-    { id: 'pending', label: 'Placed', icon: BellRing, color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/20' },
-    { id: 'processing', label: 'Processing', icon: ChefHat, color: 'text-orange-500', bg: 'bg-orange-500/5', border: 'border-orange-500/20' }
+    { id: 'pending', label: 'New Tickets', icon: BellRing, color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/20' },
+    { id: 'processing', label: 'In Flow', icon: ChefHat, color: 'text-orange-500', bg: 'bg-orange-500/5', border: 'border-orange-500/20' }
   ];
 
   return (
@@ -423,7 +434,7 @@ const OrderGrid = ({ orderGroups, onOrderClick }: any) => {
                   <Card 
                     className="rounded-[2.5rem] border-none shadow-sm hover:shadow-2xl transition-all cursor-pointer bg-white dark:bg-zinc-900 overflow-hidden group active:scale-[0.98] border-l-[6px] border-l-transparent" 
                     onClick={() => onOrderClick(order)} 
-                    style={{ borderLeftColor: order.status === 'orderPlaced' ? '#ef4444' : (order.status === 'confirmed' || order.status === 'preparing' || order.status === 'outForDelivery') ? '#f97316' : '#10b981' }}
+                    style={{ borderLeftColor: order.status === 'pending' ? '#ef4444' : '#f97316' }}
                   >
                     <div className="p-8 space-y-5">
                       <div className="flex justify-between items-start">
@@ -432,22 +443,41 @@ const OrderGrid = ({ orderGroups, onOrderClick }: any) => {
                           <h4 className="text-xl font-black uppercase tracking-tighter truncate max-w-[180px] leading-none group-hover:text-primary transition-colors">{order.customerName}</h4>
                         </div>
                         <div className="text-right">
-                          <p className="text-[9px] font-black uppercase opacity-30 mb-0.5 tracking-widest">Settlement</p>
+                          <p className="text-[9px] font-black uppercase opacity-30 mb-0.5 tracking-widest">Gross</p>
                           <p className="text-2xl font-black text-primary italic leading-none">₹{order.total}</p>
                         </div>
                       </div>
                       
                       <div className="flex items-center justify-between pt-5 border-t border-dashed opacity-60">
-                        <Badge className={cn(
-                          "px-3 py-1 text-[8px] uppercase font-black border-none rounded-md shadow-sm",
-                          order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 
-                          order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-orange-700'
-                        )}>{order.status}</Badge>
+                        <div className="flex gap-2">
+                           <Badge className={cn(
+                             "px-3 py-1 text-[8px] uppercase font-black border-none rounded-md shadow-sm",
+                             order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 
+                             order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-orange-700'
+                           )}>{order.status.replace(/_/g, ' ')}</Badge>
+                        </div>
                         <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">
                           <Clock className="w-3.5 h-3.5 text-primary opacity-40" />
                           {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Live Now'}
                         </div>
                       </div>
+
+                      {order.status === 'pending' && (activeView === 'admin' || activeView === 'cashier') && (
+                         <div className="pt-4 flex gap-2">
+                            <Button size="sm" className="flex-1 rounded-xl h-10 font-black uppercase text-[8px] bg-primary" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'accepted'); }}>
+                               Accept Ticket
+                            </Button>
+                            <Button variant="outline" size="sm" className="flex-1 rounded-xl h-10 font-black uppercase text-[8px] border-2" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'Cancelled'); }}>
+                               Reject
+                            </Button>
+                         </div>
+                      )}
+                      
+                      {order.status === 'out_for_delivery' && (activeView === 'admin' || activeView === 'cashier') && (
+                        <Button size="sm" className="w-full rounded-xl h-10 font-black uppercase text-[8px] bg-emerald-600" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'delivered'); }}>
+                          Complete Delivery
+                        </Button>
+                      )}
                     </div>
                   </Card>
                 </motion.div>

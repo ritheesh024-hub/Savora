@@ -24,12 +24,11 @@ interface KitchenSystemProps {
 }
 
 export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) => {
-  // Requirement: Kitchen should only see accepted/preparing orders.
-  // We exclude 'orderPlaced' (Pending) and terminal states.
+  // Kitchen protocol: Only accepted or preparing orders
   const kitchenOrders = (orders || []).filter(o => 
-    o.status === 'confirmed' || o.status === 'preparing'
+    o.status === 'accepted' || o.status === 'preparing'
   ).sort((a, b) => {
-    const orderPriority = ['preparing', 'confirmed'];
+    const orderPriority = ['preparing', 'accepted'];
     return orderPriority.indexOf(a.status) - orderPriority.indexOf(b.status);
   });
 
@@ -59,7 +58,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
            <div className="relative z-10 flex flex-col h-full justify-between gap-8">
               <div className="flex items-center gap-3 bg-primary/10 text-primary w-fit px-4 py-2 rounded-full border border-primary/10">
                  <BellRing className="w-4 h-4 animate-bounce" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Queue</span>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Accepted Queue</span>
               </div>
               <div>
                 <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-primary">{activeCount - preparingCount}</h3>
@@ -73,11 +72,11 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
            <div className="relative z-10 flex flex-col h-full justify-between gap-8">
               <div className="flex items-center gap-3 bg-white/10 w-fit px-4 py-2 rounded-full border border-white/10">
                  <Activity className="w-4 h-4 text-emerald-400" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Efficiency</span>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Kitchen Load</span>
               </div>
               <div>
-                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-emerald-400">99.2%</h3>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40 italic">Accuracy Rating</p>
+                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-emerald-400">{activeCount}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40 italic">Total Active Tickets</p>
               </div>
            </div>
         </Card>
@@ -91,7 +90,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
             </div>
             <div className="space-y-1">
               <h3 className="text-3xl font-black uppercase tracking-tighter italic">Station Clear</h3>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">All orders processed</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">Awaiting fresh orders from hub</p>
             </div>
           </div>
         ) : (
@@ -100,12 +99,12 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
               key={order.id} 
               className={cn(
                 "rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-all duration-700",
-                order.status === 'confirmed' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20 shadow-orange-500/10"
+                order.status === 'accepted' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20 shadow-orange-500/10"
               )}
             >
               <div className={cn(
                 "p-8 flex justify-between items-center",
-                order.status === 'confirmed' ? "bg-primary text-white" : "bg-orange-gradient text-white shadow-lg"
+                order.status === 'accepted' ? "bg-primary text-white" : "bg-orange-gradient text-white shadow-lg"
               )}>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20">
@@ -131,12 +130,6 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                           {item.quantity}
                         </div>
                       </div>
-                      {item.customization && (
-                        <div className="flex flex-wrap gap-2 pt-3 border-t border-dashed border-zinc-200">
-                           <Badge variant="outline" className="text-[8px] font-black uppercase text-primary border-primary/20 bg-primary/5 px-2">{item.customization.size}</Badge>
-                           <Badge variant="outline" className="text-[8px] font-black uppercase px-2">{item.customization.temp}</Badge>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -153,28 +146,20 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
 
                 <div className="flex items-center justify-between pt-10 border-t border-dashed border-zinc-100 dark:border-zinc-800">
                   <div className="flex flex-col gap-1">
-                    <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Accepted</p>
+                    <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Sync State</p>
                     <div className="flex items-center gap-2 text-xs font-black uppercase">
                        <Timer className="w-4 h-4 text-primary" />
-                       {order.acceptedAt?.toDate ? format(order.acceptedAt.toDate(), 'hh:mm a') : 'Just now'}
+                       {order.updatedAt?.toDate ? format(order.updatedAt.toDate(), 'hh:mm a') : 'Live'}
                     </div>
                   </div>
                   
                   <div className="flex gap-2">
-                    {order.status === 'confirmed' && (
+                    {order.status === 'accepted' && (
                       <Button 
                         onClick={() => onUpdateStatus(order.id, 'preparing')}
                         className="rounded-[1.5rem] h-18 px-10 bg-orange-500 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-orange-600 group"
                       >
-                        <ChefHat className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Start Prep
-                      </Button>
-                    )}
-                    {order.status === 'preparing' && (
-                      <Button 
-                        onClick={() => onUpdateStatus(order.id, 'outForDelivery')}
-                        className="rounded-[1.5rem] h-18 px-10 bg-emerald-600 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-emerald-700 group"
-                      >
-                        <Truck className="w-5 h-5 group-hover:translate-x-1 transition-transform" /> Prep Ready
+                        <ChefHat className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Start Cooking
                       </Button>
                     )}
                   </div>

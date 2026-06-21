@@ -22,7 +22,6 @@ export default function OrdersHistoryPage() {
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     
-    // CASE 1: Logged-in user
     if (user) {
       return query(
         collection(db, 'orders'),
@@ -32,7 +31,6 @@ export default function OrdersHistoryPage() {
       );
     }
     
-    // CASE 2: Guest Search (requires explicit trigger to avoid fetching all data)
     if (searchTriggered && phoneNumber.length === 10) {
       return query(
         collection(db, 'orders'),
@@ -45,12 +43,6 @@ export default function OrdersHistoryPage() {
   }, [db, user, phoneNumber, searchTriggered]);
 
   const { data: rawOrders, loading: ordersLoading, error } = useCollection<any>(ordersQuery);
-
-  const orders = useMemo(() => {
-    if (!rawOrders) return [];
-    // Sort secondary if needed (Firestore query handles most of it)
-    return rawOrders;
-  }, [rawOrders]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +113,7 @@ export default function OrdersHistoryPage() {
             {loading ? (
               <div className="py-20 text-center space-y-4">
                 <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
-                <p className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Fetching your order ledger...</p>
+                <p className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Fetching your ledger...</p>
               </div>
             ) : error ? (
               <div className="py-20 text-center space-y-4 bg-destructive/5 rounded-[2.5rem] border-2 border-dashed border-destructive/20 p-10">
@@ -131,8 +123,8 @@ export default function OrdersHistoryPage() {
                 <Button onClick={() => window.location.reload()} variant="outline" className="rounded-xl font-black uppercase text-[10px]">Retry Sync</Button>
               </div>
             ) : (user || searchTriggered) ? (
-              orders && orders.length > 0 ? (
-                orders.map((order: any) => (
+              rawOrders && rawOrders.length > 0 ? (
+                rawOrders.map((order: any) => (
                   <Link key={order.id} href={`/orders/${order.orderId}`}>
                     <Card className="rounded-[2rem] border-none shadow-soft hover:shadow-2xl transition-all mb-6 group bg-white dark:bg-zinc-900 overflow-hidden active:scale-[0.98]">
                       <CardContent className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -149,12 +141,12 @@ export default function OrdersHistoryPage() {
                                 order.status === 'Cancelled' ? 'bg-red-500 text-white' : 
                                 'bg-orange-500 text-white'
                               )}>
-                                {order.status}
+                                {order.status.replace(/_/g, ' ')}
                               </Badge>
                             </div>
                             <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-2">
                               <Clock className="w-3.5 h-3.5" /> 
-                              {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Syncing...'}
+                              {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Syncing...'}
                             </p>
                           </div>
                         </div>

@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useMemo, useState, useEffect, use } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -42,7 +41,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   useEffect(() => {
-    if (!order?.createdAt || (order.status !== 'orderPlaced' && order.status !== 'confirmed')) {
+    if (!order?.createdAt || (order.status !== 'pending' && order.status !== 'accepted')) {
       setCanCancel(false);
       return;
     }
@@ -83,7 +82,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
       await updateDoc(doc(db, 'orders', orderId), {
         status: 'Cancelled',
         cancelledAt: serverTimestamp(),
-        cancelledBy: 'Customer'
+        cancelledBy: 'Customer',
+        updatedAt: serverTimestamp()
       });
       trackOrderCancelled(orderId);
       toast({ title: "Order Cancelled", description: "Your order has been revoked as requested." });
@@ -95,10 +95,10 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   };
 
   const statusMap: Record<string, number> = {
-    'orderPlaced': 1,
-    'confirmed': 2,
+    'pending': 1,
+    'accepted': 2,
     'preparing': 3,
-    'outForDelivery': 4,
+    'out_for_delivery': 4,
     'delivered': 5,
     'Cancelled': 0
   };
@@ -106,10 +106,10 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   const statusLevel = order ? statusMap[order.status] || 1 : 1;
 
   const steps = [
-    { id: 1, title: 'Order Placed', statusKey: 'orderPlaced', icon: PackageCheck, desc: 'We have received your request.' },
-    { id: 2, title: 'Confirmed', statusKey: 'confirmed', icon: CheckCircle2, desc: 'Kitchen is reviewing your items.' },
+    { id: 1, title: 'Order Placed', statusKey: 'pending', icon: PackageCheck, desc: 'We have received your request.' },
+    { id: 2, title: 'Confirmed', statusKey: 'accepted', icon: CheckCircle2, desc: 'Kitchen is reviewing your items.' },
     { id: 3, title: 'Preparing Food', statusKey: 'preparing', icon: ChefHat, desc: 'Our chefs are crafting your meal.' },
-    { id: 4, title: 'Out for Delivery', statusKey: 'outForDelivery', icon: Truck, desc: 'Our rider is heading to your sanctuary.' },
+    { id: 4, title: 'Out for Delivery', statusKey: 'out_for_delivery', icon: Truck, desc: 'Our rider is heading to your sanctuary.' },
     { id: 5, title: 'Delivered', statusKey: 'delivered', icon: CheckCircle2, desc: 'Bites received. Enjoy your meal!' }
   ];
 

@@ -28,11 +28,9 @@ export const NewOrderPopups = ({ pendingOrders, onViewDetails, onUpdateStatus }:
   const shownOrderIds = useRef<Set<string>>(new Set());
   const isInitialLoad = useRef(true);
 
-  // Monitor pending orders for new arrivals
   useEffect(() => {
     if (!pendingOrders) return;
 
-    // On initial load, mark existing pending orders as "shown" so we don't spam the UI
     if (isInitialLoad.current) {
       pendingOrders.forEach(order => shownOrderIds.current.add(order.id));
       isInitialLoad.current = false;
@@ -45,7 +43,7 @@ export const NewOrderPopups = ({ pendingOrders, onViewDetails, onUpdateStatus }:
       newOrders.forEach(order => {
         shownOrderIds.current.add(order.id);
         setActiveNotifications(prev => [order, ...prev]);
-        playSound('ping'); // Alarm triggers here
+        playSound('ping'); 
       });
     }
   }, [pendingOrders, playSound]);
@@ -72,7 +70,7 @@ export const NewOrderPopups = ({ pendingOrders, onViewDetails, onUpdateStatus }:
                 <ShoppingBag className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest opacity-70">New Live Order</p>
+                <p className="text-[9px] font-black uppercase tracking-widest opacity-70">New Ticket Hub</p>
                 <h4 className="font-black text-sm">#{order.orderId}</h4>
               </div>
             </div>
@@ -94,24 +92,15 @@ export const NewOrderPopups = ({ pendingOrders, onViewDetails, onUpdateStatus }:
                   <IndianRupee className="w-3 h-3 mr-1" /> ₹{order.total}
                 </Badge>
                 <Badge variant="outline" className="text-[8px] font-black uppercase px-2">
-                  <Clock className="w-3 h-3 mr-1" /> Just Now
+                  <Clock className="w-3 h-3 mr-1" /> Incoming
                 </Badge>
               </div>
             </div>
 
-            {order.address && (
-              <div className="flex items-start gap-2 p-2.5 bg-secondary/30 rounded-xl">
-                <MapPin className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-                <p className="text-[10px] font-medium text-muted-foreground leading-tight">
-                  {order.address}
-                </p>
-              </div>
-            )}
-
             <div className="flex gap-2">
               <Button 
                 onClick={() => {
-                  onUpdateStatus(order.id, 'confirmed');
+                  onUpdateStatus(order.id, 'accepted');
                   removeNotification(order.id);
                 }}
                 className="flex-1 rounded-xl h-10 font-black text-[9px] uppercase bg-primary"
@@ -129,17 +118,6 @@ export const NewOrderPopups = ({ pendingOrders, onViewDetails, onUpdateStatus }:
                 <Ban className="w-3.5 h-3.5 mr-2" /> Reject
               </Button>
             </div>
-            
-            <Button 
-              variant="ghost" 
-              className="w-full text-[9px] font-black uppercase tracking-widest h-8 text-muted-foreground hover:text-primary"
-              onClick={() => {
-                onViewDetails(order);
-                removeNotification(order.id);
-              }}
-            >
-              <ExternalLink className="w-3 h-3 mr-2" /> View Full Order
-            </Button>
           </CardContent>
         </Card>
       ))}

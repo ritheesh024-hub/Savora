@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -55,28 +54,18 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
     setMounted(true);
   }, []);
 
-  const usersQuery = useMemo(() => db ? query(collection(db, 'users')) : null, [db]);
-  const { data: allUsers = [] } = useCollection<any>(usersQuery);
-
-  const securityQuery = useMemo(() => db ? query(collection(db, 'login_events'), orderBy('timestamp', 'desc'), limit(15)) : null, [db]);
-  const { data: securityLogs = [], loading: logsLoading } = useCollection<any>(securityQuery);
-
-  const reviewsQuery = useMemo(() => db ? query(collection(db, 'reviews')) : null, [db]);
-  const { data: allReviews = [] } = useCollection<any>(reviewsQuery);
-
-  const growthQuery = useMemo(() => db ? query(collection(db, 'referrals')) : null, [db]);
-  const { data: allReferrals = [] } = useCollection<any>(growthQuery);
-
   const metrics = useMemo(() => {
     const delivered = orders.filter(o => o.status === 'delivered');
     const todayRev = delivered.filter(o => o.createdAt?.toDate && isToday(o.createdAt.toDate())).reduce((acc, o) => acc + (Number(o.total) || 0), 0);
     const totalRev = delivered.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
     
-    const status = {
-      active: orders.filter(o => ['orderPlaced', 'confirmed', 'preparing', 'outForDelivery'].includes(o.status)).length,
+    const statusCounts = {
+      pending: orders.filter(o => o.status === 'pending').length,
+      accepted: orders.filter(o => o.status === 'accepted').length,
+      preparing: orders.filter(o => o.status === 'preparing').length,
+      out_for_delivery: orders.filter(o => o.status === 'out_for_delivery').length,
       delivered: delivered.length,
-      cancelled: orders.filter(o => o.status === 'Cancelled').length,
-      preparing: orders.filter(o => o.status === 'preparing').length
+      cancelled: orders.filter(o => o.status === 'Cancelled').length
     };
 
     const chartMap: Record<string, number> = {};
@@ -91,91 +80,40 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
     const chartData = Object.entries(chartMap).map(([name, val]) => ({ name, val }));
 
-    const referralCount = allReferrals.length;
-    const couponImpact = orders.filter(o => !!o.couponCode).length;
-
     return { 
       todayRev, 
       totalRev, 
-      status, 
+      statusCounts, 
       chartData, 
-      referralCount,
-      couponImpact,
       avgOrder: delivered.length ? Math.round(totalRev / delivered.length) : 0,
-      avgRating: allReviews.length ? (allReviews.reduce((acc, r) => acc + r.rating, 0) / allReviews.length).toFixed(1) : '0.0'
+      totalOrders: orders.length
     };
-  }, [orders, allReviews, allReferrals]);
+  }, [orders]);
 
   if (!mounted) return (
     <div className="h-[600px] flex flex-col items-center justify-center gap-4">
       <Loader2 className="animate-spin text-primary w-10 h-10" />
-      <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Connecting Data Hub...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Syncing Matrix...</p>
     </div>
   );
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-20">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard label="Gross Today" value={`₹${metrics.todayRev}`} icon={IndianRupee} trend="+12%" color="text-emerald-500" bg="bg-emerald-50" />
-        <KPICard label="Active Tickets" value={metrics.status.active} icon={Zap} trend="Live" color="text-orange-500" bg="bg-orange-50" />
-        <KPICard label="Customer Pulse" value={metrics.avgRating} icon={Star} trend={`${allReviews.length} Reviews`} color="text-yellow-500" bg="bg-yellow-50" />
-        <KPICard label="Avg. Ticket" value={`₹${metrics.avgOrder}`} icon={CreditCard} trend="Stable" color="text-primary" bg="bg-primary/5" />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-         <Card className="rounded-[2.5rem] border-none shadow-xl bg-zinc-950 text-white p-10 relative overflow-hidden group">
-            <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 transition-transform duration-1000 rotate-12">
-               <Gift className="w-48 h-48" />
-            </div>
-            <div className="relative z-10 flex items-center justify-between">
-               <div className="space-y-4">
-                  <div className="flex items-center gap-3 bg-white/10 w-fit px-3 py-1 rounded-full border border-white/10">
-                     <TrendingUp className="w-3 h-3 text-emerald-400" />
-                     <span className="text-[9px] font-black uppercase tracking-widest">Referral Velocity</span>
-                  </div>
-                  <div>
-                    <h3 className="text-6xl font-black font-headline italic leading-none">{metrics.referralCount}</h3>
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40">Total Nodes Recruited</p>
-                  </div>
-               </div>
-               <div className="hidden sm:block text-right">
-                  <p className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-2">Growth impact</p>
-                  <Badge className="bg-emerald-500/20 text-emerald-400 border-none font-black text-[10px] px-3">High Conversion</Badge>
-               </div>
-            </div>
-         </Card>
-
-         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-10 border border-primary/10 relative overflow-hidden group">
-            <div className="absolute -right-8 -bottom-8 opacity-5 group-hover:scale-110 transition-transform duration-1000 rotate-12">
-               <TicketPercent className="w-48 h-48" />
-            </div>
-            <div className="relative z-10 flex items-center justify-between">
-               <div className="space-y-4">
-                  <div className="flex items-center gap-3 bg-primary/10 text-primary w-fit px-3 py-1 rounded-full border border-primary/10">
-                     <Zap className="w-3 h-3" />
-                     <span className="text-[9px] font-black uppercase tracking-widest">Coupon Impact</span>
-                  </div>
-                  <div>
-                    <h3 className="text-6xl font-black font-headline text-primary italic leading-none">{metrics.couponImpact}</h3>
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40">Orders using Bounties</p>
-                  </div>
-               </div>
-               <div className="hidden sm:block text-right">
-                  <p className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-2">Retention Rate</p>
-                  <Badge className="bg-primary text-white border-none font-black text-[10px] px-3">Aggressive</Badge>
-               </div>
-            </div>
-         </Card>
+        <KPICard label="Gross Revenue" value={`₹${metrics.todayRev}`} icon={IndianRupee} trend="+12%" color="text-emerald-500" bg="bg-emerald-50" />
+        <KPICard label="Total Tickets" value={metrics.totalOrders} icon={Zap} trend="Real-time" color="text-primary" bg="bg-primary/5" />
+        <KPICard label="In Kitchen" value={metrics.statusCounts.preparing} icon={ChefHat} trend="Active" color="text-orange-500" bg="bg-orange-50" />
+        <KPICard label="Pending Hub" value={metrics.statusCounts.pending} icon={BellRing} trend="Immediate" color="text-rose-500" bg="bg-rose-50" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 md:p-10 flex flex-col h-full overflow-hidden relative">
           <CardHeader className="px-0 pt-0 pb-10 flex flex-row items-center justify-between border-b border-dashed mb-10">
             <div className="space-y-1">
-              <CardTitle className="text-2xl font-black font-headline uppercase tracking-tighter italic">Business <span className="text-primary">Velocity</span></CardTitle>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40">7-Day Gross Transaction Stream</p>
+              <CardTitle className="text-2xl font-black font-headline uppercase tracking-tighter italic">Operational <span className="text-primary">Velocity</span></CardTitle>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40">7-Day Transaction Performance</p>
             </div>
-            <Badge className="bg-primary/10 text-primary border-none px-4 py-1.5 font-black text-[9px] uppercase tracking-widest rounded-full">Real-time Feed</Badge>
+            <Badge className="bg-primary/10 text-primary border-none px-4 py-1.5 font-black text-[9px] uppercase tracking-widest rounded-full">Live Node Feed</Badge>
           </CardHeader>
           <div className="flex-1 min-h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -192,7 +130,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                 <Tooltip 
                   cursor={{ stroke: '#ef4444', strokeWidth: 1, strokeDasharray: '4 4' }}
                   contentStyle={{borderRadius: '1.5rem', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', fontWeight: 900, fontSize: 11}}
-                  formatter={(v: any) => [`₹${v}`, 'Revenue']}
+                  formatter={(v: any) => [`₹${v}`, 'Gross']}
                 />
                 <Area type="monotone" dataKey="val" stroke="#ef4444" strokeWidth={5} fill="url(#velocity)" animationDuration={1000} />
               </AreaChart>
@@ -200,103 +138,16 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
           </div>
         </Card>
 
-        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 flex flex-col overflow-hidden">
-          <CardHeader className="p-8 border-b bg-muted/5 flex flex-row items-center justify-between">
-             <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-zinc-950 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3"><Fingerprint className="w-6 h-6" /></div>
-               <div className="space-y-0.5">
-                 <CardTitle className="text-sm font-black uppercase tracking-widest leading-none">Identity Audit</CardTitle>
-                 <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Live Entrance Logs</p>
-               </div>
-             </div>
-             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
-             </div>
-          </CardHeader>
-          <div className="flex-1 overflow-y-auto p-6 space-y-3 scrollbar-hide max-h-[480px]">
-            {logsLoading ? (
-              <div className="h-full flex items-center justify-center opacity-10 py-20"><Loader2 className="animate-spin w-8 h-8" /></div>
-            ) : securityLogs.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center opacity-20 text-center px-10 py-20">
-                <ShieldCheck className="w-12 h-12 mb-4 opacity-10" />
-                <p className="text-[10px] font-black uppercase tracking-widest">No Signals Recorded</p>
-              </div>
-            ) : securityLogs.map((log: any, i: number) => (
-              <div key={i} className="flex gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-[1.5rem] border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-all group">
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm text-white",
-                  log.role === 'admin' ? "bg-primary" : "bg-blue-600"
-                )}>
-                  <Fingerprint className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                   <div className="flex justify-between items-start mb-0.5">
-                     <p className="text-[11px] font-black uppercase truncate group-hover:text-primary transition-colors">{log.name || 'Staff'}</p>
-                     <span className="text-[8px] font-black text-muted-foreground opacity-40 uppercase">
-                       {log.timestamp?.toDate ? format(log.timestamp.toDate(), 'hh:mm a') : 'Now'}
-                     </span>
-                   </div>
-                   <p className="text-[9px] font-bold opacity-50 truncate tracking-tight">{log.email}</p>
-                   <div className="flex items-center gap-2 mt-1.5">
-                      <Badge variant="outline" className="text-[7px] px-1.5 py-0 rounded-md font-black uppercase border-zinc-200">{log.role}</Badge>
-                      <Badge className="bg-emerald-50 text-emerald-600 border-none text-[6px] font-black uppercase px-1.5 h-3.5">Verified</Badge>
-                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 space-y-10">
           <div className="space-y-1">
-            <h4 className="text-xl font-black font-headline uppercase tracking-tighter italic">Operational <span className="text-primary">Accuracy</span></h4>
-            <p className="text-[10px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Status Distribution Ledger</p>
+            <h4 className="text-xl font-black font-headline uppercase tracking-tighter italic">Status <span className="text-primary">Ledger</span></h4>
+            <p className="text-[10px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Real-time Node Distribution</p>
           </div>
           <div className="space-y-6">
-             <MetricBar label="Delivered" count={metrics.status.delivered} total={orders.length} color="bg-emerald-500" />
-             <MetricBar label="Preparing" count={metrics.status.preparing} total={orders.length} color="bg-orange-500" />
-             <MetricBar label="Cancelled" count={metrics.status.cancelled} total={orders.length} color="bg-rose-500" />
-          </div>
-        </Card>
-
-        <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 overflow-hidden relative">
-          <div className="flex items-center justify-between mb-8">
-            <div className="space-y-1">
-              <h4 className="text-xl font-black font-headline uppercase tracking-tighter italic flex items-center gap-3">High <span className="text-primary">Demand</span></h4>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Top Converting Catalog Items</p>
-            </div>
-            <Button variant="ghost" className="h-10 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest text-primary hover:bg-primary/5 gap-2">Full Report <ArrowUpRight className="w-4 h-4" /></Button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {products.slice(0, 6).map((item, i) => {
-              const rating = item.reviewCount ? (item.ratingSum / item.reviewCount).toFixed(1) : '0.0';
-              return (
-                <div key={i} className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-[2rem] flex flex-col justify-between h-40 hover:bg-white dark:hover:bg-zinc-800 transition-all border border-transparent hover:border-primary/20 group hover:shadow-2xl">
-                   <div className="flex justify-between items-start">
-                      <span className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center font-black text-[10px] shadow-lg shadow-primary/20 rotate-3">#{i+1}</span>
-                      <div className="text-right flex flex-col items-end">
-                         <div className="flex items-center gap-1 text-[8px] font-black text-yellow-600 uppercase">
-                           <Star className="w-2 h-2 fill-current" /> {rating}
-                         </div>
-                         <p className="text-sm font-black text-primary italic leading-none mt-1">₹{item.price}</p>
-                      </div>
-                   </div>
-                   <div>
-                      <h5 className="font-black text-xs uppercase truncate group-hover:text-primary transition-colors tracking-tight">{item.name}</h5>
-                      <div className="flex items-center gap-3 mt-1">
-                        <div className="flex items-center gap-1 text-[8px] font-black uppercase opacity-40">
-                           <MessageSquare className="w-3 h-3" />
-                           {item.reviewCount || 0} Reviews
-                        </div>
-                        <Badge className="bg-emerald-50 text-emerald-600 border-none text-[6px] font-black px-1.5 py-0">Healthy Volume</Badge>
-                      </div>
-                   </div>
-                </div>
-              );
-            })}
+             <MetricBar label="Delivered" count={metrics.statusCounts.delivered} total={metrics.totalOrders} color="bg-emerald-500" />
+             <MetricBar label="Preparing" count={metrics.statusCounts.preparing} total={metrics.totalOrders} color="bg-orange-500" />
+             <MetricBar label="In Dispatch" count={metrics.statusCounts.out_for_delivery} total={metrics.totalOrders} color="bg-blue-500" />
+             <MetricBar label="Rejected" count={metrics.statusCounts.cancelled} total={metrics.totalOrders} color="bg-rose-500" />
           </div>
         </Card>
       </div>

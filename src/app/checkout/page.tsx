@@ -65,7 +65,6 @@ export default function CheckoutPage() {
     paymentMethod: 'cod'
   });
 
-  // Critical: Stabilize random state in useEffect to prevent hydration mismatches
   useEffect(() => {
     setMounted(true);
     setOrderId(`EB-${Math.floor(10000 + Math.random() * 90000)}`);
@@ -207,10 +206,11 @@ export default function CheckoutPage() {
       deliveryFee: Number(deliveryFee),
       total: Number(total),
       totalAmount: Number(total),
-      status: 'orderPlaced',
+      status: 'pending',
       paymentMethod: formData.paymentMethod,
       orderType: 'Online',
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     };
 
     const orderRef = doc(db, 'orders', finalOrderId);
@@ -258,16 +258,7 @@ export default function CheckoutPage() {
 
   const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('upi://pay?pa=8639366800@ybl&pn=Ezzy%20Bites&cu=INR')}`;
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        </div>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   if (cart.length === 0 && step < 4) {
     return (
