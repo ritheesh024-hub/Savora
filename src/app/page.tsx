@@ -168,18 +168,18 @@ export default function Home() {
         {/* TRUST */}
         <section className="py-16 bg-white dark:bg-zinc-950 border-t border-border/50">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {[
                 { icon: Utensils, title: "Master Chefs", desc: "Crafted by professionals who prioritize technique." },
                 { icon: Clock, title: "Hyper-Local", desc: "A strict 25-minute delivery promise for locals." },
                 { icon: ShieldCheck, title: "Gold Standard", desc: "Only A-grade ingredients. No preservatives." }
               ].map((f, i) => (
-                <div key={i} className="bg-zinc-50 dark:bg-zinc-900/50 p-10 rounded-[3rem] shadow-sm border border-border/20 group text-center">
-                  <div className="w-16 h-16 bg-orange-gradient rounded-[1.8rem] flex items-center justify-center mb-6 text-white shadow-2xl mx-auto group-hover:scale-110 transition-transform">
-                    <f.icon className="w-8 h-8" />
+                <div key={i} className="bg-zinc-50 dark:bg-zinc-900/50 p-8 rounded-[2.5rem] shadow-sm border border-border/20 group text-center">
+                  <div className="w-12 h-12 bg-orange-gradient rounded-2xl flex items-center justify-center mb-4 text-white shadow-2xl mx-auto group-hover:scale-110 transition-transform">
+                    <f.icon className="w-6 h-6" />
                   </div>
-                  <h4 className="text-xl font-black mb-3 uppercase tracking-tight">{f.title}</h4>
-                  <p className="text-muted-foreground font-medium text-sm leading-relaxed">{f.desc}</p>
+                  <h4 className="text-lg font-black mb-2 uppercase tracking-tight">{f.title}</h4>
+                  <p className="text-muted-foreground font-medium text-xs leading-relaxed max-w-[200px] mx-auto">{f.desc}</p>
                 </div>
               ))}
             </div>
