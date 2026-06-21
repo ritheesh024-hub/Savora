@@ -110,7 +110,7 @@ export default function Home() {
         <div className="sticky top-12 z-30 bg-white dark:bg-zinc-950 md:hidden pt-4 pb-1 border-b shadow-sm">
            <div className="container px-4 space-y-4">
               <form onSubmit={handleSearch} className="relative group">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground z-10" />
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
                 <Input 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}

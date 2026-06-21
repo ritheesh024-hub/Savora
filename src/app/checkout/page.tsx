@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -271,7 +270,7 @@ export default function CheckoutPage() {
                     ))}
                   </div>
                 </Card>
-                <Button onClick={handleNext} className="w-full h-18 rounded-[1.5rem] text-lg font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">Confirm & Continue</Button>
+                <Button onClick={handleNext} className="w-full h-16 rounded-[1.5rem] text-lg font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">Confirm & Continue</Button>
               </div>
             )}
 
@@ -304,8 +303,8 @@ export default function CheckoutPage() {
                   </CardContent>
                 </Card>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={handleBack} className="h-18 rounded-[1.5rem] px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
-                  <Button onClick={handleNext} className="flex-1 h-18 rounded-[1.5rem] text-base font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">
+                  <Button variant="outline" onClick={handleBack} className="h-16 rounded-[1.5rem] px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
+                  <Button onClick={handleNext} className="flex-1 h-16 rounded-[1.5rem] text-base font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">
                     {user ? 'Select Payment' : 'Login to Continue'}
                   </Button>
                 </div>
@@ -347,8 +346,8 @@ export default function CheckoutPage() {
                 )}
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={handleBack} className="h-18 rounded-[1.5rem] px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
-                  <Button onClick={handleSubmit} disabled={loading} className="flex-1 h-18 rounded-[1.5rem] text-base font-black uppercase tracking-widest bg-primary shadow-2xl shadow-primary/30">
+                  <Button variant="outline" onClick={handleBack} className="h-16 rounded-[1.5rem] px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
+                  <Button onClick={handleSubmit} disabled={loading} className="flex-1 h-16 rounded-[1.5rem] text-base font-black uppercase tracking-widest bg-primary shadow-2xl shadow-primary/30">
                     {loading ? <Loader2 className="animate-spin" /> : 'Settle Order'}
                   </Button>
                 </div>
@@ -370,10 +369,10 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-center gap-6 pt-6">
                   <Link href={`/orders/${orderId}`}>
-                    <Button className="rounded-2xl px-12 h-18 font-black uppercase text-[10px] tracking-widest bg-primary">Track Order</Button>
+                    <Button className="rounded-2xl px-12 h-16 font-black uppercase text-[10px] tracking-widest bg-primary">Track Order</Button>
                   </Link>
                   <Link href="/">
-                    <Button variant="outline" className="rounded-2xl px-12 h-18 font-black uppercase text-[10px] tracking-widest border-2">Return Home</Button>
+                    <Button variant="outline" className="rounded-2xl px-12 h-16 font-black uppercase text-[10px] tracking-widest border-2">Return Home</Button>
                   </Link>
                 </div>
               </Card>

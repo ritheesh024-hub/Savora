@@ -98,7 +98,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
             <Card 
               key={order.id} 
               className={cn(
-                "rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-all duration-700",
+                "rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-all duration-1000",
                 order.status === 'accepted' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20 shadow-orange-500/10"
               )}
             >
@@ -157,7 +157,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                     {order.status === 'accepted' && (
                       <Button 
                         onClick={() => onUpdateStatus(order.id, 'preparing')}
-                        className="rounded-[1.5rem] h-18 px-10 bg-orange-500 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-orange-600 group"
+                        className="rounded-[1.5rem] h-16 px-10 bg-orange-500 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-orange-600 group"
                       >
                         <ChefHat className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Start Cooking
                       </Button>

@@ -137,7 +137,7 @@ function DashboardContent() {
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-all shadow-lg shadow-primary/20">
-              <ShoppingBag className="w-4.5 h-4.5 text-white" />
+              <ShoppingBag className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-headline font-black tracking-tighter leading-none uppercase">Ezzy<span className="text-primary italic">Ops</span></span>

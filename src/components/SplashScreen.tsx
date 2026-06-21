@@ -91,7 +91,7 @@ export const SplashScreen = () => {
       {/* Bottom Loading Bar (Optional app-feel) */}
       <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-32 h-0.5 bg-white/5 rounded-full overflow-hidden">
         <div className={cn(
-          "h-full bg-primary transition-all duration-[1500ms] ease-out",
+          "h-full bg-primary transition-all duration-1000 ease-out",
           shouldAnimate ? "w-full" : "w-0"
         )} />
       </div>

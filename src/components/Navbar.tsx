@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -131,7 +130,7 @@ export const Navbar = () => {
           <div className="flex-1 max-w-md hidden md:block">
             <form onSubmit={(e) => { e.preventDefault(); router.push(`/menu?q=${navSearch}`); }} className="relative group">
               <Search className={cn(
-                "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10",
+                "absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors z-10",
                 scrolled ? "text-muted-foreground" : "text-white/40"
               )} />
               <Input 

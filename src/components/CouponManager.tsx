@@ -281,7 +281,7 @@ export const CouponManager = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Discount Val</Label>
-                      <Input type="number" value={formData.discount} onChange={e => setFormData({...formData, discount: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-black px-6" />
+                      <Input type="number" value={formData.discount} onChange={e => setFormData({...formData, discount: e.target.value})} className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 border-none font-black px-6" />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Min. Basket (₹)</Label>
@@ -322,8 +322,8 @@ export const CouponManager = () => {
           </div>
 
           <DialogFooter className="p-10 bg-secondary/30 flex gap-4">
-             <Button variant="outline" className="h-18 flex-1 rounded-[1.8rem] font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Close</Button>
-             <Button className="h-18 flex-1 rounded-[1.8rem] font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all" onClick={handleSave} disabled={submitting}>
+             <Button variant="outline" className="h-16 flex-1 rounded-[1.8rem] font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Close</Button>
+             <Button className="h-16 flex-1 rounded-[1.8rem] font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all" onClick={handleSave} disabled={submitting}>
                {submitting ? <Loader2 className="animate-spin w-5 h-5" /> : 'Save'}
              </Button>
           </DialogFooter>

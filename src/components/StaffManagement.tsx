@@ -337,7 +337,7 @@ export const StaffManagement = () => {
                     <tr key={staff.id} className={cn("hover:bg-primary/5 transition-all group", staff.id === currentUser?.uid && "bg-primary/5")}>
                       <td className="px-10 py-6">
                         <div className="flex items-center gap-5">
-                          <Avatar className="h-14 w-14 rounded-2xl shadow-xl border-4 border-white dark:border-zinc-800 shrink-0 group-hover:scale-110 transition-transform duration-700">
+                          <Avatar className="h-14 w-14 rounded-2xl shadow-xl border-4 border-white dark:border-zinc-900 shrink-0 group-hover:scale-110 transition-transform duration-700">
                             <AvatarImage src={staff.photoUrl} alt={staff.name} />
                             <AvatarFallback className="bg-primary/10 text-primary font-black">
                               {(staff.name || 'EB').slice(0, 2).toUpperCase()}
@@ -457,7 +457,7 @@ export const StaffManagement = () => {
                 <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6" placeholder="Mobile" />
               </div>
             </div>
-            <Button className="w-full h-18 rounded-[1.8rem] font-black text-lg bg-primary text-white shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all uppercase tracking-widest mt-4" onClick={handleAddStaff} disabled={submitting}>
+            <Button className="w-full h-16 rounded-[1.8rem] font-black text-lg bg-primary text-white shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all uppercase tracking-widest mt-4" onClick={handleAddStaff} disabled={submitting}>
               {submitting ? <Loader2 className="animate-spin w-6 h-6" /> : 'Register Identity'}
             </Button>
           </div>

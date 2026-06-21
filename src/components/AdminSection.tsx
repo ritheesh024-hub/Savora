@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -166,7 +165,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   };
 
   const getTabIcon = (tab: string, className?: string) => {
-    const iconClass = cn("w-4.5 h-4.5", className);
+    const iconClass = cn("w-5 h-5", className);
     switch(tab) {
       case 'overview': return <BarChart3 className={iconClass} />;
       case 'users': return <Users className={iconClass} />;
@@ -248,7 +247,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                     )}
                   >
                     <div className="shrink-0 flex items-center justify-center w-5 h-5">
-                      {getTabIcon(tab, "w-4.5 h-4.5 transition-transform group-hover:scale-110")}
+                      {getTabIcon(tab, "w-5 h-5 transition-transform group-hover:scale-110")}
                     </div>
                     <span className="truncate flex-1 text-left">{getTabLabel(tab)}</span>
                     {tab === 'orders' && orderGroups.pending.length > 0 && (
