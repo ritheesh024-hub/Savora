@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for generating marketing copy for a daily special food item.
@@ -33,17 +34,10 @@ const promoPrompt = ai.definePrompt({
     }) 
   },
   output: { schema: DailySpecialOutputSchema },
-  prompt: `You are a creative marketing expert for "Ezzy Bites", a premium fast food cafe.
-Generate a punchy, exciting promotion for the dish: {{{dishName}}}.
+  prompt: `You are a creative marketing expert for "Ezzy Bites".
+Generate a promotion for: {{{dishName}}}.
 The base price is ₹{{{basePrice}}} and we are offering a {{{discountPercent}}}% discount.
-
-The calculated final price is: ₹{{{calculatedFinalPrice}}}.
-
-Include:
-1. A catchy headline.
-2. A description that makes people hungry.
-3. The discounted price prominently.
-4. A fun emoji.`,
+Final price: ₹{{{calculatedFinalPrice}}}.`,
 });
 
 const dailySpecialGeneratorFlow = ai.defineFlow(
@@ -53,18 +47,17 @@ const dailySpecialGeneratorFlow = ai.defineFlow(
     outputSchema: DailySpecialOutputSchema,
   },
   async (input) => {
-    // Perform calculation in TypeScript to ensure reliability
-    const finalPrice = Math.round(input.basePrice * (1 - (input.discountPercent / 100)));
-    
-    const { output } = await promoPrompt({
-      ...input,
-      calculatedFinalPrice: finalPrice
-    });
-    
-    if (!output) {
-      throw new Error('Failed to generate promotion copy.');
+    try {
+      const finalPrice = Math.round(input.basePrice * (1 - (input.discountPercent / 100)));
+      const { output } = await promoPrompt({
+        ...input,
+        calculatedFinalPrice: finalPrice
+      });
+      if (!output) throw new Error('Failed to generate promotion.');
+      return output;
+    } catch (error) {
+      console.error('🔥 [Ezzy AI] Daily Special Flow Error:', error);
+      throw error;
     }
-    
-    return output;
   }
 );
