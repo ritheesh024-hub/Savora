@@ -6,8 +6,8 @@ const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
   console.warn('⚠️ [Ezzy AI] GEMINI_API_KEY is missing. AI features will be unavailable.');
-} else if (!apiKey.startsWith('AIza')) {
-  console.warn('⚠️ [Ezzy AI] GEMINI_API_KEY does not appear to be a valid Google AI API key (should start with AIza).');
+} else if (!apiKey.startsWith('AIza') && !apiKey.startsWith('AQ.')) {
+  console.warn('⚠️ [Ezzy AI] GEMINI_API_KEY does not appear to be a valid credential.');
 }
 
 export const ai = genkit({
