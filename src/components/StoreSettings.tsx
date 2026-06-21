@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,8 +90,9 @@ export const StoreSettings = () => {
   };
 
   const publicBaseUrl = settings.productionUrl || origin;
-  const menuUrl = `${publicBaseUrl}/menu`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(menuUrl)}`;
+  // Universal QR now points to /scan
+  const scanUrl = `${publicBaseUrl}/scan`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(scanUrl)}`;
 
   if (loading) return (
     <div className="p-40 text-center space-y-6">
@@ -221,13 +223,13 @@ export const StoreSettings = () => {
                 </div>
              </div>
              <div className="space-y-4">
-                <h3 className="text-3xl font-black font-headline uppercase tracking-tighter">Instant <span className="text-primary italic">Access</span></h3>
-                <p className="text-muted-foreground text-sm font-medium leading-relaxed max-w-sm">Place this QR on tables or delivery bags to direct customers instantly to the digital menu experience.</p>
-                <code className="text-[10px] font-mono font-bold text-primary bg-primary/5 p-4 rounded-2xl block border border-dashed border-primary/20 break-all">{menuUrl}</code>
+                <h3 className="text-3xl font-black font-headline uppercase tracking-tighter">Universal <span className="text-primary italic">Ordering</span></h3>
+                <p className="text-muted-foreground text-sm font-medium leading-relaxed max-w-sm">Place this QR anywhere to allow customers to order directly from their phone. No table setup required.</p>
+                <code className="text-[10px] font-mono font-bold text-primary bg-primary/5 p-4 rounded-2xl block border border-dashed border-primary/20 break-all">{scanUrl}</code>
              </div>
              <div className="flex gap-4 w-full pt-4">
-                <Button variant="outline" className="flex-1 h-16 rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest gap-2 border-2" onClick={() => window.open(qrCodeUrl, '_blank')}><Download className="w-4 h-4" /> Save Manifest</Button>
-                <Button className="flex-1 h-16 rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest gap-2 bg-primary shadow-xl shadow-primary/30" onClick={() => window.open(menuUrl, '_blank')}>Launch Menu <ExternalLink className="w-4 h-4" /></Button>
+                <Button variant="outline" className="flex-1 h-16 rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest gap-2 border-2" onClick={() => window.open(qrCodeUrl, '_blank')}><Download className="w-5 h-5" /> Save Manifest</Button>
+                <Button className="flex-1 h-16 rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest gap-2 bg-primary shadow-xl shadow-primary/30" onClick={() => window.open(scanUrl, '_blank')}>Launch Hub <ExternalLink className="w-5 h-5" /></Button>
              </div>
           </Card>
         </TabsContent>

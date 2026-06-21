@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type OrderType = 'Dine-In' | 'Take Away' | 'Delivery';
+
 export interface BeverageOptions {
   size: 'Small' | 'Medium' | 'Large';
   sugar: 'None' | 'Less' | 'Regular' | 'Extra';
@@ -44,6 +46,7 @@ interface AppStore {
   isAdminMuted: boolean;
   menuViewMode: 'small' | 'big';
   isDarkMode: boolean;
+  selectedOrderType: OrderType | null;
   addToCart: (item: FoodItem, customization?: BeverageOptions) => void;
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, delta: number) => void;
@@ -52,6 +55,7 @@ interface AppStore {
   toggleAdminMute: () => void;
   setMenuViewMode: (mode: 'small' | 'big') => void;
   toggleDarkMode: () => void;
+  setOrderType: (type: OrderType | null) => void;
 }
 
 export const useStore = create<AppStore>()(
@@ -61,6 +65,7 @@ export const useStore = create<AppStore>()(
       isAdminMuted: false,
       menuViewMode: 'big',
       isDarkMode: false,
+      selectedOrderType: null,
       addToCart: (item, customization) => set((state) => {
         const cartId = customization 
           ? `${item.id}-${customization.size}-${customization.temp}-${customization.sugar}-${customization.addons.sort().join(',')}`
@@ -100,6 +105,7 @@ export const useStore = create<AppStore>()(
       toggleAdminMute: () => set((state) => ({ isAdminMuted: !state.isAdminMuted })),
       setMenuViewMode: (mode) => set({ menuViewMode: mode }),
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+      setOrderType: (type) => set({ selectedOrderType: type }),
     }),
     { name: 'ezzy-bites-operational-storage' }
   )

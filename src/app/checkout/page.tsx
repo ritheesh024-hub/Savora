@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -20,7 +21,10 @@ import {
   Trash2,
   TicketPercent,
   X,
-  PartyPopper
+  PartyPopper,
+  MapPin,
+  Utensils,
+  Package
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -35,7 +39,7 @@ import { useAnalytics } from '@/hooks/use-analytics';
 import { useSmartPermissions } from '@/hooks/use-smart-permissions';
 
 export default function CheckoutPage() {
-  const { cart, getTotal, clearCart, removeFromCart } = useStore();
+  const { cart, getTotal, clearCart, removeFromCart, selectedOrderType, setOrderType } = useStore();
   const db = useFirestore();
   const { user } = useUser();
   const { trackOrderPlaced } = useAnalytics();
@@ -66,7 +70,8 @@ export default function CheckoutPage() {
   }, []);
 
   const subtotal = getTotal();
-  const deliveryFee = subtotal >= 149 ? 0 : 40;
+  const isDelivery = (selectedOrderType === 'Delivery') || (!selectedOrderType);
+  const deliveryFee = (isDelivery && subtotal < 149) ? 40 : 0;
   const total = Math.max(0, subtotal - discount + deliveryFee);
 
   const handleApplyCoupon = async () => {
@@ -111,19 +116,23 @@ export default function CheckoutPage() {
 
   const handleNext = () => {
     if (step === 2) {
-      if (!formData.name || !formData.phone || !formData.address) {
-        toast({ variant: "destructive", title: "Details Required", description: "Please fill in all delivery info." });
+      if (!formData.name || !formData.phone) {
+        toast({ variant: "destructive", title: "Details Required", description: "Please fill in your name and phone." });
         return;
       }
       if (formData.phone.length < 10) {
         toast({ variant: "destructive", title: "Invalid Phone", description: "Please enter a valid 10-digit number." });
         return;
       }
+      if (isDelivery && !formData.address) {
+        toast({ variant: "destructive", title: "Address Required", description: "Delivery requires a sanctuary address." });
+        return;
+      }
       if (!user) {
         setIsAuthModalOpen(true);
         return;
       }
-      requestSmartly('location');
+      if (isDelivery) requestSmartly('location');
     }
     setStep(step + 1);
   };
@@ -141,7 +150,7 @@ export default function CheckoutPage() {
       customerName: formData.name,
       customerPhone: formData.phone,
       customerEmail: user.email || '',
-      address: formData.address,
+      address: formData.address || (selectedOrderType === 'Dine-In' ? 'Dine-In Self Service' : 'Takeaway Counter'),
       instructions: formData.instructions || '',
       items: cart.map(item => ({
         id: item.id,
@@ -159,7 +168,7 @@ export default function CheckoutPage() {
       totalAmount: Number(total),
       status: 'pending',
       paymentMethod: formData.paymentMethod,
-      orderType: 'Online',
+      orderType: selectedOrderType || 'Delivery',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -171,7 +180,7 @@ export default function CheckoutPage() {
         await setDoc(userRef, {
           phone: formData.phone,
           name: formData.name,
-          address: formData.address,
+          address: formData.address || '',
           lastOrderAt: serverTimestamp(),
           orderCount: increment(1)
         }, { merge: true });
@@ -184,6 +193,7 @@ export default function CheckoutPage() {
 
         trackOrderPlaced(orderData);
         clearCart();
+        setOrderType(null); // Reset after order
         setStep(4);
         toast({ title: "Order Placed Successfully! 🚀" });
       })
@@ -245,7 +255,15 @@ export default function CheckoutPage() {
           <div className="lg:col-span-2 space-y-6">
             {step === 1 && (
               <div className="space-y-5 animate-in fade-in slide-in-from-left-2 duration-500">
-                <h2 className="text-2xl md:text-3xl font-headline font-black uppercase tracking-tighter">Review <span className="text-primary italic">Order</span></h2>
+                <div className="flex justify-between items-end">
+                   <h2 className="text-2xl md:text-3xl font-headline font-black uppercase tracking-tighter">Review <span className="text-primary italic">Order</span></h2>
+                   {selectedOrderType && (
+                     <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-1 rounded-full font-black uppercase text-[8px] tracking-widest gap-2">
+                       {selectedOrderType === 'Dine-In' ? <Utensils className="w-3 h-3" /> : selectedOrderType === 'Take Away' ? <Package className="w-3 h-3" /> : <Truck className="w-3 h-3" />}
+                       {selectedOrderType} Node
+                     </Badge>
+                   )}
+                </div>
                 <Card className="rounded-[1.5rem] border-none shadow-xl overflow-hidden bg-white dark:bg-zinc-900">
                   <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                     {cart.map((item) => (
@@ -276,7 +294,7 @@ export default function CheckoutPage() {
 
             {step === 2 && (
               <div className="space-y-5 animate-in fade-in slide-in-from-left-2 duration-500">
-                <h2 className="text-2xl md:text-3xl font-headline font-black uppercase tracking-tighter">Delivery <span className="text-primary italic">Details</span></h2>
+                <h2 className="text-2xl md:text-3xl font-headline font-black uppercase tracking-tighter">Identity <span className="text-primary italic">Node</span></h2>
                 <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-xl bg-white dark:bg-zinc-900">
                   <CardContent className="p-6 md:p-10 space-y-6">
                     <div className="grid md:grid-cols-2 gap-5 md:gap-8">
@@ -294,9 +312,15 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     </div>
+                    {isDelivery && (
+                      <div className="space-y-1.5">
+                        <Label className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Sanctuary Address</Label>
+                        <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[100px] md:min-h-[120px] font-medium bg-secondary/30 border-none px-5 py-4 text-sm" placeholder="Building, Street, Area..." suppressHydrationWarning />
+                      </div>
+                    )}
                     <div className="space-y-1.5">
-                      <Label className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Sanctuary Address</Label>
-                      <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[100px] md:min-h-[120px] font-medium bg-secondary/30 border-none px-5 py-4 text-sm" placeholder="Building, Street, Area..." suppressHydrationWarning />
+                      <Label className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Special Instructions</Label>
+                      <Input value={formData.instructions} onChange={(e) => setFormData({...formData, instructions: e.target.value})} className="h-12 md:h-14 rounded-xl bg-secondary/30 border-none px-5 text-sm" placeholder="No spicy, extra ketchup, etc." suppressHydrationWarning />
                     </div>
                   </CardContent>
                 </Card>
@@ -388,7 +412,7 @@ export default function CheckoutPage() {
                   {appliedCoupon ? (
                     <div className="bg-green-50 dark:bg-emerald-950/20 border border-green-100 dark:border-emerald-900/30 p-3 rounded-xl flex items-center justify-between animate-in zoom-in-95">
                       <div className="flex items-center gap-2.5">
-                         <div className="w-9 h-9 bg-green-500 rounded-lg flex items-center justify-center text-white shrink-0"><PartyPopper className="w-4.5 h-4.5" /></div>
+                         <div className="w-9 h-9 bg-green-500 rounded-lg flex items-center justify-center text-white shrink-0"><PartyPopper className="w-5 h-5" /></div>
                          <div className="min-w-0">
                             <p className="text-[9px] font-black uppercase text-green-700 dark:text-emerald-400 tracking-tighter truncate">{appliedCoupon.code}</p>
                             <p className="text-[7px] font-bold text-green-600 dark:text-emerald-500/60 uppercase">Activated</p>
@@ -429,10 +453,12 @@ export default function CheckoutPage() {
                       <span className="font-black text-green-600 dark:text-emerald-500">- ₹{discount}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    <span>Delivery</span>
-                    <span className={deliveryFee === 0 ? "text-green-600 italic font-black" : "text-foreground"}>{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
-                  </div>
+                  {isDelivery && (
+                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      <span>Delivery</span>
+                      <span className={deliveryFee === 0 ? "text-green-600 italic font-black" : "text-foreground"}>{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
+                    </div>
+                  )}
                   <div className="border-t-2 border-dashed pt-5 flex justify-between items-end">
                     <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Payable</span>
                     <span className="text-4xl font-black font-headline text-primary italic leading-none">₹{total}</span>
