@@ -7,11 +7,17 @@ import { ShoppingBag, Minus, Plus, X, ChevronRight, Truck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from './ui/separator';
+import { useGlobalSettings } from '@/hooks/use-global-settings';
 
 export const CartDrawer = ({ children }: { children: React.ReactNode }) => {
   const { cart, updateQuantity, removeFromCart, getTotal } = useStore();
+  const { settings } = useGlobalSettings();
+  
   const subtotal = getTotal();
-  const deliveryFee = subtotal >= 149 ? 0 : 40;
+  const freeThreshold = settings?.freeDeliveryThreshold || 149;
+  const charge = settings?.deliveryCharge || 40;
+  
+  const deliveryFee = subtotal >= freeThreshold ? 0 : charge;
   const total = subtotal + deliveryFee;
 
   return (
@@ -103,13 +109,13 @@ export const CartDrawer = ({ children }: { children: React.ReactNode }) => {
 
         {cart.length > 0 && (
           <div className="border-t p-5 md:p-8 space-y-5 bg-card/80 backdrop-blur-xl">
-            {subtotal < 149 && (
+            {subtotal < freeThreshold && (
               <div className="bg-primary/5 border border-primary/10 p-3 rounded-xl flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
                   <Truck className="w-4 h-4" />
                 </div>
                 <p className="text-[8px] font-black uppercase tracking-widest leading-relaxed">
-                  Add <span className="text-primary italic">₹{149 - subtotal}</span> for <span className="text-primary italic">FREE</span> delivery!
+                  Add <span className="text-primary italic">₹{freeThreshold - subtotal}</span> for <span className="text-primary italic">FREE</span> delivery!
                 </p>
               </div>
             )}

@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -22,26 +21,28 @@ import {
   TicketPercent,
   X,
   PartyPopper,
-  MapPin,
   Utensils,
-  Package
+  Package,
+  Ban
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, increment, collection, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
 import { AuthModal } from '@/components/AuthModal';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { useSmartPermissions } from '@/hooks/use-smart-permissions';
+import { useGlobalSettings } from '@/hooks/use-global-settings';
 
 export default function CheckoutPage() {
   const { cart, getTotal, clearCart, removeFromCart, selectedOrderType, setOrderType } = useStore();
   const db = useFirestore();
   const { user } = useUser();
+  const { settings, loading: settingsLoading } = useGlobalSettings();
   const { trackOrderPlaced } = useAnalytics();
   const { requestSmartly } = useSmartPermissions();
   
@@ -71,7 +72,9 @@ export default function CheckoutPage() {
 
   const subtotal = getTotal();
   const isDelivery = (selectedOrderType === 'Delivery') || (!selectedOrderType);
-  const deliveryFee = (isDelivery && subtotal < 149) ? 40 : 0;
+  
+  // Real-time Logistics calculation
+  const deliveryFee = (isDelivery && subtotal < (settings?.freeDeliveryThreshold || 149)) ? (settings?.deliveryCharge || 40) : 0;
   const total = Math.max(0, subtotal - discount + deliveryFee);
 
   const handleApplyCoupon = async () => {
@@ -140,7 +143,18 @@ export default function CheckoutPage() {
   const handleBack = () => setStep(step - 1);
 
   const handleSubmit = async () => {
-    if (!db || !user) return;
+    if (!db || !user || !settings) return;
+
+    // Availability Check
+    if (!settings.isOpen) {
+      toast({ variant: "destructive", title: "Station Offline", description: "We are currently not accepting new orders. Please check timings." });
+      return;
+    }
+
+    if (isDelivery && !settings.deliveryActive) {
+      toast({ variant: "destructive", title: "Fleet Grounded", description: "Delivery is currently disabled. Please select Takeaway." });
+      return;
+    }
 
     setLoading(true);
     const finalOrderId = orderId || `EB-${Date.now()}`;
@@ -207,9 +221,9 @@ export default function CheckoutPage() {
       .finally(() => setLoading(false));
   };
 
-  const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('upi://pay?pa=8639366800@ybl&pn=Ezzy%20Bites&cu=INR')}`;
+  const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(`upi://pay?pa=${settings?.contactNumber}@ybl&pn=${encodeURIComponent(settings?.storeName || 'Ezzy Bites')}&cu=INR`)}`;
 
-  if (!mounted) return null;
+  if (!mounted || settingsLoading) return null;
 
   if (cart.length === 0 && step < 4) {
     return (
@@ -221,6 +235,25 @@ export default function CheckoutPage() {
           <p className="text-muted-foreground text-[10px] uppercase tracking-widest max-w-xs mb-8">Add some premium bites to your cart before proceeding.</p>
           <Link href="/menu">
             <Button className="rounded-full px-10 h-12 font-black uppercase tracking-widest text-[9px] bg-primary">Browse Menu</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // CLOSED STORE OVERLAY
+  if (!settings?.isOpen && step < 4) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center pt-20">
+          <div className="w-20 h-20 bg-rose-50 rounded-[2rem] flex items-center justify-center text-rose-600 mb-6 shadow-inner">
+            <Ban className="w-10 h-10" />
+          </div>
+          <h2 className="text-3xl font-black mb-2 uppercase tracking-tighter italic">Station <span className="text-rose-600">Offline</span></h2>
+          <p className="text-muted-foreground text-[10px] uppercase tracking-[0.2em] max-w-xs mb-8">We are currently not accepting new orders. Please check back during operational hours.</p>
+          <Link href="/">
+            <Button variant="outline" className="rounded-full px-10 h-14 font-black uppercase text-[10px] tracking-widest border-2">Return Home</Button>
           </Link>
         </div>
       </div>
@@ -337,22 +370,26 @@ export default function CheckoutPage() {
               <div className="space-y-5 animate-in fade-in slide-in-from-left-2 duration-500">
                 <h2 className="text-2xl md:text-3xl font-headline font-black uppercase tracking-tighter">Payment <span className="text-primary italic">Methods</span></h2>
                 <RadioGroup value={formData.paymentMethod} onValueChange={(v) => setFormData({...formData, paymentMethod: v})} className="space-y-3">
-                  <Label htmlFor="cod" className={cn("flex items-center gap-4 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent shadow-sm')}>
-                    <RadioGroupItem value="cod" id="cod" className="sr-only" />
-                    <Truck className={cn("w-6 h-6 md:w-8 md:h-8", formData.paymentMethod === 'cod' ? 'text-primary' : 'text-muted-foreground')} />
-                    <div className="flex-1">
-                      <p className="font-black text-sm md:text-base uppercase tracking-tight">Pay on Arrival</p>
-                      <p className="text-[8px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Settle with cash or UPI at delivery</p>
-                    </div>
-                  </Label>
-                  <Label htmlFor="upi" className={cn("flex items-center gap-4 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'upi' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent shadow-sm')}>
-                    <RadioGroupItem value="upi" id="upi" className="sr-only" />
-                    <Smartphone className={cn("w-6 h-6 md:w-8 md:h-8", formData.paymentMethod === 'upi' ? 'text-primary' : 'text-muted-foreground')} />
-                    <div className="flex-1">
-                      <p className="font-black text-sm md:text-base uppercase tracking-tight">Instant UPI Scan</p>
-                      <p className="text-[8px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">High-speed verification via QR</p>
-                    </div>
-                  </Label>
+                  {settings?.codEnabled && (
+                    <Label htmlFor="cod" className={cn("flex items-center gap-4 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent shadow-sm')}>
+                      <RadioGroupItem value="cod" id="cod" className="sr-only" />
+                      <Truck className={cn("w-6 h-6 md:w-8 md:h-8", formData.paymentMethod === 'cod' ? 'text-primary' : 'text-muted-foreground')} />
+                      <div className="flex-1">
+                        <p className="font-black text-sm md:text-base uppercase tracking-tight">Pay on Arrival</p>
+                        <p className="text-[8px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Settle with cash or UPI at delivery</p>
+                      </div>
+                    </Label>
+                  )}
+                  {settings?.onlinePayEnabled && (
+                    <Label htmlFor="upi" className={cn("flex items-center gap-4 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'upi' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent shadow-sm')}>
+                      <RadioGroupItem value="upi" id="upi" className="sr-only" />
+                      <Smartphone className={cn("w-6 h-6 md:w-8 md:h-8", formData.paymentMethod === 'upi' ? 'text-primary' : 'text-muted-foreground')} />
+                      <div className="flex-1">
+                        <p className="font-black text-sm md:text-base uppercase tracking-tight">Instant UPI Scan</p>
+                        <p className="text-[8px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">High-speed verification via QR</p>
+                      </div>
+                    </Label>
+                  )}
                 </RadioGroup>
                 
                 {formData.paymentMethod === 'upi' && (
@@ -362,7 +399,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="bg-secondary/50 rounded-xl p-3 inline-block">
                       <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">Business Identity</p>
-                      <p className="font-black text-primary text-base md:text-lg">8639366800@ybl</p>
+                      <p className="font-black text-primary text-base md:text-lg">{settings?.contactNumber}@ybl</p>
                     </div>
                   </Card>
                 )}

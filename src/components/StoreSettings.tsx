@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,70 +7,45 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   Clock, Store, Save, Loader2, 
-  ShieldCheck, QrCode, Download, 
+  QrCode, Download, 
   ExternalLink, Phone, Mail, 
-  MapPin, CreditCard, Truck,
-  BellRing, Globe, Settings2,
-  Link as LinkIcon
+  MapPin, Truck,
+  Settings2,
+  Globe
 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useGlobalSettings, GlobalSettings } from '@/hooks/use-global-settings';
 
 export const StoreSettings = () => {
   const db = useFirestore();
-  const [loading, setLoading] = useState(true);
+  const { settings: globalSettings, loading } = useGlobalSettings();
   const [saving, setSaving] = useState(false);
   const [origin, setOrigin] = useState('');
   
-  const [settings, setSettings] = useState({
-    isOpen: true,
-    deliveryActive: true,
-    codEnabled: true,
-    onlinePayEnabled: true,
-    storeName: 'Ezzy Bites',
-    contactNumber: '8639366800',
-    supportEmail: 'support@ezzybites.com',
-    address: 'Near Anurag University, Pocharam, Hyderabad',
-    deliveryRadius: 3,
-    openTime: '08:00',
-    closeTime: '22:00',
-    minOrderValue: 0,
-    deliveryCharge: 40,
-    freeDeliveryThreshold: 149,
-    newOrderAlert: true,
-    statusUpdates: true,
-    productionUrl: '' 
-  });
+  // Local state for form editing
+  const [localSettings, setLocalSettings] = useState<GlobalSettings>(globalSettings);
 
   useEffect(() => {
     setOrigin(typeof window !== 'undefined' ? window.location.origin : '');
-    if (!db) return;
-    const fetchSettings = async () => {
-      try {
-        const docRef = doc(db, 'settings', 'store_config');
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          setSettings(prev => ({ ...prev, ...snap.data() }));
-        }
-      } catch (e) {
-        console.error("Failed to load settings:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSettings();
-  }, [db]);
+  }, []);
+
+  useEffect(() => {
+    if (!loading && globalSettings) {
+      setLocalSettings(globalSettings);
+    }
+  }, [globalSettings, loading]);
 
   const handleSave = async () => {
     if (!db) return;
     setSaving(true);
-    const settingsRef = doc(db, 'settings', 'store_config');
+    const settingsRef = doc(db, 'global_settings', 'config');
     const updateData = {
-      ...settings,
+      ...localSettings,
       updatedAt: serverTimestamp()
     };
 
@@ -82,15 +56,14 @@ export const StoreSettings = () => {
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: settingsRef.path,
-          operation: 'write',
+          operation: 'update',
           requestResourceData: updateData
         } satisfies SecurityRuleContext));
       })
       .finally(() => setSaving(false));
   };
 
-  const publicBaseUrl = settings.productionUrl || origin;
-  // Universal QR now points to /scan
+  const publicBaseUrl = localSettings.productionUrl || origin;
   const scanUrl = `${publicBaseUrl}/scan`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(scanUrl)}`;
 
@@ -131,16 +104,16 @@ export const StoreSettings = () => {
                 <div className="space-y-8">
                    <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Trading Name</Label>
-                      <Input value={settings.storeName} onChange={e => setSettings({...settings, storeName: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 border-none font-black text-base" />
+                      <Input value={localSettings.storeName} onChange={e => setLocalSettings({...localSettings, storeName: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 border-none font-black text-base" />
                    </div>
                    <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Operational Phone</Label>
-                        <Input value={settings.contactNumber} onChange={e => setSettings({...settings, contactNumber: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 border-none font-bold" />
+                        <Input value={localSettings.contactNumber} onChange={e => setLocalSettings({...localSettings, contactNumber: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 border-none font-bold" />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Support Channel</Label>
-                        <Input value={settings.supportEmail} onChange={e => setSettings({...settings, supportEmail: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 border-none font-bold" />
+                        <Input value={localSettings.supportEmail} onChange={e => setLocalSettings({...localSettings, supportEmail: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 border-none font-bold" />
                       </div>
                    </div>
                 </div>
@@ -154,14 +127,14 @@ export const StoreSettings = () => {
                         <p className="font-black text-[12px] uppercase">Accepting Orders</p>
                         <p className="text-[9px] font-medium opacity-50 uppercase tracking-widest">Global override for store presence</p>
                       </div>
-                      <Switch checked={settings.isOpen} onCheckedChange={(v) => setSettings({...settings, isOpen: v})} />
+                      <Switch checked={localSettings.isOpen} onCheckedChange={(v) => setLocalSettings({...localSettings, isOpen: v})} />
                    </div>
                    <div className="flex items-center justify-between p-6 bg-secondary/30 dark:bg-zinc-800 rounded-[2rem] group">
                       <div className="space-y-1">
                         <p className="font-black text-[12px] uppercase">Fleet Status</p>
                         <p className="text-[9px] font-medium opacity-50 uppercase tracking-widest">Toggle delivery logic availability</p>
                       </div>
-                      <Switch checked={settings.deliveryActive} onCheckedChange={(v) => setSettings({...settings, deliveryActive: v})} />
+                      <Switch checked={localSettings.deliveryActive} onCheckedChange={(v) => setLocalSettings({...localSettings, deliveryActive: v})} />
                    </div>
                 </div>
              </Card>
@@ -176,16 +149,16 @@ export const StoreSettings = () => {
                     <div className="grid grid-cols-2 gap-6">
                        <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase opacity-40">Min. Cart Value</Label>
-                          <Input type="number" value={settings.minOrderValue} onChange={e => setSettings({...settings, minOrderValue: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 border-none font-black" />
+                          <Input type="number" value={localSettings.minOrderValue} onChange={e => setLocalSettings({...localSettings, minOrderValue: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 border-none font-black" />
                        </div>
                        <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase opacity-40">Base Delivery Fee</Label>
-                          <Input type="number" value={settings.deliveryCharge} onChange={e => setSettings({...settings, deliveryCharge: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 border-none font-black" />
+                          <Input type="number" value={localSettings.deliveryCharge} onChange={e => setLocalSettings({...localSettings, deliveryCharge: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 border-none font-black" />
                        </div>
                     </div>
                     <div className="space-y-2">
                        <Label className="text-[10px] font-black uppercase opacity-40">Free Shipping Threshold (₹)</Label>
-                       <Input type="number" value={settings.freeDeliveryThreshold} onChange={e => setSettings({...settings, freeDeliveryThreshold: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 border-none font-black" />
+                       <Input type="number" value={localSettings.freeDeliveryThreshold} onChange={e => setLocalSettings({...localSettings, freeDeliveryThreshold: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 border-none font-black" />
                     </div>
                  </div>
                  <div className="space-y-8">
@@ -196,14 +169,14 @@ export const StoreSettings = () => {
                              <Truck className="w-5 h-5" />
                              <span className="font-black text-[11px] uppercase">Pay On Arrival (COD)</span>
                           </div>
-                          <Switch checked={settings.codEnabled} onCheckedChange={(v) => setSettings({...settings, codEnabled: v})} />
+                          <Switch checked={localSettings.codEnabled} onCheckedChange={(v) => setLocalSettings({...localSettings, codEnabled: v})} />
                        </div>
                        <div className="flex items-center justify-between p-5 bg-secondary/30 dark:bg-zinc-800 rounded-3xl">
                           <div className="flex items-center gap-4 text-blue-500">
                              <Globe className="w-5 h-5" />
                              <span className="font-black text-[11px] uppercase">Digital UPI/Card Gateway</span>
                           </div>
-                          <Switch checked={settings.onlinePayEnabled} onCheckedChange={(v) => setSettings({...settings, onlinePayEnabled: v})} />
+                          <Switch checked={localSettings.onlinePayEnabled} onCheckedChange={(v) => setLocalSettings({...localSettings, onlinePayEnabled: v})} />
                        </div>
                     </div>
                  </div>
@@ -236,7 +209,7 @@ export const StoreSettings = () => {
       </Tabs>
 
       <div className="pt-10 text-center">
-         <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-20">Ezzy Bites • Configuration Cluster</p>
+         <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-20">{localSettings.storeName} • Configuration Cluster</p>
       </div>
     </div>
   );

@@ -19,11 +19,13 @@ import { toast } from '@/hooks/use-toast';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ReviewForm } from '@/components/ReviewForm';
+import { useGlobalSettings } from '@/hooks/use-global-settings';
 
 export default function OrderTrackingPage({ params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = use(params);
   const db = useFirestore();
   const { user } = useUser();
+  const { settings } = useGlobalSettings();
   const router = useRouter();
   const { trackOrderCancelled } = useAnalytics();
 
@@ -134,6 +136,14 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
     );
   }
 
+  const callStation = () => {
+    if (settings?.contactNumber) {
+      window.open(`tel:${settings.contactNumber}`);
+    } else {
+      toast({ variant: "destructive", title: "Contact Unavailable", description: "Identity node not found." });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-secondary/5 pb-10">
       <Navbar />
@@ -163,7 +173,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
                    <Star className="w-3.5 h-3.5 fill-current" /> Rate items
                 </Button>
              )}
-             <Button variant="outline" className="flex-1 md:flex-none rounded-xl h-12 px-6 gap-2 font-black uppercase text-[9px] tracking-widest border-2" onClick={() => window.open('tel:8639366800')}>
+             <Button variant="outline" className="flex-1 md:flex-none rounded-xl h-12 px-6 gap-2 font-black uppercase text-[9px] tracking-widest border-2" onClick={callStation}>
                 <Phone className="w-3.5 h-3.5" /> Call Station
              </Button>
           </div>

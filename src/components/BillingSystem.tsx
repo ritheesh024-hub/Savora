@@ -25,6 +25,7 @@ import Image from 'next/image';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { format } from 'date-fns';
+import { useGlobalSettings } from '@/hooks/use-global-settings';
 
 interface BillingSystemProps {
   products: any[];
@@ -34,6 +35,8 @@ interface BillingSystemProps {
 export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
   const db = useFirestore();
   const { user } = useUser();
+  const { settings } = useGlobalSettings();
+  
   const [activeBill, setActiveBill] = useState<any[]>([]);
   const [orderType, setOrderType] = useState('Dine-In');
   const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', notes: '' });
@@ -317,7 +320,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
           <div id="print-area" className="p-10 bg-white">
             {/* RECEIPT HEADER */}
             <div className="text-center mb-8 pb-6 border-b-2 border-dashed border-zinc-200">
-              <h2 className="text-3xl font-black font-headline tracking-tighter uppercase leading-none mb-1">EZZY BITES</h2>
+              <h2 className="text-3xl font-black font-headline tracking-tighter uppercase leading-none mb-1">{settings?.storeName || 'EZZY BITES'}</h2>
               <p className="text-[8px] font-black uppercase tracking-[0.4em] opacity-50 mb-4">Premium Fast Food-Tech</p>
               
               <div className="bg-zinc-100 py-3 rounded-xl mb-4">
