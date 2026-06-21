@@ -60,22 +60,19 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
   const [saving, setSaving] = useState(false);
 
   const filteredOrders = useMemo(() => {
-    // Requirements: Only show Delivered and Cancelled orders in Archive.
-    const terminalOrders = orders.filter(o => 
-      o.status === 'delivered' || o.status === 'Cancelled'
-    );
-
-    return terminalOrders.filter(o => {
+    // Show all orders from the source, no terminal-only restriction
+    return orders.filter(o => {
       const matchesSearch = 
         o.orderId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         o.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         o.customerPhone?.includes(searchQuery);
       
-      const status = o.status?.toLowerCase();
+      const status = (o.status || '').toLowerCase();
+      const filterValue = statusFilter.toLowerCase();
+      
       const matchesStatus = 
         statusFilter === 'all' || 
-        (statusFilter === 'delivered' && status === 'delivered') ||
-        (statusFilter === 'Cancelled' && status === 'cancelled');
+        status === filterValue;
 
       const matchesType = 
         typeFilter === 'all' || 
@@ -90,6 +87,14 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
   const getStatusBadge = (status: string) => {
     const s = (status || '').toLowerCase();
     switch(s) {
+      case 'orderplaced':
+        return { label: 'PLACED', class: 'bg-blue-50 text-blue-600 border-blue-100' };
+      case 'confirmed':
+        return { label: 'CONFIRMED', class: 'bg-indigo-50 text-indigo-600 border-indigo-100' };
+      case 'preparing':
+        return { label: 'PREPARING', class: 'bg-orange-50 text-orange-600 border-orange-100' };
+      case 'outfordelivery':
+        return { label: 'OUT FOR DELIVERY', class: 'bg-amber-50 text-amber-600 border-amber-100' };
       case 'delivered':
         return { label: 'DELIVERED', class: 'bg-emerald-50 text-emerald-600 border-emerald-100' };
       case 'cancelled':
@@ -153,8 +158,8 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
     <div className="space-y-10 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
         <div className="space-y-1">
-          <h2 className="text-4xl font-black font-headline uppercase tracking-tighter italic text-zinc-400">Order <span className="text-primary">Archive</span></h2>
-          <p className="text-muted-foreground text-sm font-medium tracking-tight">Terminal ledger of all delivered and revoked transactions.</p>
+          <h2 className="text-4xl font-black font-headline uppercase tracking-tighter italic text-zinc-400">Order <span className="text-primary">Master Ledger</span></h2>
+          <p className="text-muted-foreground text-sm font-medium tracking-tight">Comprehensive record of every transaction in the ecosystem.</p>
         </div>
         <Button onClick={handleExport} variant="outline" className="h-16 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-3 border-2 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all">
           <Download className="w-5 h-5" /> Export Data Node
@@ -179,6 +184,10 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                className="h-14 px-6 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-black uppercase text-[9px] tracking-widest outline-none focus:ring-2 focus:ring-primary/20"
              >
                <option value="all">All States</option>
+               <option value="orderPlaced">Placed</option>
+               <option value="confirmed">Confirmed</option>
+               <option value="preparing">Preparing</option>
+               <option value="outForDelivery">Out for Delivery</option>
                <option value="delivered">Delivered</option>
                <option value="Cancelled">Cancelled</option>
              </select>
@@ -315,7 +324,7 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                   <Input 
                     value={editingOrder?.customerName || ''} 
                     onChange={e => setEditingOrder({...editingOrder, customerName: e.target.value})}
-                    className="h-14 pl-12 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" 
+                    className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" 
                   />
                 </div>
               </div>
@@ -360,6 +369,10 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
+                     <SelectItem value="orderPlaced" className="font-bold">PLACED</SelectItem>
+                     <SelectItem value="confirmed" className="font-bold">CONFIRMED</SelectItem>
+                     <SelectItem value="preparing" className="font-bold">PREPARING</SelectItem>
+                     <SelectItem value="outForDelivery" className="font-bold">OUT FOR DELIVERY</SelectItem>
                      <SelectItem value="delivered" className="font-bold">DELIVERED</SelectItem>
                      <SelectItem value="Cancelled" className="font-bold">CANCELLED</SelectItem>
                   </SelectContent>
@@ -370,7 +383,7 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
           <DialogFooter className="p-8 bg-zinc-50 dark:bg-zinc-900 border-t flex gap-3">
              <Button variant="outline" className="h-16 flex-1 rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsEditProfileOpen(false)}>Close</Button>
              <Button className="h-16 flex-[2] rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30" onClick={handleSaveEdit} disabled={saving}>
-               {saving ? <Loader2 className="animate-spin w-5 h-5" /> : <><Save className="w-5 h-5 mr-2" /> Commit Sync</>}
+               {saving ? <Loader2 className="animate-spin w-5 h-5" /> : <><Save className="w-5 h-5 mr-2" /> Save</>}
              </Button>
           </DialogFooter>
         </DialogContent>
