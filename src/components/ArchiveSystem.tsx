@@ -39,8 +39,8 @@ import {
 } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useFirestore } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, updateDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
 interface ArchiveSystemProps {
@@ -50,6 +50,7 @@ interface ArchiveSystemProps {
 
 export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => {
   const db = useFirestore();
+  const { user: staffUser } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -115,6 +116,9 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
     setSaving(true);
     try {
       const orderRef = doc(db, 'orders', editingOrder.id);
+      const originalOrder = orders.find(o => o.id === editingOrder.id);
+      const statusChanged = originalOrder && originalOrder.status !== editingOrder.status;
+
       await updateDoc(orderRef, {
         customerName: editingOrder.customerName,
         customerPhone: editingOrder.customerPhone,
@@ -123,6 +127,38 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
         status: editingOrder.status,
         updatedAt: serverTimestamp()
       });
+
+      // Send In-App Notification if status changed
+      if (statusChanged && editingOrder.userId) {
+        const notifRef = collection(db, 'user_notifications', editingOrder.userId, 'items');
+        const titles: Record<string, string> = {
+          'confirmed': 'Order Confirmed! ✅',
+          'preparing': 'Chef is on it! 👨‍🍳',
+          'outForDelivery': 'Rider is Dispatched 🛵',
+          'delivered': 'Enjoy your Bites! 🍱',
+          'Cancelled': 'Order Cancelled ❌',
+          'orderPlaced': 'Order Placed! 🎫'
+        };
+        const messages: Record<string, string> = {
+          'confirmed': 'Your order has been accepted by the station.',
+          'preparing': 'Your premium bites are being handcrafted now.',
+          'outForDelivery': 'Your premium bites are on the way to your sanctuary.',
+          'delivered': 'Your order was successfully handed over. Thank you!',
+          'Cancelled': 'We regret that your order was revoked. Contact support if needed.',
+          'orderPlaced': 'Your order has been recorded in our master log.'
+        };
+
+        await addDoc(notifRef, {
+          title: titles[editingOrder.status] || `Status Update: ${editingOrder.status}`,
+          message: messages[editingOrder.status] || `Your order status changed to ${editingOrder.status}.`,
+          type: 'order',
+          orderId: editingOrder.orderId,
+          ctaLink: `/orders/${editingOrder.orderId}`,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+      }
+
       toast({ title: "Order Synchronized", description: `Ticket #${editingOrder.orderId} updated successfully.` });
       setIsEditProfileOpen(false);
     } catch (e: any) {
@@ -324,7 +360,7 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                   <Input 
                     value={editingOrder?.customerName || ''} 
                     onChange={e => setEditingOrder({...editingOrder, customerName: e.target.value})}
-                    className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" 
+                    className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6" 
                   />
                 </div>
               </div>
@@ -333,7 +369,7 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                 <Input 
                   value={editingOrder?.customerPhone || ''} 
                   onChange={e => setEditingOrder({...editingOrder, customerPhone: e.target.value})}
-                  className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" 
+                  className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6" 
                 />
               </div>
             </div>
@@ -345,7 +381,7 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                  <Textarea 
                    value={editingOrder?.address || ''} 
                    onChange={e => setEditingOrder({...editingOrder, address: e.target.value})}
-                   className="min-h-[100px] pl-12 rounded-[1.5rem] border-none bg-secondary/30 dark:bg-zinc-800 font-medium" 
+                   className="min-h-[100px] pl-12 rounded-[1.5rem] border-none bg-secondary/30 dark:bg-zinc-800 font-medium py-4 pr-6" 
                  />
               </div>
             </div>
@@ -357,7 +393,7 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                  <Textarea 
                    value={editingOrder?.instructions || ''} 
                    onChange={e => setEditingOrder({...editingOrder, instructions: e.target.value})}
-                   className="min-h-[80px] pl-12 rounded-[1.5rem] border-none bg-secondary/30 dark:bg-zinc-800 font-medium" 
+                   className="min-h-[80px] pl-12 rounded-[1.5rem] border-none bg-secondary/30 dark:bg-zinc-800 font-medium py-4 pr-6" 
                  />
               </div>
             </div>

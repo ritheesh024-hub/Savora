@@ -145,7 +145,7 @@ export default function OrdersHistoryPage() {
                               <h4 className="font-black text-lg tracking-tight">#{order.orderId}</h4>
                               <Badge className={cn(
                                 "text-[8px] uppercase font-black px-2 py-0.5 rounded-lg border-none shadow-sm",
-                                order.status === 'Delivered' ? 'bg-green-500 text-white' : 
+                                order.status === 'delivered' ? 'bg-green-500 text-white' : 
                                 order.status === 'Cancelled' ? 'bg-red-500 text-white' : 
                                 'bg-orange-500 text-white'
                               )}>
