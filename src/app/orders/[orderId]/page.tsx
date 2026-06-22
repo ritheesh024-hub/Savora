@@ -8,7 +8,8 @@ import {
   AlertCircle, Ban, Clock,
   ArrowLeft, Info, HelpCircle, Star, Bot, Package,
   Utensils,
-  Home
+  Home,
+  ShoppingBag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

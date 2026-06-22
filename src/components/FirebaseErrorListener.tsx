@@ -4,8 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { X, ShieldAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ShieldAlert } from 'lucide-react';
 
 export function FirebaseErrorListener() {
   const [error, setError] = useState<FirestorePermissionError | null>(null);
@@ -25,7 +24,7 @@ export function FirebaseErrorListener() {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-[100] animate-in slide-in-from-bottom-5">
-      <Alert variant="destructive" className="bg-destructive text-destructive-foreground border-none shadow-2xl rounded-2xl relative pr-12">
+      <Alert variant="destructive" className="bg-destructive text-destructive-foreground border-none shadow-2xl rounded-2xl relative">
         <ShieldAlert className="h-5 w-5" />
         <AlertTitle className="font-bold">Security Rules Error</AlertTitle>
         <AlertDescription className="text-sm opacity-90">
@@ -37,14 +36,6 @@ export function FirebaseErrorListener() {
             </div>
           )}
         </AlertDescription>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="absolute top-2 right-2 hover:bg-white/20 text-white rounded-full"
-          onClick={() => setError(null)}
-        >
-          <X className="h-4 w-4" />
-        </Button>
       </Alert>
     </div>
   );
