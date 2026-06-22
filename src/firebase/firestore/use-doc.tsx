@@ -6,8 +6,8 @@ import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 
 /**
- * HIGH-INTEGRITY DOCUMENT HOOK v3.0
- * Uses an active-mount guard to prevent Firestore internal state machine collisions.
+ * ATOMIC DOCUMENT HOOK v4.0
+ * Guarantees loading state resolution and prevents listener overlap.
  */
 export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
@@ -32,13 +32,13 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
         (snapshot) => {
           if (!isMounted) return;
           setData(snapshot.data() || null);
-          setLoading(false);
           setError(null);
+          setLoading(false);
         },
         (serverError: any) => {
           if (!isMounted) return;
           
-          console.error("🔥 [Ezzy Flux] Doc Sync Error:", {
+          console.warn("⚠️ [Ezzy Flux] Firestore Doc Sync Interrupted:", {
             code: serverError.code,
             path: docRef.path
           });
@@ -52,7 +52,7 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
           }
           
           setError(serverError);
-          setLoading(false);
+          setLoading(false); // CRITICAL: Stop loading even on error
         }
       );
     } catch (err: any) {
@@ -66,7 +66,7 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
       isMounted = false;
       if (unsubscribe) unsubscribe();
     };
-  }, [docRef?.path]); // Depend strictly on the path identity
+  }, [docRef?.path]); 
 
   return { data, loading, error };
 }

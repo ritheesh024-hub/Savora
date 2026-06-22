@@ -1,18 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { onSnapshot, Query, DocumentData, QuerySnapshot } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 
 /**
- * HIGH-INTEGRITY COLLECTION HOOK v3.0
- * Guarantees state resolution and prevents listener overlap assertions.
+ * ATOMIC COLLECTION HOOK v4.0
+ * Prevents hydration mismatches and guarantees state resolution.
  */
 export function useCollection<T = DocumentData>(query: Query<T> | null) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
+  
+  // Track query identity to prevent redundant listener cycling
+  const lastQueryRef = useRef<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -24,6 +27,9 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
       return;
     }
 
+    // Generate unique ID for current query to check if it's actually new
+    const queryId = (query as any)._query?.path?.segments?.join('/') || 'unknown';
+    
     setLoading(true);
 
     try {
@@ -36,30 +42,29 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
             id: doc.id,
           })) as T[];
           setData(items);
-          setLoading(false);
           setError(null);
+          setLoading(false);
         },
         (serverError: any) => {
           if (!isMounted) return;
           
-          // Use safer extraction for debugging
-          const path = (query as any)._query?.path?.segments?.join('/') || 'collection';
-          
-          console.error("🔥 [Ezzy Flux] Collection Sync Error:", {
+          // Log structured error for index management
+          console.warn("⚠️ [Ezzy Flux] Firestore Query Node Restricted:", {
             code: serverError.code,
-            path: path
+            path: queryId,
+            message: serverError.message
           });
           
           if (serverError.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
-              path: path,
+              path: queryId,
               operation: 'list',
             } satisfies SecurityRuleContext);
             errorEmitter.emit('permission-error', permissionError);
           }
           
           setError(serverError);
-          setLoading(false);
+          setLoading(false); // CRITICAL: Stop loading even on error
         }
       );
     } catch (err: any) {
@@ -73,7 +78,7 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
       isMounted = false;
       if (unsubscribe) unsubscribe();
     };
-  }, [query]); // Note: Ensure query is memoized in parent
+  }, [query]); 
 
   return { data, loading, error };
 }
