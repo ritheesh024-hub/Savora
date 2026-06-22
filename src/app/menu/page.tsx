@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'next/navigation';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, limit } from 'firebase/firestore';
 import { FoodItem } from '@/app/lib/store';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/app/lib/menu-data';
@@ -40,28 +41,39 @@ function MenuContent() {
     trackMenuView();
   }, [trackMenuView]);
 
+  // Sync searchQuery with URL params for external navigation (e.g. from Navbar)
   useEffect(() => {
-    if (urlQuery) {
-      setSearchQuery(urlQuery);
-    }
+    setSearchQuery(urlQuery);
   }, [urlQuery]);
 
   const productsQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(200));
+    // Robust query: Remove orderBy to ensure compatibility with all items
+    // If you need specific ordering, ensure 'createdAt' index is built in Firebase
+    return query(collection(db, 'products'), limit(150));
   }, [db]);
 
   const { data: menuItems, loading, error } = useCollection<FoodItem>(productsQuery);
+
+  // Monitor errors in console for debugging
+  useEffect(() => {
+    if (error) console.error("🔥 [Ezzy Menu] Firestore Load Error:", error);
+  }, [error]);
 
   const filteredItems = useMemo(() => {
     if (!menuItems) return [];
     
     return menuItems.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
-                           item.description?.toLowerCase().includes(debouncedSearch.toLowerCase());
+      const search = debouncedSearch.toLowerCase();
+      const matchesSearch = !search || 
+                           item.name?.toLowerCase().includes(search) || 
+                           item.description?.toLowerCase().includes(search) ||
+                           item.category?.toLowerCase().includes(search);
+                           
       const matchesDiet = dietFilter === 'all' || 
                         (dietFilter === 'veg' && item.isVeg) || 
                         (dietFilter === 'non-veg' && !item.isVeg);
+                        
       const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
       
       return matchesSearch && matchesDiet && matchesCategory;
@@ -156,7 +168,8 @@ function MenuContent() {
         ) : error ? (
            <div className="py-20 text-center bg-destructive/5 rounded-3xl border-2 border-destructive/10 border-dashed max-w-xl mx-auto">
              <AlertCircle className="w-12 h-12 text-destructive/30 mx-auto mb-4" />
-             <Button variant="outline" className="rounded-full h-10 px-8 border-destructive/20 text-destructive font-black uppercase text-[9px]" onClick={() => window.location.reload()}>Try Again</Button>
+             <p className="text-[10px] font-black uppercase mb-6 text-destructive opacity-60">Identity Sync Interrupted</p>
+             <Button variant="outline" className="rounded-full h-10 px-8 border-destructive/20 text-destructive font-black uppercase text-[9px]" onClick={() => window.location.reload()}>Re-establish Node</Button>
            </div>
         ) : filteredItems.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 md:gap-5 pb-10">
@@ -171,7 +184,7 @@ function MenuContent() {
             </div>
             <div className="space-y-1">
               <h3 className="text-xl font-black uppercase tracking-tighter">No Matches</h3>
-              <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-widest">Try refining your search nodes.</p>
+              <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-widest">Try refining your search nodes or seeding inventory in Admin.</p>
             </div>
             <Button 
               variant="outline" 

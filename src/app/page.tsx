@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -36,9 +37,9 @@ export default function Home() {
 
   const highlightsQuery = useMemo(() => {
     if (!db) return null;
+    // Robust highlights query
     return query(
       collection(db, 'products'),
-      where('isAvailable', '==', true),
       limit(10)
     );
   }, [db]);
