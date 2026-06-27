@@ -1,16 +1,24 @@
 'use client';
 
 /**
- * @fileOverview Firebase configuration using the project credentials.
- * The authDomain is used for OAuth operations like Google Sign-In.
+ * @fileOverview Hardened Firebase configuration.
+ * Fetches credentials from environment variables for secure multi-node deployment.
  */
 
+const getEnv = (key: string) => {
+  const val = process.env[key];
+  if (!val && typeof window !== 'undefined') {
+    console.warn(`⚠️ [Ezzy Ops] Environment Node Missing: ${key}`);
+  }
+  return val || '';
+};
+
 export const firebaseConfig = {
-  apiKey: "AIzaSyB782eG58KyGfjKK55hmUP6XKYv_BxdWN4",
-  authDomain: "studio-954019231-545c1.firebaseapp.com",
-  projectId: "studio-954019231-545c1",
-  storageBucket: "studio-954019231-545c1.firebasestorage.app",
-  messagingSenderId: "718652602424",
-  appId: "1:718652602424:web:2865b2dcd06548ed148ecd",
-  measurementId: "G-G7JSV6J7NC" 
+  apiKey: getEnv('NEXT_PUBLIC_FIREBASE_API_KEY'),
+  authDomain: getEnv('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
+  projectId: getEnv('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
+  storageBucket: getEnv('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: getEnv('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: getEnv('NEXT_PUBLIC_FIREBASE_APP_ID'),
+  measurementId: getEnv('NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID')
 };

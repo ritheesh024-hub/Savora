@@ -4,7 +4,8 @@ import { googleAI } from '@genkit-ai/google-genai';
 /**
  * @fileOverview Centralized Genkit configuration for Ezzy Bites.
  * Standardizes the AI logic node using the stable Gemini 1.5 Flash model.
- * Automatically detects GOOGLE_GENAI_API_KEY from environment variables.
+ * Automatically detects GOOGLE_GENAI_API_KEY from environment variables (.env).
+ * Secure: Keys are never exposed to the client-side.
  */
 
 export const ai = genkit({
