@@ -3,6 +3,7 @@
 /**
  * @fileOverview Hardened Firebase configuration.
  * Explicitly maps environment variables for high-integrity client-side bundling.
+ * Next.js requires explicit process.env references to inline values during build.
  */
 
 export const firebaseConfig = {
@@ -15,7 +16,7 @@ export const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || ''
 };
 
-// Diagnostic Node: Log warning if keys are missing
+// Diagnostic Node: Log warning if keys are missing in the browser environment
 if (typeof window !== 'undefined' && !firebaseConfig.apiKey) {
-  console.warn('⚠️ [Ezzy Ops] Firebase Handshake Pending: Credentials not detected in bundle.');
+  console.warn('⚠️ [Ezzy Ops] Firebase Handshake Pending: NEXT_PUBLIC_FIREBASE_API_KEY is not detected.');
 }
