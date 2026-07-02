@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -110,6 +111,10 @@ export const Navbar = () => {
     { label: 'Settings', href: '/settings', icon: Settings, authRequired: true },
   ];
 
+  // Logic to determine if text/icons should be white regardless of light/dark mode
+  // (Used for home page hero section)
+  const isHeroState = pathname === '/' && !scrolled;
+
   return (
     <nav className={cn(
       "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
@@ -121,7 +126,7 @@ export const Navbar = () => {
         <div className="h-10 md:h-12 flex items-center justify-between gap-4">
           <Link href="/" className="transition-transform active:scale-95">
             <Logo 
-              variant={scrolled ? 'dark' : (mounted && isDarkMode ? 'dark' : (pathname === '/' ? 'light' : 'dark'))} 
+              variant={isHeroState ? 'light' : (scrolled ? (isDarkMode ? 'light' : 'dark') : (isDarkMode ? 'light' : 'dark'))} 
               size="sm" 
               className="shrink-0 scale-90 md:scale-100 origin-left" 
             />
@@ -131,7 +136,7 @@ export const Navbar = () => {
             <form onSubmit={(e) => { e.preventDefault(); router.push(`/menu?q=${navSearch}`); }} className="relative group">
               <Search className={cn(
                 "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10",
-                scrolled ? "text-muted-foreground" : "text-white/40"
+                scrolled ? "text-muted-foreground" : (isHeroState ? "text-white/60" : "text-muted-foreground")
               )} />
               <Input 
                 value={navSearch}
@@ -142,7 +147,9 @@ export const Navbar = () => {
                   "w-full h-9 pl-10 pr-4 rounded-xl border-none transition-all font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
                   scrolled 
                     ? "bg-secondary/60 focus:bg-white dark:bg-zinc-900 !text-foreground" 
-                    : "bg-white/10 !text-white placeholder:text-white/40 focus:bg-white/20 backdrop-blur-xl"
+                    : (isHeroState 
+                        ? "bg-white/10 !text-white placeholder:text-white/40 focus:bg-white/20 backdrop-blur-xl" 
+                        : "bg-secondary/60 dark:bg-zinc-900 !text-foreground")
                 )}
               />
             </form>
@@ -153,9 +160,9 @@ export const Navbar = () => {
               <NotificationCenter>
                 <Button variant="ghost" size="icon" className={cn(
                   "rounded-full w-10 h-10 transition-all relative",
-                  scrolled 
-                    ? "hover:bg-primary/5 text-foreground" 
-                    : (isDarkMode ? "hover:bg-white/10 text-white" : "hover:bg-black/5 text-foreground")
+                  isHeroState 
+                    ? "hover:bg-white/10 text-white" 
+                    : (scrolled ? "hover:bg-primary/5 text-foreground" : (isDarkMode ? "hover:bg-white/10 text-white" : "hover:bg-black/5 text-foreground"))
                 )}>
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && (
@@ -167,15 +174,18 @@ export const Navbar = () => {
               </NotificationCenter>
             )}
 
-            <ThemeToggle className="hidden md:flex h-10 w-10" />
+            <ThemeToggle className={cn(
+              "hidden md:flex h-10 w-10",
+              isHeroState ? "text-white hover:bg-white/10" : ""
+            )} />
             
             <div className="hidden md:flex items-center gap-3">
               {mounted && !userLoading && (
                 user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="outline-none rounded-xl ring-offset-background focus:ring-4 focus:ring-primary/20 transition-all active:scale-90 overflow-hidden shadow-lg">
-                        <Avatar className="h-8 w-8 rounded-xl border-2 border-background">
+                      <button className="outline-none rounded-xl ring-offset-background focus:ring-4 focus:ring-primary/20 transition-all active:scale-90 overflow-hidden shadow-lg border-2 border-background">
+                        <Avatar className="h-8 w-8 rounded-xl">
                           <AvatarImage src={customerProfile?.photoUrl || user.photoURL || ''} alt={user.displayName || 'Member'} />
                           <AvatarFallback className="bg-orange-gradient text-white font-black text-[10px] rounded-xl">
                             {(customerProfile?.name || user.displayName || 'EB').slice(0, 2).toUpperCase()}
@@ -227,9 +237,9 @@ export const Navbar = () => {
               <CartDrawer>
                 <Button variant="ghost" size="icon" className={cn(
                   "rounded-full w-10 h-10 transition-all relative",
-                  scrolled 
-                    ? "hover:bg-primary/5 text-foreground" 
-                    : (isDarkMode ? "hover:bg-white/10 text-white" : "hover:bg-black/5 text-foreground")
+                  isHeroState 
+                    ? "hover:bg-white/10 text-white" 
+                    : (scrolled ? "hover:bg-primary/5 text-foreground" : (isDarkMode ? "hover:bg-white/10 text-white" : "hover:bg-black/5 text-foreground"))
                 )}>
                   <ShoppingBag className="w-5 h-5" />
                   {cart.length > 0 && (
@@ -247,7 +257,7 @@ export const Navbar = () => {
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className={cn(
                       "rounded-full w-10 h-10 transition-transform active:scale-90",
-                      scrolled ? "text-foreground" : (isDarkMode ? "text-foreground" : (pathname === '/' ? "text-white" : "text-foreground"))
+                      isHeroState ? "text-white" : (scrolled ? "text-foreground" : (isDarkMode ? "text-foreground" : "text-foreground"))
                     )}>
                       <Menu className="w-5 h-5" />
                     </Button>

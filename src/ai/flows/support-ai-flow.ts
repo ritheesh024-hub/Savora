@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Automated Support Assistant for Ezzy Bites.
@@ -78,10 +79,13 @@ const supportAIFlow = ai.defineFlow(
   },
   async (input) => {
     try {
+      console.log("🤖 [Ezzy AI] Dispatching signal to Gemini node...");
       const { output } = await prompt(input);
-      if (!output) throw new Error('AI failed to generate a response.');
+      if (!output) throw new Error('AI logic node failed to yield output.');
       return output;
     } catch (error: any) {
+      console.error('🔥 [Ezzy AI] Logic Node Error:', error?.message || error);
+      
       // Resilient Simulation Fallback: Ensures 100% resolution capability even if logic node is dormant
       const msg = input.message.toLowerCase();
       let reply = "Hello! I'm your Ezzy Assistant. I'm here to ensure your premium bite experience is perfect. How can I assist you?";
@@ -97,6 +101,9 @@ const supportAIFlow = ai.defineFlow(
         actions = ["Track Order", "Policy Help"];
       } else if (msg.includes('contact') || msg.includes('phone') || msg.includes('call')) {
         reply = "You can reach our operational commander at +91 8639366800 for immediate assistance.";
+      } else if (msg.includes('where') || msg.includes('track') || msg.includes('order')) {
+        reply = "You can track your live order nodes in real-time from the History tab in your dashboard.";
+        actions = ["Track Orders", "Active Ticket"];
       }
 
       return {
