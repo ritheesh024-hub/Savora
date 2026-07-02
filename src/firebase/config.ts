@@ -3,7 +3,7 @@
 /**
  * @fileOverview Hardened Firebase configuration.
  * Explicitly maps environment variables for high-integrity client-side bundling.
- * Next.js requires explicit process.env references to inline values during build.
+ * Includes support for regional database nodes.
  */
 
 export const firebaseConfig = {
