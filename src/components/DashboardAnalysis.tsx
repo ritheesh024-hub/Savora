@@ -100,10 +100,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       topRated: [...sentimentList].sort((a, b) => Number(b.avg) - Number(a.avg)).slice(0, 3),
       mostRated: [...sentimentList].sort((a, b) => b.count - a.count).slice(0, 3),
       chartData: currOrders.slice(-10).map(o => ({ name: o.orderId.slice(-4), val: o.total })),
-      pieData: [
-        { name: 'Delivered', value: currStats.delivered, color: '#10b981' },
-        { name: 'Cancelled', value: currStats.cancelled, color: '#f43f5e' }
-      ].filter(d => d.value > 0)
     };
   }, [orders, intervals, reviews]);
 
@@ -134,7 +130,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* SENTIMENT HUB */}
         <Card className="rounded-[2rem] border-none shadow-sm bg-white dark:bg-zinc-900 p-6 space-y-6">
            <div className="flex items-center justify-between border-b border-dashed pb-4">
               <h3 className="font-black uppercase tracking-widest text-xs flex items-center gap-2">
@@ -149,15 +144,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                    <div key={i} className="flex justify-between items-center p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl">
                       <span className="text-[10px] font-bold uppercase truncate pr-4">{p.name}</span>
                       <Badge className="bg-emerald-100 text-emerald-600 border-none text-[8px] font-black px-1.5 h-4">{p.avg} ★</Badge>
-                   </div>
-                 ))}
-              </div>
-              <div className="space-y-3">
-                 <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">High Velocity</p>
-                 {metrics.mostRated.map((p, i) => (
-                   <div key={i} className="flex justify-between items-center p-2.5 bg-primary/5 rounded-xl">
-                      <span className="text-[10px] font-bold uppercase truncate pr-4">{p.name}</span>
-                      <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black px-1.5 h-4">{p.count} Rates</Badge>
                    </div>
                  ))}
               </div>
@@ -177,7 +163,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 7, fontWeight: 900}} />
                 <YAxis hide />
-                <Tooltip contentStyle={{borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}} />
+                <Tooltip contentStyle={{borderRadius: '1rem', border: 'none'}} />
                 <Area type="monotone" dataKey="val" stroke="#f97316" strokeWidth={2} fill="url(#colorVal)" />
               </AreaChart>
             </ResponsiveContainer>

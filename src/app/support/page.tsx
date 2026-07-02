@@ -3,25 +3,14 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, limit } from 'firebase/firestore';
+import { collection, query, where, orderBy, addDoc, serverTimestamp, limit, doc, updateDoc } from 'firebase/firestore';
 import { 
-  Bot, 
-  Package, 
-  CreditCard, 
-  Truck, 
-  Utensils, 
-  Star, 
-  HelpCircle, 
-  Send, 
-  Loader2, 
-  ChevronRight,
-  Phone,
-  Mail,
-  Clock,
-  RotateCcw
+  Bot, Package, CreditCard, Truck, Utensils, Star, 
+  HelpCircle, Send, Loader2, ChevronRight, Phone, 
+  Mail, RotateCcw, MapPin, Ban, History
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,13 +19,15 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ezzySupportAI } from '@/ai/flows/support-ai-flow';
 import { useGlobalSettings } from '@/hooks/use-global-settings';
+import Link from 'next/link';
 
 type Message = {
   id: string;
   role: 'assistant' | 'user';
   content: string;
-  type?: 'text' | 'options' | 'orders' | 'feedback' | 'contact' | 'chips';
+  type?: 'text' | 'options' | 'orders' | 'feedback' | 'contact' | 'chips' | 'items';
   options?: any[];
+  protocolAction?: string;
 };
 
 export default function SupportPage() {
@@ -48,58 +39,38 @@ export default function SupportPage() {
   const initialMessage: Message = { 
     id: 'welcome', 
     role: 'assistant', 
-    content: '👋 Welcome to Ezzy Bites Support. How can we help you today?',
+    content: '👋 Welcome to Ezzy Bites Support Hub. How can our fleet assist you today?',
     type: 'options' 
   };
 
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
-  // Recent Orders Query
   const ordersQuery = useMemo(() => {
     if (!db || !user) return null;
     return query(collection(db, 'orders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), limit(5));
   }, [db, user]);
   const { data: recentOrders, loading: ordersLoading } = useCollection<any>(ordersQuery);
 
-  // Menu Registry Query for AI Context
-  const menuQuery = useMemo(() => {
-    if (!db) return null;
-    return query(collection(db, 'products'), limit(100));
-  }, [db]);
-  const { data: menuItems } = useCollection<any>(menuQuery);
-
-  const supportCategories = [
-    { id: 'order', label: 'Order Issue', icon: Package, color: 'bg-[#FFF2E9] text-[#FF6B00]' },
-    { id: 'payment', label: 'Payment Issue', icon: CreditCard, color: 'bg-[#EEF4FF] text-[#3B82F6]' },
-    { id: 'delivery', label: 'Delivery Issue', icon: Truck, color: 'bg-[#EBFDF5] text-[#10B981]' },
-    { id: 'food', label: 'Food Quality', icon: Utensils, color: 'bg-[#FFF7ED] text-[#F97316]' },
-    { id: 'feedback', label: 'Feedback', icon: Star, color: 'bg-[#F5F3FF] text-[#8B5CF6]' },
-    { id: 'general', label: 'General Enquiry', icon: HelpCircle, color: 'bg-[#F4F4F5] text-[#71717A]' },
-    { id: 'contact', label: 'Contact Support', icon: Phone, color: 'bg-[#FFF1F2] text-[#F43F5E]' }
-  ];
-
-  const generalOptions = ["Restaurant Timings", "Delivery Charges", "Coupons & Offers", "Payment Methods"];
-
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const addMessage = (role: 'assistant' | 'user', content: string, type: Message['type'] = 'text', options?: any[]) => {
+  const addMessage = (role: 'assistant' | 'user', content: string, type: Message['type'] = 'text', options?: any[], action?: string) => {
     const newMsg: Message = { 
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
       role, 
       content, 
       type, 
-      options 
+      options,
+      protocolAction: action
     };
     setMessages(prev => [...prev, newMsg]);
   };
 
-  const handleSendMessage = async (text?: string, categoryOverride?: string) => {
+  const handleSendMessage = async (text?: string) => {
     const msg = text || inputText;
     if (!msg.trim()) return;
 
@@ -108,84 +79,63 @@ export default function SupportPage() {
     setIsTyping(true);
 
     try {
-      const chatHistory = messages
-        .filter(m => m.type === 'text')
-        .map(m => ({ 
-          role: m.role === 'assistant' ? 'model' as const : 'user' as const, 
-          content: m.content 
-        }));
+      const orderContext = selectedOrder ? JSON.stringify({
+        orderId: selectedOrder.orderId,
+        status: selectedOrder.status,
+        items: selectedOrder.items,
+        total: selectedOrder.total,
+        createdAt: selectedOrder.createdAt?.toDate ? selectedOrder.createdAt.toDate().toISOString() : new Date().toISOString()
+      }) : '';
 
-      // Summarize Menu and Settings for AI Context
-      const menuContext = menuItems?.map(i => `${i.name} (₹${i.price}) - ${i.isAvailable ? 'In Stock' : 'Sold Out'}`).join('\n') || '';
-      const settingsContext = settings ? `Store Status: ${settings.isOpen ? 'OPEN' : 'CLOSED'}, Delivery: ${settings.deliveryActive ? 'ACTIVE' : 'INACTIVE'}, Charge: ₹${settings.deliveryCharge}, Free Delivery above: ₹${settings.freeDeliveryThreshold}` : '';
-      
-      const orderContext = selectedOrder ? `Discussing Order #${selectedOrder.orderId}: Status ${selectedOrder.status}, Items: ${selectedOrder.items?.map((i: any) => i.name).join(', ')}, Total ₹${selectedOrder.total}` : '';
+      const settingsContext = settings ? `Open: ${settings.isOpen}, Contact: ${settings.contactNumber}` : '';
 
       const response = await ezzySupportAI({
         message: msg,
-        category: categoryOverride || activeCategory || undefined,
-        chatHistory,
-        menuContext,
+        orderContext,
         settingsContext,
-        orderContext
+        chatHistory: messages.filter(m => m.type === 'text').map(m => ({
+          role: m.role === 'assistant' ? 'model' as const : 'user' as const,
+          content: m.content
+        }))
       });
 
-      addMessage('assistant', response.reply, 'chips', response.suggestedActions);
+      addMessage('assistant', response.reply, 'chips', response.suggestedActions, response.protocolAction);
     } catch (e) {
-      console.error("🔥 [Ezzy AI] UI Error:", e);
-      addMessage('assistant', "Sorry, I'm currently unavailable. Please try again later.");
+      addMessage('assistant', "I'm currently unable to process your request. Please call our hotline.");
     } finally {
       setIsTyping(false);
     }
   };
 
   const handleCategoryClick = (cat: any) => {
-    setActiveCategory(cat.label);
     addMessage('user', cat.label);
-    
     if (cat.id === 'order') {
-      addMessage('assistant', 'Please select the order you need help with:', 'orders');
-    } else if (cat.id === 'feedback') {
-      addMessage('assistant', 'We value your input. Please rate your experience:', 'feedback');
+      addMessage('assistant', 'Please select an order node for synchronization:', 'orders');
     } else if (cat.id === 'contact') {
-      addMessage('assistant', 'Our support nodes are active 08:00 AM - 10:00 PM:', 'contact');
-    } else if (cat.id === 'general') {
-      addMessage('assistant', 'Select a topic or type your question:', 'chips', generalOptions);
+      addMessage('assistant', 'Direct frequency nodes:', 'contact');
     } else {
-      handleSendMessage(cat.label, cat.label);
+      handleSendMessage(cat.label);
     }
   };
 
   const handleOrderSelect = (order: any) => {
     setSelectedOrder(order);
-    const orderText = `Order #${order.orderId}`;
-    addMessage('user', orderText);
-    const issues = ["Where is my order?", "Items missing", "Packaging issue", "Cancel my order"];
-    addMessage('assistant', `Understood. What's the issue with ${orderText}?`, 'chips', issues);
+    addMessage('user', `Tracking Ticket #${order.orderId}`);
+    addMessage('assistant', `Sync established for Ticket #${order.orderId}. What's the status on your end?`, 'chips', 
+      ["Where is my order?", "Cancel my order", "Wrong item received", "Missing item"]
+    );
   };
 
-  const submitFeedback = async (rating: number, comment: string) => {
-    if (!db || !user) return;
-    try {
-      await addDoc(collection(db, 'feedbacks'), {
-        userId: user.uid,
-        userName: user.displayName || 'Guest',
-        rating,
-        comment,
-        createdAt: serverTimestamp()
-      });
-      addMessage('assistant', '🎉 Thank you! Your feedback has been recorded in our logs.');
-      addMessage('assistant', 'Is there anything else I can help with?', 'options');
-    } catch (e) {
-      toast({ variant: "destructive", title: "Feedback Sync Failed" });
+  const handleActionClick = async (action: string) => {
+    if (action === 'CANCEL_ORDER' && selectedOrder && db) {
+      try {
+        await updateDoc(doc(db, 'orders', selectedOrder.id), { status: 'Cancelled', cancelledBy: 'AI Support' });
+        toast({ title: "Order Cancelled Successfully" });
+        addMessage('assistant', `Ticket #${selectedOrder.orderId} has been successfully revoked in our logs.`);
+      } catch (e) {
+        toast({ variant: "destructive", title: "Cancellation Protocol Failed" });
+      }
     }
-  };
-
-  const handleClearChat = () => {
-    setMessages([initialMessage]);
-    setActiveCategory(null);
-    setSelectedOrder(null);
-    toast({ title: "Session Cleared" });
   };
 
   if (userLoading) return <div className="h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -193,193 +143,130 @@ export default function SupportPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
       <Navbar />
-      
-      <main className="flex-1 flex flex-col pt-14 md:pt-20 max-w-2xl mx-auto w-full px-4 pb-3">
-        {/* CHAT HEADER / CONTROLS */}
-        <div className="flex justify-between items-center py-4 px-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
-           <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-[#FFF2E9] flex items-center justify-center">
-                <Bot className="w-3.5 h-3.5 text-[#FF6B00]" />
-              </div>
-              <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-40">Active Support Node</span>
-           </div>
-           <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleClearChat}
-              className="h-8 rounded-lg font-black uppercase text-[10px] tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 gap-2 transition-all"
-           >
-              <RotateCcw className="w-3.5 h-3.5" /> Clear History
-           </Button>
+      <main className="flex-1 flex flex-col pt-16 md:pt-24 max-w-2xl mx-auto w-full px-4 pb-4">
+        {/* HEADER */}
+        <div className="flex justify-between items-center py-4 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Operational Support Node</span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setMessages([initialMessage])} className="h-8 rounded-lg font-black uppercase text-[9px] tracking-widest gap-2">
+            <RotateCcw className="w-3.5 h-3.5" /> Reset Hub
+          </Button>
         </div>
 
-        {/* CHAT AREA */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6 py-6 flex flex-col">
+        {/* MESSAGES */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide py-6 space-y-6 flex flex-col">
           <AnimatePresence initial={false}>
             {messages.map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                className={cn("flex flex-col max-w-[90%] space-y-2", msg.role === 'user' ? "items-end ml-auto" : "items-start")}
-              >
-                {msg.content && (
-                  <div className={cn(
-                    "p-4 px-6 rounded-[2rem] shadow-sm text-sm font-medium leading-relaxed border",
-                    msg.role === 'user' ? "bg-primary text-white border-primary rounded-tr-none" : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-tl-none"
-                  )}>
-                    {msg.content}
+              <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={cn("flex flex-col max-w-[90%]", msg.role === 'user' ? "ml-auto items-end" : "items-start")}>
+                <div className={cn("p-4 px-6 rounded-[2rem] shadow-sm text-sm font-medium leading-relaxed border", 
+                  msg.role === 'user' ? "bg-primary text-white border-primary rounded-tr-none" : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-tl-none")}>
+                  {msg.content}
+                </div>
+
+                {/* PROTOCOL ACTIONS */}
+                {msg.protocolAction && msg.protocolAction !== 'NONE' && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {msg.protocolAction === 'TRACK_ORDER' && selectedOrder && (
+                      <Link href={`/orders/${selectedOrder.orderId}`}>
+                        <Button className="h-10 rounded-xl bg-zinc-950 text-white font-black uppercase text-[8px] tracking-widest gap-2">
+                          <Truck className="w-3 h-3" /> Track Order Hub
+                        </Button>
+                      </Link>
+                    )}
+                    {msg.protocolAction === 'CANCEL_ORDER' && (
+                      <Button onClick={() => handleActionClick('CANCEL_ORDER')} variant="destructive" className="h-10 rounded-xl font-black uppercase text-[8px] tracking-widest gap-2">
+                        <Ban className="w-3 h-3" /> Execute Cancellation
+                      </Button>
+                    )}
+                    {msg.protocolAction === 'CALL_RESTAURANT' && (
+                      <Button onClick={() => window.open(`tel:${settings?.contactNumber}`)} className="h-10 rounded-xl bg-emerald-600 text-white font-black uppercase text-[8px] tracking-widest gap-2">
+                        <Phone className="w-3 h-3" /> Call Station Now
+                      </Button>
+                    )}
                   </div>
                 )}
 
-                {/* RENDER OPTIONS - Large buttons as requested */}
+                {/* RENDER CATEGORIES */}
                 {msg.type === 'options' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 w-full">
-                    {supportCategories.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => handleCategoryClick(cat)}
-                        className="flex items-center gap-4 p-5 bg-white dark:bg-zinc-900 rounded-[1.5rem] border border-zinc-200 dark:border-zinc-800 hover:border-primary hover:shadow-lg transition-all text-left group shadow-sm"
-                      >
-                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner", cat.color)}>
-                          <cat.icon className="w-5 h-5" />
-                        </div>
-                        <span className="text-[11px] font-black uppercase tracking-widest group-hover:text-primary truncate">{cat.label}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 w-full">
+                    {[
+                      { id: 'order', label: 'Order Status', icon: Package, color: 'bg-orange-50 text-orange-600' },
+                      { id: 'contact', label: 'Contact Station', icon: Phone, color: 'bg-blue-50 text-blue-600' },
+                      { id: 'feedback', label: 'Rate Experience', icon: Star, color: 'bg-emerald-50 text-emerald-600' }
+                    ].map(cat => (
+                      <button key={cat.id} onClick={() => handleCategoryClick(cat)} className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-900 rounded-[1.5rem] border hover:border-primary transition-all text-left">
+                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", cat.color)}><cat.icon className="w-5 h-5" /></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{cat.label}</span>
                       </button>
                     ))}
                   </div>
                 )}
 
-                {/* RENDER CHIPS - Quick Replies */}
-                {msg.type === 'chips' && msg.options && (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {msg.options.map((opt, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleSendMessage(opt)}
-                        className="px-5 py-2.5 bg-white dark:bg-zinc-900 rounded-full text-[10px] font-black uppercase tracking-widest border border-zinc-200 dark:border-zinc-800 hover:border-primary hover:text-primary transition-all shadow-sm"
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* RENDER ORDERS - Clickable Cards */}
+                {/* RENDER ORDERS */}
                 {msg.type === 'orders' && (
-                  <div className="space-y-2 mt-2 w-full">
+                  <div className="space-y-2 mt-3 w-full">
                     {ordersLoading ? <Loader2 className="w-5 h-5 animate-spin opacity-20" /> : 
-                      (!recentOrders || recentOrders.length === 0) ? (
-                        <div className="p-5 bg-zinc-100 dark:bg-zinc-800 rounded-2xl text-center border-2 border-dashed">
-                          <p className="text-[10px] font-black uppercase opacity-40">No recent orders recorded.</p>
-                        </div>
-                      ) :
-                      recentOrders.map(o => (
-                        <button key={o.id} onClick={() => handleOrderSelect(o)} className="w-full p-4 bg-white dark:bg-zinc-900 rounded-[1.5rem] border border-zinc-200 dark:border-zinc-800 flex items-center justify-between group hover:border-primary transition-all shadow-sm">
+                      recentOrders?.map(o => (
+                        <button key={o.id} onClick={() => handleOrderSelect(o)} className="w-full p-4 bg-white dark:bg-zinc-900 rounded-[1.5rem] border flex items-center justify-between hover:border-primary transition-all">
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-primary">
-                              <Package className="w-5 h-5" />
-                            </div>
+                            <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-primary"><Package className="w-5 h-5" /></div>
                             <div className="text-left">
-                              <p className="text-[10px] font-black uppercase text-primary leading-none mb-1">Ticket #{o.orderId}</p>
-                              <p className="text-[9px] font-bold opacity-40 uppercase">₹{o.total} • {o.status.replace(/_/g, ' ')}</p>
+                              <p className="text-[10px] font-black uppercase text-primary">#{o.orderId}</p>
+                              <p className="text-[8px] font-bold opacity-40 uppercase tracking-tighter">{o.status} • ₹{o.total}</p>
                             </div>
                           </div>
-                          <ChevronRight className="w-4 h-4 opacity-20 group-hover:translate-x-1 transition-all" />
+                          <ChevronRight className="w-4 h-4 opacity-20" />
                         </button>
                       ))
                     }
                   </div>
                 )}
 
-                {/* RENDER FEEDBACK */}
-                {msg.type === 'feedback' && <FeedbackInput onComplete={submitFeedback} />}
+                {/* RENDER CHIPS */}
+                {msg.type === 'chips' && msg.options && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {msg.options.map((opt, i) => (
+                      <button key={i} onClick={() => handleSendMessage(opt)} className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-[9px] font-black uppercase tracking-widest border border-zinc-200 hover:border-primary hover:text-primary transition-all shadow-sm">
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {/* RENDER CONTACT */}
                 {msg.type === 'contact' && (
-                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-[2rem] border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-5 mt-2 w-full">
+                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-[2rem] border shadow-sm space-y-4 mt-3 w-full">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#FFF2E9] rounded-xl flex items-center justify-center text-[#FF6B00] shadow-inner"><Phone className="w-5 h-5" /></div>
-                      <div><p className="text-[8px] font-black uppercase opacity-40 leading-none mb-1">Hotline</p><p className="text-sm font-black">+91 8639366800</p></div>
+                      <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600"><Phone className="w-5 h-5" /></div>
+                      <div><p className="text-[8px] font-black uppercase opacity-40">Station Hotline</p><p className="text-sm font-black">+91 {settings?.contactNumber}</p></div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#EEF4FF] rounded-xl flex items-center justify-center text-[#3B82F6] shadow-inner"><Mail className="w-5 h-5" /></div>
-                      <div><p className="text-[8px] font-black uppercase opacity-40 leading-none mb-1">Email</p><p className="text-sm font-black">support@ezzybites.com</p></div>
+                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600"><Mail className="w-5 h-5" /></div>
+                      <div><p className="text-[8px] font-black uppercase opacity-40">Identity Mail</p><p className="text-sm font-black">support@ezzybites.com</p></div>
                     </div>
                   </div>
                 )}
               </motion.div>
             ))}
-
-            {isTyping && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-1.5 p-3 bg-white dark:bg-zinc-900 rounded-[1.5rem] rounded-tl-none border border-zinc-200 dark:border-zinc-800 w-fit shadow-sm">
-                <span className="w-1.5 h-1.5 bg-primary/30 rounded-full animate-bounce" />
-                <span className="w-1.5 h-1.5 bg-primary/30 rounded-full animate-bounce [animation-delay:0.2s]" />
-                <span className="w-1.5 h-1.5 bg-primary/30 rounded-full animate-bounce [animation-delay:0.4s]" />
-              </motion.div>
-            )}
           </AnimatePresence>
           <div ref={scrollRef} />
         </div>
 
-        {/* INPUT AREA */}
-        <div className="shrink-0 pt-4 border-t bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-md pb-4 sticky bottom-0">
-          <div className="flex gap-3 bg-white dark:bg-zinc-900 p-2 rounded-full border border-zinc-200 dark:border-zinc-800 shadow-xl items-center ring-4 ring-primary/5">
-            <Input 
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ask Ezzy AI anything..." 
-              className="flex-1 border-none bg-transparent focus-visible:ring-0 font-bold px-6 h-12 text-sm"
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-            />
-            <Button 
-              onClick={() => handleSendMessage()}
-              disabled={!inputText.trim() || isTyping}
-              className="w-12 h-12 rounded-full p-0 bg-primary text-white shadow-lg shrink-0 transition-transform active:scale-90"
-            >
-              <Send className="w-5 h-5" />
+        {/* INPUT */}
+        <div className="shrink-0 pt-4 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-md pb-2">
+          <div className="flex gap-3 bg-white dark:bg-zinc-900 p-1.5 rounded-full border shadow-xl items-center ring-4 ring-primary/5">
+            <Input value={inputText} onChange={(e) => setInputText(e.target.value)} placeholder="Signal your concern..." className="flex-1 border-none bg-transparent focus-visible:ring-0 font-bold px-6 h-12" onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} />
+            <Button onClick={() => handleSendMessage()} disabled={!inputText.trim() || isTyping} className="w-12 h-12 rounded-full p-0 bg-primary text-white">
+              {isTyping ? <Loader2 className="animate-spin" /> : <Send className="w-5 h-5" />}
             </Button>
           </div>
-          <p className="text-[8px] font-black text-center mt-3 uppercase tracking-[0.4em] opacity-20">Ezzy AI Assistant • Secure Data Node 5.0</p>
+          <p className="text-[7px] font-black text-center mt-3 uppercase tracking-[0.5em] opacity-20">Ezzy AI Cluster v5.0 • Live Data Active</p>
         </div>
       </main>
     </div>
-  );
-}
-
-function FeedbackInput({ onComplete }: { onComplete: (r: number, c: string) => void }) {
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-
-  if (submitted) return null;
-
-  return (
-    <Card className="w-full mt-2 rounded-[2rem] border border-zinc-200 dark:border-zinc-800 shadow-lg p-6 bg-white dark:bg-zinc-900 animate-in zoom-in-98">
-      <div className="space-y-6">
-        <div className="flex justify-center gap-3">
-          {[1,2,3,4,5].map(s => (
-            <button key={s} onClick={() => setRating(s)} className="transition-transform active:scale-75 p-1.5">
-              <Star className={cn("w-8 h-8 md:w-10 md:h-10 transition-colors", s <= rating ? "fill-primary text-primary" : "text-zinc-200 dark:text-zinc-800")} />
-            </button>
-          ))}
-        </div>
-        <div className="space-y-2">
-          <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Comments</Label>
-          <Textarea 
-            value={comment} 
-            onChange={e => setComment(e.target.value)} 
-            placeholder="How can we elevate your experience?"
-            className="rounded-[1.5rem] bg-secondary/30 border-none min-h-[100px] font-medium text-sm p-5"
-          />
-        </div>
-        <Button 
-          className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase text-[10px] tracking-widest shadow-xl shadow-primary/20"
-          onClick={() => { setSubmitted(true); onComplete(rating, comment); }}
-        >
-          Submit Feedback
-        </Button>
-      </div>
-    </Card>
   );
 }

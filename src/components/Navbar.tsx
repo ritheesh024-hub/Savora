@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -10,7 +9,6 @@ import {
   Search,
   User,
   Heart,
-  Phone,
   Home,
   Utensils,
   ChevronRight,
@@ -52,7 +50,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 
 export const Navbar = () => {
@@ -111,8 +108,6 @@ export const Navbar = () => {
     { label: 'Settings', href: '/settings', icon: Settings, authRequired: true },
   ];
 
-  // Logic to determine if text/icons should be white regardless of light/dark mode
-  // (Used for home page hero section)
   const isHeroState = pathname === '/' && !scrolled;
 
   return (
@@ -125,32 +120,18 @@ export const Navbar = () => {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="h-10 md:h-12 flex items-center justify-between gap-4">
           <Link href="/" className="transition-transform active:scale-95">
-            <Logo 
-              variant={isHeroState ? 'light' : (scrolled ? (isDarkMode ? 'light' : 'dark') : (isDarkMode ? 'light' : 'dark'))} 
-              size="sm" 
-              className="shrink-0 scale-90 md:scale-100 origin-left" 
-            />
+            <Logo variant={isHeroState ? 'light' : (isDarkMode ? 'light' : 'dark')} size="sm" className="shrink-0" />
           </Link>
 
           <div className="flex-1 max-w-sm hidden md:block">
             <form onSubmit={(e) => { e.preventDefault(); router.push(`/menu?q=${navSearch}`); }} className="relative group">
-              <Search className={cn(
-                "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10",
-                scrolled ? "text-muted-foreground" : (isHeroState ? "text-white/60" : "text-muted-foreground")
-              )} />
+              <Search className={cn("absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10", isHeroState ? "text-white/60" : "text-muted-foreground")} />
               <Input 
                 value={navSearch}
                 onChange={(e) => setNavSearch(e.target.value)}
                 placeholder="Search bites..." 
-                suppressHydrationWarning
-                className={cn(
-                  "w-full h-9 pl-10 pr-4 rounded-xl border-none transition-all font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
-                  scrolled 
-                    ? "bg-secondary/60 focus:bg-white dark:bg-zinc-900 !text-foreground" 
-                    : (isHeroState 
-                        ? "bg-white/10 !text-white placeholder:text-white/40 focus:bg-white/20 backdrop-blur-xl" 
-                        : "bg-secondary/60 dark:bg-zinc-900 !text-foreground")
-                )}
+                className={cn("w-full h-9 pl-10 rounded-xl border-none transition-all font-black text-[10px] uppercase", 
+                  isHeroState ? "bg-white/10 !text-white placeholder:text-white/40" : "bg-secondary/60 dark:bg-zinc-900 !text-foreground")}
               />
             </form>
           </div>
@@ -158,201 +139,47 @@ export const Navbar = () => {
           <div className="flex items-center gap-1.5 md:gap-3">
             {mounted && user && (
               <NotificationCenter>
-                <Button variant="ghost" size="icon" className={cn(
-                  "rounded-full w-10 h-10 transition-all relative",
-                  isHeroState 
-                    ? "hover:bg-white/10 text-white" 
-                    : (scrolled ? "hover:bg-primary/5 text-foreground" : (isDarkMode ? "hover:bg-white/10 text-white" : "hover:bg-black/5 text-foreground"))
-                )}>
+                <Button variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-all relative", isHeroState ? "text-white" : "text-foreground")}>
                   <Bell className="w-5 h-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
-                      {unreadCount}
-                    </span>
-                  )}
+                  {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">{unreadCount}</span>}
                 </Button>
               </NotificationCenter>
             )}
 
-            <ThemeToggle className={cn(
-              "hidden md:flex h-10 w-10",
-              isHeroState ? "text-white hover:bg-white/10" : ""
-            )} />
-            
-            <div className="hidden md:flex items-center gap-3">
-              {mounted && !userLoading && (
-                user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="outline-none rounded-xl ring-offset-background focus:ring-4 focus:ring-primary/20 transition-all active:scale-90 overflow-hidden shadow-lg border-2 border-background">
-                        <Avatar className="h-8 w-8 rounded-xl">
-                          <AvatarImage src={customerProfile?.photoUrl || user.photoURL || ''} alt={user.displayName || 'Member'} />
-                          <AvatarFallback className="bg-orange-gradient text-white font-black text-[10px] rounded-xl">
-                            {(customerProfile?.name || user.displayName || 'EB').slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64 rounded-[2rem] p-3 border-none shadow-3xl bg-white dark:bg-zinc-950 mt-4">
-                      <DropdownMenuLabel className="px-4 py-5">
-                        <p className="text-xs font-black uppercase tracking-widest truncate mb-1">{customerProfile?.name || user.displayName || 'Member'}</p>
-                        <p className="text-[9px] font-black uppercase opacity-40 truncate tracking-[0.05em]">{user.email}</p>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator className="opacity-10" />
-                      <DropdownMenuItem asChild className="rounded-xl py-3 px-4 font-black uppercase text-[9px] tracking-widest cursor-pointer hover:bg-primary/5 transition-all">
-                        <Link href="/orders" className="flex items-center gap-4">
-                          <History className="w-4 h-4 text-primary" /> Tracking History
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="rounded-xl py-3 px-4 font-black uppercase text-[9px] tracking-widest cursor-pointer hover:bg-primary/5 transition-all">
-                        <Link href="/support" className="flex items-center gap-4">
-                          <LifeBuoy className="w-4 h-4 text-blue-500" /> Help & Support
-                        </Link>
-                      </DropdownMenuItem>
-                      {isStaff && (
-                        <DropdownMenuItem asChild className="rounded-xl py-3 px-4 font-black uppercase text-[9px] tracking-widest cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-950/20 text-orange-600 transition-all">
-                          <Link href="/admin/dashboard" className="flex items-center gap-4">
-                            <ShieldCheck className="w-4 h-4" /> Staff Hub
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator className="opacity-10" />
-                      <DropdownMenuItem onClick={handleLogout} className="rounded-xl py-3 px-4 font-black uppercase text-[9px] tracking-widest text-destructive cursor-pointer hover:bg-destructive/5 transition-all flex items-center gap-4">
-                        <LogOut className="w-4 h-4" /> Log out
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Button 
-                    onClick={() => setIsAuthModalOpen(true)}
-                    className="rounded-full px-5 h-9 font-black uppercase text-[10px] tracking-widest bg-orange-gradient text-white shadow-xl shadow-primary/20 transform hover:scale-105 transition-all"
-                  >
-                    Login
+            <CartDrawer>
+              <Button variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-all relative", isHeroState ? "text-white" : "text-foreground")}>
+                <ShoppingBag className="w-5 h-5" />
+                {cart.length > 0 && <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">{cart.reduce((acc, i) => acc + i.quantity, 0)}</span>}
+              </Button>
+            </CartDrawer>
+
+            <div className="md:hidden">
+              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-transform active:scale-90", isHeroState ? "text-white" : "text-foreground")}>
+                    <Menu className="w-5 h-5" />
                   </Button>
-                )
-              )}
-            </div>
-
-            {mounted && (
-              <CartDrawer>
-                <Button variant="ghost" size="icon" className={cn(
-                  "rounded-full w-10 h-10 transition-all relative",
-                  isHeroState 
-                    ? "hover:bg-white/10 text-white" 
-                    : (scrolled ? "hover:bg-primary/5 text-foreground" : (isDarkMode ? "hover:bg-white/10 text-white" : "hover:bg-black/5 text-foreground"))
-                )}>
-                  <ShoppingBag className="w-5 h-5" />
-                  {cart.length > 0 && (
-                    <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
-                      {cart.reduce((acc, i) => acc + i.quantity, 0)}
-                    </span>
-                  )}
-                </Button>
-              </CartDrawer>
-            )}
-
-            {mounted && (
-              <div className="md:hidden">
-                <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className={cn(
-                      "rounded-full w-10 h-10 transition-transform active:scale-90",
-                      isHeroState ? "text-white" : (scrolled ? "text-foreground" : (isDarkMode ? "text-foreground" : "text-foreground"))
-                    )}>
-                      <Menu className="w-5 h-5" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="w-[300px] p-0 border-none bg-background flex flex-col z-[60] shadow-3xl">
-                    <SheetHeader className="p-6 text-left border-b bg-secondary/20">
-                      <SheetTitle className="sr-only">User Menu</SheetTitle>
-                      {user ? (
-                        <div 
-                          onClick={() => { setIsMenuOpen(false); setIsEditProfileOpen(true); }}
-                          className="flex items-center gap-4 cursor-pointer group"
-                        >
-                          <Avatar className="h-16 w-16 rounded-2xl border-4 border-primary/10 shadow-xl transition-transform group-hover:scale-105">
-                            <AvatarImage src={customerProfile?.photoUrl || user.photoURL || ''} />
-                            <AvatarFallback className="bg-orange-gradient text-white font-black text-lg uppercase">
-                              {(customerProfile?.name || user.displayName || 'EB').slice(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="font-black text-xl uppercase tracking-tighter truncate group-hover:text-primary transition-colors">
-                              {customerProfile?.name?.split(' ')[0] || user.displayName?.split(' ')[0] || 'Member'}
-                            </p>
-                            <div className="flex items-center gap-1 text-primary/60">
-                              <span className="text-[8px] font-black uppercase tracking-widest">Edit Profile</span>
-                              <ChevronRight className="w-3 h-3" />
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-2">
-                          <Logo variant="color" size="sm" className="scale-90 origin-left" />
-                          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Authorized Hub Only</p>
-                        </div>
-                      )}
-                    </SheetHeader>
-
-                    <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1 scrollbar-hide">
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] p-0 border-none bg-background flex flex-col z-[60] shadow-3xl">
+                   <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
                       {menuItems.map((item) => {
                         if (item.authRequired && !user) return null;
                         if (item.staffOnly && !isStaff) return null;
-                        
                         return (
-                          <Link 
-                            key={item.label} 
-                            href={item.href}
-                            onClick={() => setIsMenuOpen(false)}
-                            className="flex items-center justify-between p-4 rounded-xl hover:bg-primary/5 transition-all active:bg-primary/10 group"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-secondary/60 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                                <item.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                              </div>
-                              <span className="font-black text-[10px] uppercase tracking-widest text-foreground/80 group-hover:text-primary">
-                                {item.label}
-                              </span>
-                            </div>
+                          <Link key={item.label} href={item.href} onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-primary/5 group">
+                            <item.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary" />
+                            <span className="font-black text-[10px] uppercase tracking-widest text-foreground/80 group-hover:text-primary">{item.label}</span>
                           </Link>
                         );
                       })}
-
-                      <div className="h-px bg-border my-6 mx-4 opacity-50" />
-
-                      <div className="px-1.5">
-                         <ThemeToggle className="w-full h-auto p-4 rounded-xl bg-secondary/20" />
-                      </div>
-                    </div>
-
-                    <div className="p-6 border-t shrink-0">
-                      {user ? (
-                        <Button 
-                          variant="ghost" 
-                          onClick={handleLogout}
-                          className="w-full h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest text-destructive hover:bg-destructive/5 gap-3 border-2 border-destructive/10"
-                        >
-                          <LogOut className="w-5 h-5" /> Log out
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={() => { setIsAuthModalOpen(true); setIsMenuOpen(false); }}
-                          className="w-full h-14 rounded-2xl bg-orange-gradient font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20 text-white"
-                        >
-                          Login
-                        </Button>
-                      )}
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
-            )}
+                   </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </div>
-
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      <EditProfileModal isOpen={isEditProfileOpen} onClose={() => setIsEditProfileOpen(false)} />
     </nav>
   );
 };

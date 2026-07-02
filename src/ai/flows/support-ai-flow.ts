@@ -1,8 +1,7 @@
 'use server';
 /**
- * @fileOverview Automated Support Assistant for Ezzy Bites.
- * Resolves common customer issues using AI and brand-specific FAQs.
- * Hardened with real-time data injection from the database registry.
+ * @fileOverview High-Integrity Order Support AI for Ezzy Bites.
+ * Synchronized with live Firestore order nodes and operational policy.
  */
 
 import { ai } from '@/ai/genkit';
@@ -10,21 +9,22 @@ import { z } from 'genkit';
 
 const SupportAIInputSchema = z.object({
   message: z.string().describe('The user\'s current question or concern.'),
-  category: z.string().optional().describe('The selected support category (e.g. Order, Payment).'),
-  orderContext: z.string().optional().describe('Contextual information about the specific order being discussed.'),
-  menuContext: z.string().optional().describe('Real-time summary of the menu items, prices, and availability.'),
-  settingsContext: z.string().optional().describe('Real-time store operational settings (open status, fees).'),
+  category: z.string().optional().describe('The selected support category.'),
+  orderContext: z.string().optional().describe('JSON string of the current selected order data.'),
+  menuContext: z.string().optional().describe('Real-time menu data.'),
+  settingsContext: z.string().optional().describe('Real-time store settings.'),
   chatHistory: z.array(z.object({
     role: z.enum(['user', 'model']),
     content: z.string()
-  })).optional().describe('The previous messages in the current support session.')
+  })).optional()
 });
 
 export type SupportAIInput = z.infer<typeof SupportAIInputSchema>;
 
 const SupportAIOutputSchema = z.object({
-  reply: z.string().describe('The automated response from Ezzy Assistant.'),
-  suggestedActions: z.array(z.string()).optional().describe('Suggested follow-up questions or actions.')
+  reply: z.string().describe('The AI response message.'),
+  suggestedActions: z.array(z.string()).optional().describe('Quick reply buttons.'),
+  protocolAction: z.enum(['TRACK_ORDER', 'CANCEL_ORDER', 'CHANGE_ADDRESS', 'CALL_RESTAURANT', 'MISSING_ITEM_FLOW', 'NONE']).default('NONE').describe('Internal protocol to trigger UI components.')
 });
 
 export type SupportAIOutput = z.infer<typeof SupportAIOutputSchema>;
@@ -37,37 +37,46 @@ const prompt = ai.definePrompt({
   name: 'ezzySupportPrompt',
   input: { schema: SupportAIInputSchema },
   output: { schema: SupportAIOutputSchema },
-  prompt: `You are "Ezzy AI", the official automated support assistant for "Ezzy Bites", a premium fast food cafe.
-Your goal is to provide fast, helpful, and polite resolutions to customer concerns. You MUST answer every question accurately based on the real-time restaurant data provided below.
+  prompt: `You are "Ezzy AI", the logistics and flavor assistant for "Ezzy Bites".
+You MUST provide answers based ONLY on the REAL-TIME REGISTRY DATA provided. 
 
-REAL-TIME REGISTRY DATA:
-{{#if settingsContext}}OPERATIONAL SETTINGS:
+--- OPERATIONAL GUIDELINES ---
+1. WHERE IS MY ORDER: 
+   - Status 'pending': ~30 mins.
+   - Status 'accepted': ~25 mins.
+   - Status 'preparing': ~15 mins.
+   - Status 'out_for_delivery': ~5-8 mins.
+   - Trigger protocolAction: 'TRACK_ORDER'.
+
+2. CANCELLATION:
+   - Allowed ONLY if order was placed within the last 5 minutes.
+   - If allowed, trigger protocolAction: 'CANCEL_ORDER'.
+   - If not, explain that the kitchen station has already committed resources.
+
+3. CHANGE ADDRESS:
+   - Allowed ONLY if status is 'pending'.
+   - If allowed, trigger protocolAction: 'CHANGE_ADDRESS'.
+   - If status is 'accepted' or beyond, inform them logistics are locked.
+
+4. MISSING/WRONG ITEM:
+   - Apologize sincerely.
+   - Trigger protocolAction: 'MISSING_ITEM_FLOW' if they ask about missing items.
+   - Trigger protocolAction: 'CALL_RESTAURANT' for wrong items.
+
+5. DELIVERED BUT NOT RECEIVED:
+   - If status is 'delivered', inform them and trigger 'CALL_RESTAURANT'.
+
+--- REGISTRY DATA ---
+{{#if orderContext}}CURRENT ORDER SIGNAL:
+{{{orderContext}}}{{/if}}
+
+{{#if settingsContext}}STORE SETTINGS:
 {{{settingsContext}}}{{/if}}
-
-{{#if menuContext}}CURRENT MENU CATALOG:
-{{{menuContext}}}{{/if}}
-
-CORE KNOWLEDGE BASE:
-- Location: Pocharam Campus, Near Anurag University, Hyderabad.
-- Delivery Promise: 3km radius. 25-30 minute target.
-- Cancellation Policy: Within 5 minutes of placement ONLY.
-- Refund Policy: 24-48 hours for failed digital payments (bank side).
-
-SESSION CONTEXT:
-{{#if category}}Issue Category: {{{category}}}{{/if}}
-{{#if orderContext}}Active Ticket Details: {{{orderContext}}}{{/if}}
 
 USER MESSAGE:
 {{{message}}}
 
-GUIDELINES:
-1. ALWAYS use the real-time catalog and settings above as the single source of truth.
-2. If an item is mentioned that is not in the menu catalog, politely inform them it's not currently in our registry.
-3. If the store is marked as "Closed" in settings, inform the user about our operational timings (08:00 AM - 10:00 PM).
-4. Be professional, concise, and friendly.
-5. Provide relevant suggested actions (e.g., "Check Menu", "Track Order", "Call Hotline").
-
-Output your reply in the defined JSON schema.`
+Provide a professional, concise response in the defined JSON format.`
 });
 
 const supportAIFlow = ai.defineFlow(
@@ -78,26 +87,16 @@ const supportAIFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      console.log("🤖 [Ezzy AI] Dispatching signal to Gemini node...");
       const { output } = await prompt(input);
-      if (!output) throw new Error('AI logic node failed to yield output.');
+      if (!output) throw new Error('AI Hub failed to yield logic.');
       return output;
-    } catch (error: any) {
-      console.error('🔥 [Ezzy AI] Logic Node Error:', error?.message || error);
-      
-      // Resilient Simulation Fallback
-      const msg = input.message.toLowerCase();
-      let reply = "Hello! I'm your Ezzy Assistant. I'm here to ensure your premium bite experience is perfect. How can I assist you?";
-      let actions = ["View Menu", "Track Orders", "Call Station"];
-
-      if (msg.includes('menu') || msg.includes('eat') || msg.includes('food') || msg.includes('recommend')) {
-        reply = "Our premium menu features Hyderabadi Biryani (₹249), Classic Burgers, and our signature Masala Tea (₹25). You can browse the full high-speed catalog at /menu!";
-        actions = ["View Menu", "Best Sellers", "Offers"];
-      } else if (msg.includes('time') || msg.includes('open') || msg.includes('hour')) {
-        reply = "Ezzy Bites is operational daily from 08:00 AM to 10:00 PM. Orders placed near closing time are processed with maximum speed.";
-      }
-
-      return { reply, suggestedActions: actions };
+    } catch (error) {
+      console.error('🔥 [Ezzy AI] Logic Error:', error);
+      return { 
+        reply: "I'm having trouble syncing with our logistics hub. Please call our station directly for immediate assistance.",
+        protocolAction: 'CALL_RESTAURANT',
+        suggestedActions: ["Call Station", "View Menu"]
+      };
     }
   }
 );
