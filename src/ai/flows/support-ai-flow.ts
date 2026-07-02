@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Automated Support Assistant for Ezzy Bites.
@@ -86,7 +85,7 @@ const supportAIFlow = ai.defineFlow(
     } catch (error: any) {
       console.error('🔥 [Ezzy AI] Logic Node Error:', error?.message || error);
       
-      // Resilient Simulation Fallback: Ensures 100% resolution capability even if logic node is dormant
+      // Resilient Simulation Fallback
       const msg = input.message.toLowerCase();
       let reply = "Hello! I'm your Ezzy Assistant. I'm here to ensure your premium bite experience is perfect. How can I assist you?";
       let actions = ["View Menu", "Track Orders", "Call Station"];
@@ -96,20 +95,9 @@ const supportAIFlow = ai.defineFlow(
         actions = ["View Menu", "Best Sellers", "Offers"];
       } else if (msg.includes('time') || msg.includes('open') || msg.includes('hour')) {
         reply = "Ezzy Bites is operational daily from 08:00 AM to 10:00 PM. Orders placed near closing time are processed with maximum speed.";
-      } else if (msg.includes('cancel') || msg.includes('revoke')) {
-        reply = "Cancellations are permitted within 5 minutes of placement via your order tracking page. After 5 minutes, our chefs begin crafting your meal.";
-        actions = ["Track Order", "Policy Help"];
-      } else if (msg.includes('contact') || msg.includes('phone') || msg.includes('call')) {
-        reply = "You can reach our operational commander at +91 8639366800 for immediate assistance.";
-      } else if (msg.includes('where') || msg.includes('track') || msg.includes('order')) {
-        reply = "You can track your live order nodes in real-time from the History tab in your dashboard.";
-        actions = ["Track Orders", "Active Ticket"];
       }
 
-      return {
-        reply: reply,
-        suggestedActions: actions
-      };
+      return { reply, suggestedActions: actions };
     }
   }
 );
