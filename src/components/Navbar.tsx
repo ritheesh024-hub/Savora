@@ -121,7 +121,7 @@ export const Navbar = () => {
         <div className="h-10 md:h-12 flex items-center justify-between gap-4">
           <Link href="/" className="transition-transform active:scale-95">
             <Logo 
-              variant={scrolled ? 'dark' : (mounted && isDarkMode ? 'dark' : 'light')} 
+              variant={scrolled ? 'dark' : (mounted && isDarkMode ? 'dark' : (pathname === '/' ? 'light' : 'dark'))} 
               size="sm" 
               className="shrink-0 scale-90 md:scale-100 origin-left" 
             />
@@ -153,7 +153,9 @@ export const Navbar = () => {
               <NotificationCenter>
                 <Button variant="ghost" size="icon" className={cn(
                   "rounded-full w-10 h-10 transition-all relative",
-                  scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
+                  scrolled 
+                    ? "hover:bg-primary/5 text-foreground" 
+                    : (isDarkMode ? "hover:bg-white/10 text-white" : "hover:bg-black/5 text-foreground")
                 )}>
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && (
@@ -225,7 +227,9 @@ export const Navbar = () => {
               <CartDrawer>
                 <Button variant="ghost" size="icon" className={cn(
                   "rounded-full w-10 h-10 transition-all relative",
-                  scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
+                  scrolled 
+                    ? "hover:bg-primary/5 text-foreground" 
+                    : (isDarkMode ? "hover:bg-white/10 text-white" : "hover:bg-black/5 text-foreground")
                 )}>
                   <ShoppingBag className="w-5 h-5" />
                   {cart.length > 0 && (
@@ -243,7 +247,7 @@ export const Navbar = () => {
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className={cn(
                       "rounded-full w-10 h-10 transition-transform active:scale-90",
-                      scrolled ? "text-foreground" : (isDarkMode ? "text-foreground" : "text-white")
+                      scrolled ? "text-foreground" : (isDarkMode ? "text-foreground" : (pathname === '/' ? "text-white" : "text-foreground"))
                     )}>
                       <Menu className="w-5 h-5" />
                     </Button>
