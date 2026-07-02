@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -89,19 +90,24 @@ export default function SupportPage() {
 
       const settingsContext = settings ? `Open: ${settings.isOpen}, Contact: ${settings.contactNumber}` : '';
 
+      // Prepare conversation history node
+      const history = messages
+        .filter(m => m.content && (m.type === 'text' || m.type === 'chips'))
+        .map(m => ({
+          role: m.role === 'assistant' ? 'model' as const : 'user' as const,
+          content: m.content
+        }));
+
       const response = await ezzySupportAI({
         message: msg,
         orderContext,
         settingsContext,
-        chatHistory: messages.filter(m => m.type === 'text').map(m => ({
-          role: m.role === 'assistant' ? 'model' as const : 'user' as const,
-          content: m.content
-        }))
+        chatHistory: history
       });
 
-      addMessage('assistant', response.reply, 'chips', response.suggestedActions, response.protocolAction);
+      addMessage('assistant', response.reply, response.suggestedActions?.length ? 'chips' : 'text', response.suggestedActions, response.protocolAction);
     } catch (e) {
-      addMessage('assistant', "I'm currently unable to process your request. Please call our hotline.");
+      addMessage('assistant', "I'm currently unable to process your request. Please call our hotline directly.");
     } finally {
       setIsTyping(false);
     }
@@ -121,7 +127,7 @@ export default function SupportPage() {
   const handleOrderSelect = (order: any) => {
     setSelectedOrder(order);
     addMessage('user', `Tracking Ticket #${order.orderId}`);
-    addMessage('assistant', `Sync established for Ticket #${order.orderId}. What's the status on your end?`, 'chips', 
+    addMessage('assistant', `Sync established for Ticket #${order.orderId}. How can I assist with this specific order?`, 'chips', 
       ["Where is my order?", "Cancel my order", "Wrong item received", "Missing item"]
     );
   };
@@ -129,7 +135,11 @@ export default function SupportPage() {
   const handleActionClick = async (action: string) => {
     if (action === 'CANCEL_ORDER' && selectedOrder && db) {
       try {
-        await updateDoc(doc(db, 'orders', selectedOrder.id), { status: 'Cancelled', cancelledBy: 'AI Support' });
+        await updateDoc(doc(db, 'orders', selectedOrder.id), { 
+          status: 'Cancelled', 
+          cancelledBy: 'AI Support Hub',
+          updatedAt: serverTimestamp()
+        });
         toast({ title: "Order Cancelled Successfully" });
         addMessage('assistant', `Ticket #${selectedOrder.orderId} has been successfully revoked in our logs.`);
       } catch (e) {
@@ -210,7 +220,8 @@ export default function SupportPage() {
                 {msg.type === 'orders' && (
                   <div className="space-y-2 mt-3 w-full">
                     {ordersLoading ? <Loader2 className="w-5 h-5 animate-spin opacity-20" /> : 
-                      recentOrders?.map(o => (
+                      (!recentOrders?.length ? <p className="text-[10px] font-black uppercase opacity-40 px-4">No active nodes in history.</p> :
+                      recentOrders.map(o => (
                         <button key={o.id} onClick={() => handleOrderSelect(o)} className="w-full p-4 bg-white dark:bg-zinc-900 rounded-[1.5rem] border flex items-center justify-between hover:border-primary transition-all">
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-primary"><Package className="w-5 h-5" /></div>
@@ -221,7 +232,7 @@ export default function SupportPage() {
                           </div>
                           <ChevronRight className="w-4 h-4 opacity-20" />
                         </button>
-                      ))
+                      )))
                     }
                   </div>
                 )}
@@ -264,7 +275,7 @@ export default function SupportPage() {
               {isTyping ? <Loader2 className="animate-spin" /> : <Send className="w-5 h-5" />}
             </Button>
           </div>
-          <p className="text-[7px] font-black text-center mt-3 uppercase tracking-[0.5em] opacity-20">Ezzy AI Cluster v5.0 • Live Data Active</p>
+          <p className="text-[7px] font-black text-center mt-3 uppercase tracking-[0.5em] opacity-20">Ezzy AI Cluster v5.1 • Live Logic Active</p>
         </div>
       </main>
     </div>

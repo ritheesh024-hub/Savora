@@ -1,7 +1,9 @@
+
 'use server';
 /**
  * @fileOverview High-Integrity Order Support AI for Ezzy Bites.
  * Synchronized with live Firestore order nodes and operational policy.
+ * Resolves logic failures with resilient error recovery.
  */
 
 import { ai } from '@/ai/genkit';
