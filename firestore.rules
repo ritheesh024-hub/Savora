@@ -13,17 +13,19 @@ service cloud.firestore {
       return isAuthenticated() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) || 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-        request.auth.token.email == "sunnyritheesh@gmail.com"
+        request.auth.token.email == "meruguritheesh09@gmail.com"
       );
     }
     function isStaff() {
-      let role = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-      return isAuthenticated() && (role in ['admin', 'cashier', 'kitchen'] || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'cashier', 'kitchen'] || 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
     }
 
     match /admins/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() || (isAuthenticated() && request.auth.token.email == "sunnyritheesh@gmail.com");
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.token.email == "meruguritheesh09@gmail.com");
     }
 
     match /users/{userId} {

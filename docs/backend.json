@@ -3,7 +3,7 @@
   "entities": {
     "AdminProfile": {
       "title": "Admin Profile",
-      "description": "Restricted administrative records. Primary Admin (sunnyritheesh@gmail.com) has exclusive access to platform-wide configuration.",
+      "description": "Restricted administrative records. Primary Admin (meruguritheesh09@gmail.com) has exclusive access to platform-wide configuration.",
       "type": "object",
       "properties": {
         "email": { "type": "string", "format": "email" },

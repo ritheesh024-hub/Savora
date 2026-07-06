@@ -42,7 +42,7 @@ export default function AdminLoginPage() {
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
 
-  const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
+  const PRIMARY_ADMIN_EMAIL = "meruguritheesh09@gmail.com";
 
   useEffect(() => {
     async function checkExistingAuth() {
@@ -98,7 +98,7 @@ export default function AdminLoginPage() {
           if (!legacySnap.empty) {
             targetEmail = legacySnap.docs[0].data().email;
           } else {
-            toast({ variant: "destructive", title: "Authentication Failed", description: "Invalid Admin ID or Password." });
+            toast({ variant: "destructive", title: "Authentication Failed", description: "Invalid email or password." });
             setLoading(false);
             return;
           }
@@ -114,24 +114,26 @@ export default function AdminLoginPage() {
       let userSnap = await getDoc(userRef);
       let userData = userSnap.data();
 
-      // If user doc doesn't exist or doesn't have role, check legacy admins
-      if (!userData || !userData.role) {
-        const adminRef = doc(db, 'admins', uid);
-        const adminSnap = await getDoc(adminRef);
-        if (adminSnap.exists()) {
-          userData = adminSnap.data();
-          // Auto-migrate to users collection if missing
-          await setDoc(userRef, {
-            ...userData,
+      // Master Admin Seeding / Force Check
+      if (targetEmail === PRIMARY_ADMIN_EMAIL) {
+        if (!userData || userData.role !== 'admin' || userData.status !== 'active') {
+          const seedData = {
             uid: uid,
-            updatedAt: serverTimestamp()
-          }, { merge: true });
+            email: PRIMARY_ADMIN_EMAIL,
+            role: 'admin',
+            status: 'active',
+            name: 'Master Admin',
+            updatedAt: serverTimestamp(),
+            createdAt: userData?.createdAt || serverTimestamp()
+          };
+          await setDoc(userRef, seedData, { merge: true });
+          userData = seedData;
         }
       }
 
       if (!userData || (selectedRole === 'admin' && userData.role !== 'admin' && targetEmail !== PRIMARY_ADMIN_EMAIL)) {
         await signOut(auth);
-        toast({ variant: "destructive", title: "Authentication Failed", description: "Invalid Admin ID or Password." });
+        toast({ variant: "destructive", title: "Authentication Failed", description: "Invalid email or password." });
         setLoading(false);
         return;
       }
@@ -150,9 +152,9 @@ export default function AdminLoginPage() {
       router.push('/admin/dashboard');
 
     } catch (error: any) {
-      let message = "Invalid Admin ID or Password.";
+      let message = "Invalid email or password.";
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        message = "Invalid Admin ID or Password.";
+        message = "Invalid email or password.";
       } else if (error.message) {
         message = error.message;
       }

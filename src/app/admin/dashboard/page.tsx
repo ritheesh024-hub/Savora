@@ -38,7 +38,7 @@ function DashboardContent() {
   const [mounted, setMounted] = useState(false);
   
   const isCheckingRef = useRef(false);
-  const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
+  const PRIMARY_ADMIN_EMAIL = "meruguritheesh09@gmail.com";
   const requestedView = searchParams.get('view') as StaffRole;
 
   useEffect(() => {
@@ -191,7 +191,7 @@ function DashboardContent() {
           
           <div className="hidden md:flex items-center gap-2 ml-4">
             <Badge variant="outline" className="px-3 py-1 rounded-full border-primary/20 bg-primary/5 text-primary font-black uppercase text-[8px] tracking-widest gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <div className="w.5 h-1.5 rounded-full bg-primary animate-pulse" />
               {assignedRole?.toUpperCase()} NODE
             </Badge>
           </div>
