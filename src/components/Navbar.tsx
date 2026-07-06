@@ -46,6 +46,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -161,6 +162,10 @@ export const Navbar = () => {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[300px] p-0 border-none bg-background flex flex-col z-[60] shadow-3xl">
+                   <SheetHeader className="sr-only">
+                     <SheetTitle>Navigation Menu</SheetTitle>
+                     <SheetDescription>Access all pages and account settings.</SheetDescription>
+                   </SheetHeader>
                    <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
                       {menuItems.map((item) => {
                         if (item.authRequired && !user) return null;
