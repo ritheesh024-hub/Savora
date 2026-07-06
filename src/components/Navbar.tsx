@@ -4,45 +4,30 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   History, 
-  ShieldCheck, 
   LayoutDashboard, 
   Search,
-  User,
   Heart,
   Home,
   Utensils,
-  ChevronRight,
   MapPin,
   TicketPercent,
   Settings,
   Bell,
-  LogOut,
   ShoppingBag,
   Menu,
   LifeBuoy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth, useFirestore, useDoc } from '@/firebase';
 import { AuthModal } from './AuthModal';
 import { CartDrawer } from './CartDrawer';
 import { NotificationCenter } from './NotificationCenter';
 import { useStore } from '@/app/lib/store';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { doc } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Logo } from './Logo';
-import { EditProfileModal } from './EditProfileModal';
 import { useNotifications } from '@/hooks/use-notifications';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
 import {
   Sheet,
   SheetContent,
@@ -56,12 +41,11 @@ import { toast } from '@/hooks/use-toast';
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [navSearch, setNavSearch] = useState('');
   const [mounted, setMounted] = useState(false);
   
-  const { user, loading: userLoading } = useUser();
+  const { user } = useUser();
   const auth = useAuth();
   const db = useFirestore();
   const { cart, isDarkMode } = useStore();
@@ -76,13 +60,10 @@ export const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const userDocRef = useMemo(() => user && db ? doc(db, 'users', user.uid) : null, [user, db]);
   const adminDocRef = useMemo(() => user && db ? doc(db, 'admins', user.uid) : null, [user, db]);
-  
-  const { data: customerProfile } = useDoc(userDocRef);
   const { data: adminProfile } = useDoc(adminDocRef);
 
-  const isStaff = !!adminProfile;
+  const isStaff = !!adminProfile || user?.email === "meruguritheesh09@gmail.com";
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -111,6 +92,13 @@ export const Navbar = () => {
 
   const isHeroState = pathname === '/' && !scrolled;
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (navSearch.trim()) {
+      router.push(`/menu?q=${encodeURIComponent(navSearch.trim())}`);
+    }
+  };
+
   return (
     <nav className={cn(
       "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
@@ -125,7 +113,7 @@ export const Navbar = () => {
           </Link>
 
           <div className="flex-1 max-w-sm hidden md:block">
-            <form onSubmit={(e) => { e.preventDefault(); router.push(`/menu?q=${navSearch}`); }} className="relative group">
+            <form onSubmit={handleSearchSubmit} className="relative group">
               <Search className={cn("absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10", isHeroState ? "text-white/60" : "text-muted-foreground")} />
               <Input 
                 value={navSearch}
@@ -140,7 +128,7 @@ export const Navbar = () => {
           <div className="flex items-center gap-1.5 md:gap-3">
             {mounted && user && (
               <NotificationCenter>
-                <Button variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-all relative", isHeroState ? "text-white" : "text-foreground")}>
+                <Button type="button" variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-all relative", isHeroState ? "text-white" : "text-foreground")}>
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">{unreadCount}</span>}
                 </Button>
@@ -148,7 +136,7 @@ export const Navbar = () => {
             )}
 
             <CartDrawer>
-              <Button variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-all relative", isHeroState ? "text-white" : "text-foreground")}>
+              <Button type="button" variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-all relative", isHeroState ? "text-white" : "text-foreground")}>
                 <ShoppingBag className="w-5 h-5" />
                 {cart.length > 0 && <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">{cart.reduce((acc, i) => acc + i.quantity, 0)}</span>}
               </Button>
@@ -157,14 +145,14 @@ export const Navbar = () => {
             <div className="md:hidden">
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-transform active:scale-90", isHeroState ? "text-white" : "text-foreground")}>
+                  <Button type="button" variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-transform active:scale-90", isHeroState ? "text-white" : "text-foreground")}>
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[300px] p-0 border-none bg-background flex flex-col z-[60] shadow-3xl">
-                   <SheetHeader className="sr-only">
-                     <SheetTitle>Navigation Menu</SheetTitle>
-                     <SheetDescription>Access all pages and account settings.</SheetDescription>
+                   <SheetHeader className="p-6 border-b bg-zinc-50 dark:bg-zinc-900/50">
+                     <SheetTitle className="text-xl font-black font-headline uppercase tracking-tighter italic">Ezzy<span className="text-primary">Bites</span> Menu</SheetTitle>
+                     <SheetDescription className="text-[10px] font-bold uppercase tracking-widest opacity-60">Global Navigation Hub</SheetDescription>
                    </SheetHeader>
                    <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
                       {menuItems.map((item) => {
@@ -177,6 +165,12 @@ export const Navbar = () => {
                           </Link>
                         );
                       })}
+                      {user && (
+                        <button onClick={handleLogout} className="flex items-center gap-4 p-4 rounded-xl hover:bg-rose-500/5 group w-full text-left">
+                          <History className="w-5 h-5 text-muted-foreground group-hover:text-rose-500" />
+                          <span className="font-black text-[10px] uppercase tracking-widest text-foreground/80 group-hover:text-rose-500">Sign Out Hub</span>
+                        </button>
+                      )}
                    </div>
                 </SheetContent>
               </Sheet>

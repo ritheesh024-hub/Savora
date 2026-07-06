@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -6,29 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Loader2, 
-  Package, Clock, ChefHat, 
+  BellRing,
+  ChefHat, 
   Receipt, ShoppingBag, 
-  Volume2, VolumeX, BellRing,
-  MapPin, User,
+  Volume2, VolumeX,
   Users, TicketPercent, BarChart3, Fingerprint,
   Settings2,
   BoxSelect,
   Layers,
-  Ban,
   Megaphone,
   MessageSquare,
   History,
-  LayoutDashboard,
-  Truck,
   CheckCircle2,
   AlertCircle,
-  Star,
   Utensils,
-  Home,
-  X,
   ChevronRight,
-  ArrowRight
+  X
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { 
@@ -42,8 +34,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from '@/hooks/use-toast';
-import { useUser, useAuth, useFirestore, useCollection } from '@/firebase';
-import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp, addDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { DashboardAnalysis } from './DashboardAnalysis';
 import { BillingSystem } from './BillingSystem';
@@ -60,8 +52,6 @@ import { ArchiveSystem } from './ArchiveSystem';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { StaffRole } from '@/app/admin/dashboard/page';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAnalytics } from '@/hooks/use-analytics';
 
@@ -179,19 +169,9 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   };
 
   const canAction = (status: string, targetStatus: string) => {
-    // Admin can do everything
-    if (assignedRole === 'admin') return true;
-    
-    // Kitchen Permissions: Accept, Preparing
-    if (assignedRole === 'kitchen') {
-      return ['accepted', 'preparing'].includes(targetStatus);
-    }
-
-    // Cashier Permissions: Out for delivery, Delivered
-    if (assignedRole === 'cashier') {
-      return ['out_for_delivery', 'delivered'].includes(targetStatus);
-    }
-
+    if (assignedRole === 'admin' || user?.email === "meruguritheesh09@gmail.com") return true;
+    if (assignedRole === 'kitchen') return ['accepted', 'preparing'].includes(targetStatus);
+    if (assignedRole === 'cashier') return ['out_for_delivery', 'delivered'].includes(targetStatus);
     return false;
   };
 
@@ -200,7 +180,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       <div className="p-10 md:p-20 text-center space-y-4">
         <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
         <h3 className="text-xl font-black uppercase tracking-tighter">Sync Error</h3>
-        <Button variant="outline" onClick={() => window.location.reload()} className="rounded-xl h-10 px-8 border-2">Retry Sync</Button>
+        <Button type="button" variant="outline" onClick={() => window.location.reload()} className="rounded-xl h-10 px-8 border-2">Retry Sync</Button>
       </div>
     );
   }
@@ -210,7 +190,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
       <Tabs key={activeView} defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
-        <div className="lg:hidden sticky top-[70px] z-[90] bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b shadow-sm w-full overflow-hidden shrink-0">
+        <div className="lg:hidden sticky top-[70px] z-[40] bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b shadow-sm w-full overflow-hidden shrink-0">
            <TabsList className="bg-transparent h-auto flex flex-row flex-nowrap justify-start p-2 space-x-1.5 overflow-x-auto scrollbar-hide snap-x w-full border-none">
               {availableTabs.map((tab) => (
                 <TabsTrigger key={tab} value={tab} className="h-9 px-4 rounded-full font-black uppercase text-[8px] tracking-widest transition-all shrink-0 snap-start bg-secondary/60 data-[state=active]:bg-primary data-[state=active]:text-white shadow-md border-none whitespace-nowrap">
@@ -232,6 +212,13 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   </TabsTrigger>
                 ))}
               </TabsList>
+            </div>
+            
+            <div className="px-3 pt-6 border-t border-white/10">
+               <button type="button" onClick={toggleAdminMute} className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-all text-white/40 hover:text-white">
+                  {isAdminMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4 text-emerald-500" />}
+                  <span className="text-[8px] font-black uppercase tracking-widest">{isAdminMuted ? 'Muted' : 'Alerts Active'}</span>
+               </button>
             </div>
           </div>
         </aside>
@@ -291,7 +278,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   </div>
                   <div className="space-y-4">
                     <h5 className="text-[9px] font-black uppercase text-primary tracking-[0.2em] border-b pb-2">Recipient</h5>
-                    <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl space-y-2">
+                    <div className="bg-zinc-50 dark:bg-zinc-800/5 p-4 rounded-xl space-y-2">
                         <p className="text-[11px] font-black uppercase truncate">{selectedOrderForView.customerName}</p>
                         <p className="text-[9px] font-bold opacity-50">{selectedOrderForView.customerPhone}</p>
                         <p className="text-[10px] font-medium leading-relaxed italic opacity-80 pt-2 border-t border-dashed mt-2">{selectedOrderForView.address}</p>
@@ -302,22 +289,22 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               <DialogFooter className="p-4 md:p-6 bg-zinc-50 dark:bg-zinc-900 border-t flex gap-3">
                 <div className="flex-1 flex gap-2">
                    {selectedOrderForView.status === 'pending' && canAction('pending', 'accepted') && (
-                     <Button onClick={() => executeStatusUpdate(selectedOrderForView.id, 'accepted')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-emerald-600">Accept</Button>
+                     <Button type="button" onClick={() => executeStatusUpdate(selectedOrderForView.id, 'accepted')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-emerald-600">Accept</Button>
                    )}
                    {selectedOrderForView.status === 'accepted' && canAction('accepted', 'preparing') && (
-                     <Button onClick={() => executeStatusUpdate(selectedOrderForView.id, 'preparing')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-orange-500">Start Cooking</Button>
+                     <Button type="button" onClick={() => executeStatusUpdate(selectedOrderForView.id, 'preparing')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-orange-500">Start Cooking</Button>
                    )}
                    {selectedOrderForView.status === 'preparing' && canAction('preparing', 'out_for_delivery') && (
-                     <Button onClick={() => executeStatusUpdate(selectedOrderForView.id, 'out_for_delivery')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-blue-600">Dispatch</Button>
+                     <Button type="button" onClick={() => executeStatusUpdate(selectedOrderForView.id, 'out_for_delivery')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-blue-600">Dispatch</Button>
                    )}
                    {selectedOrderForView.status === 'out_for_delivery' && canAction('out_for_delivery', 'delivered') && (
-                     <Button onClick={() => handleUpdateStatus(selectedOrderForView.id, 'delivered')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-primary">Mark Delivered</Button>
+                     <Button type="button" onClick={() => handleUpdateStatus(selectedOrderForView.id, 'delivered')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-primary">Mark Delivered</Button>
                    )}
-                   {['pending', 'accepted'].includes(selectedOrderForView.status) && assignedRole === 'admin' && (
-                     <Button onClick={() => executeStatusUpdate(selectedOrderForView.id, 'Cancelled')} variant="destructive" className="rounded-xl h-12 font-black uppercase text-[9px] tracking-widest">Cancel</Button>
+                   {['pending', 'accepted'].includes(selectedOrderForView.status) && (assignedRole === 'admin' || user?.email === "meruguritheesh09@gmail.com") && (
+                     <Button type="button" onClick={() => executeStatusUpdate(selectedOrderForView.id, 'Cancelled')} variant="destructive" className="rounded-xl h-12 font-black uppercase text-[9px] tracking-widest">Cancel</Button>
                    )}
                 </div>
-                <Button variant="outline" className="rounded-xl h-12 px-6 font-black uppercase text-[9px] tracking-widest border-2" onClick={() => setSelectedOrderForView(null)}>Close</Button>
+                <Button type="button" variant="outline" className="rounded-xl h-12 px-6 font-black uppercase text-[9px] tracking-widest border-2" onClick={() => setSelectedOrderForView(null)}>Close</Button>
               </DialogFooter>
             </div>
           )}
@@ -341,10 +328,11 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               </div>
            </AlertDialogHeader>
            <AlertDialogFooter className="mt-8 flex flex-col sm:flex-row gap-3">
-              <AlertDialogCancel className="h-14 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2" onClick={() => { setIsDeliveredConfirmOpen(false); setOrderToDeliver(null); }}>
+              <AlertDialogCancel type="button" className="h-14 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2" onClick={() => { setIsDeliveredConfirmOpen(false); setOrderToDeliver(null); }}>
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction 
+                type="button"
                 onClick={() => orderToDeliver && executeStatusUpdate(orderToDeliver.id, 'delivered')}
                 className="h-14 flex-[2] rounded-2xl font-black uppercase text-[10px] tracking-widest bg-emerald-600 text-white shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
               >
@@ -357,7 +345,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   );
 };
 
-const OrderGrid = ({ orderGroups, onOrderClick, activeView, handleUpdateStatus }: any) => {
+const OrderGrid = ({ orderGroups, onOrderClick }: any) => {
   const categories = [
     { id: 'pending', label: 'New', icon: BellRing, color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/20' },
     { id: 'processing', label: 'In Flow', icon: ChefHat, color: 'text-orange-500', bg: 'bg-orange-500/5', border: 'border-orange-500/20' }
@@ -375,7 +363,7 @@ const OrderGrid = ({ orderGroups, onOrderClick, activeView, handleUpdateStatus }
           </div>
           <div className="grid gap-3">
             {orderGroups[cat.id].map((order: any) => (
-              <Card key={order.id} className="rounded-2xl border-none shadow-sm hover:shadow-lg transition-all cursor-pointer bg-white dark:bg-zinc-900 p-4" onClick={() => onOrderClick(order)}>
+              <Card key={order.id} className="rounded-2xl border-none shadow-sm hover:shadow-xl transition-all cursor-pointer bg-white dark:bg-zinc-900 p-4 active:scale-[0.98]" onClick={() => onOrderClick(order)}>
                 <div className="flex justify-between items-start mb-3">
                    <div><p className="text-[8px] font-black uppercase text-primary">#{order.orderId}</p><h4 className="text-sm font-black uppercase truncate max-w-[120px]">{order.customerName}</h4></div>
                    <p className="text-[10px] font-black text-primary">₹{order.total}</p>

@@ -16,7 +16,6 @@ import {
   Loader2,
   Plus,
   Minus,
-  X,
   Bot
 } from 'lucide-react';
 import { FoodItem, useStore } from '@/app/lib/store';
@@ -55,7 +54,6 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
 
   const reviewsQuery = useMemo(() => {
     if (!db || !item.id || !isOpen) return null;
-    // Descriptive query for user-generated food feedback
     return query(
       collection(db, 'reviews'),
       where('productId', '==', item.id),
@@ -88,7 +86,9 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
     }
   }, [reviews, aiSummary, summarizing, isOpen]);
 
-  const handleAddToCartFinal = () => {
+  const handleAddToCartFinal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (cartItem) {
       onClose();
     } else {
@@ -100,7 +100,9 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
     }
   };
 
-  const adjustQty = (delta: number) => {
+  const adjustQty = (delta: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (cartItem) {
       updateQuantity(cartItem.cartId, delta);
     } else {
@@ -115,9 +117,9 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[500px] w-[95vw] md:w-full rounded-[2.5rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950 flex flex-col animate-in zoom-in-95 duration-300">
-        <DialogHeader className="sr-only">
-          <DialogTitle>{item.name}</DialogTitle>
-          <DialogDescription>{item.description}</DialogDescription>
+        <DialogHeader className="p-0 border-none">
+          <DialogTitle className="sr-only">{item.name}</DialogTitle>
+          <DialogDescription className="sr-only">Detailed manifestation of {item.name}.</DialogDescription>
         </DialogHeader>
         
         <div className="relative aspect-video w-full overflow-hidden bg-secondary/30 shrink-0">
@@ -214,14 +216,16 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
         <div className="p-6 md:p-8 bg-zinc-50 dark:bg-zinc-900/80 border-t flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-3 bg-white dark:bg-zinc-800 rounded-xl p-1.5 shadow-sm border border-border/40">
             <button 
-              onClick={() => adjustQty(-1)}
+              type="button"
+              onClick={(e) => adjustQty(-1, e)}
               className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-secondary transition-colors"
             >
               <Minus className="w-4 h-4" />
             </button>
             <span className="w-6 text-center font-black text-sm">{cartItem?.quantity || localQty}</span>
             <button 
-              onClick={() => adjustQty(1)}
+              type="button"
+              onClick={(e) => adjustQty(1, e)}
               className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-secondary transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -229,6 +233,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
           </div>
 
           <Button 
+            type="button"
             onClick={handleAddToCartFinal}
             className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary text-white shadow-xl shadow-primary/20 gap-3"
           >

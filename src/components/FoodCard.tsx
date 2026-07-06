@@ -96,7 +96,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
     <>
       <div 
         onClick={() => setIsDetailsOpen(true)}
-        className="group bg-white dark:bg-zinc-900 rounded-xl md:rounded-2xl border border-border/40 hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col h-full relative cursor-pointer"
+        className="group bg-white dark:bg-zinc-900 rounded-xl md:rounded-2xl border border-border/40 hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col h-full relative cursor-pointer active:scale-[0.98]"
       >
         {/* IMAGE SECTION */}
         <div className="relative aspect-video md:aspect-[4/3] w-full overflow-hidden bg-secondary/30">
@@ -125,6 +125,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
           </div>
 
           <button 
+            type="button"
             onClick={toggleFavorite}
             className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 dark:bg-black/90 backdrop-blur flex items-center justify-center shadow-md active:scale-75 transition-all z-10"
           >
@@ -146,15 +147,16 @@ export const FoodCard = ({ item }: FoodCardProps) => {
           <div className="flex items-center justify-between mt-auto gap-2">
             <span className="text-xs md:text-lg font-black text-primary italic">₹{item.price}</span>
 
-            <div className="shrink-0">
+            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
               {cartItemCount > 0 ? (
                 <div className="flex items-center gap-1 bg-primary text-white rounded-lg md:rounded-xl h-7 md:h-9 px-1 shadow-md">
-                  <button onClick={(e) => handleQtyChange(-1, e)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Minus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
+                  <button type="button" onClick={(e) => handleQtyChange(-1, e)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Minus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
                   <span className="text-[8px] md:text-xs font-black w-3 text-center">{cartItemCount}</span>
-                  <button onClick={(e) => handleQtyChange(1, e)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Plus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
+                  <button type="button" onClick={(e) => handleQtyChange(1, e)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Plus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
                 </div>
               ) : (
                 <Button 
+                  type="button"
                   onClick={handleAddClick} 
                   className="rounded-lg md:rounded-xl h-7 md:h-9 px-2 md:px-4 font-black uppercase tracking-widest text-[8px] md:text-[10px] bg-white dark:bg-zinc-800 text-primary border-2 border-primary/20 hover:bg-primary hover:text-white transition-all shadow-sm"
                 >
