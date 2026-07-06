@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -58,7 +57,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
-      const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
+      const PRIMARY_ADMIN_EMAIL = "meruguritheesh09@gmail.com";
       
       // Strict separation check
       if (user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL) {
@@ -157,7 +156,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
             <DialogTitle className="text-3xl font-black font-headline tracking-tighter uppercase leading-none">
               Identity <span className="text-primary italic">Gateway</span>
             </DialogTitle>
-            <DialogDescription className="text-sm font-medium text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
+            <DialogDescription className="text-sm font-medium text-muted-foreground leading-relaxed max-w-[280px] mx-auto uppercase tracking-wide">
               Securely access your account to track orders and save favorites.
             </DialogDescription>
           </div>
@@ -209,7 +208,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           <Button 
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full h-16 rounded-full bg-white dark:bg-zinc-900 text-foreground border-2 border-muted hover:bg-secondary/50 transition-all font-black uppercase text-[10px] tracking-widest gap-4 shadow-sm"
+            className="w-full h-16 rounded-full bg-white dark:bg-zinc-900 text-foreground border-2 border-muted hover:bg-secondary/50 transition-all font-black uppercase text-[10px] tracking-widest gap-4 shadow-sm active:scale-95"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
               <>
@@ -239,7 +238,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
 
         <DialogFooter className="mt-12">
           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-primary/30 mx-auto">
-            Ezzy Bites • Quantum Sync Active
+            Ezzy Bites • Identity Verified
           </p>
         </DialogFooter>
       </DialogContent>

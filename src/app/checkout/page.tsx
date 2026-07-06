@@ -26,7 +26,8 @@ import {
   Ban,
   Home,
   WifiOff,
-  AlertCircle
+  AlertCircle,
+  LogIn
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -41,6 +42,7 @@ import { useAnalytics } from '@/hooks/use-analytics';
 import { useSmartPermissions } from '@/hooks/use-smart-permissions';
 import { useGlobalSettings } from '@/hooks/use-global-settings';
 import { useOffline } from '@/hooks/use-offline';
+import { useRouter } from 'next/navigation';
 
 export default function CheckoutPage() {
   const { cart, getTotal, clearCart, removeFromCart, selectedOrderType, setOrderType } = useStore();
@@ -50,6 +52,7 @@ export default function CheckoutPage() {
   const { trackOrderPlaced } = useAnalytics();
   const { requestSmartly } = useSmartPermissions();
   const isOffline = useOffline();
+  const router = useRouter();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -140,7 +143,8 @@ export default function CheckoutPage() {
         return;
       }
       if (!user) {
-        setIsAuthModalOpen(true);
+        // Use consistent redirect logic for seamless auth flow
+        router.push(`/login?redirect=${encodeURIComponent('/checkout')}`);
         return;
       }
       if (isDelivery) requestSmartly('location');
@@ -272,7 +276,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-secondary/10 pb-10 overflow-x-hidden">
       <Navbar />
-      <main className="container mx-auto px-4 pt-16 md:pt-20">
+      <main className="container mx-auto px-4 pt-20 md:pt-24">
         {isOffline && step < 4 && (
           <Card className="mb-6 bg-zinc-950 border-none rounded-2xl p-4 flex items-center gap-4 animate-in slide-in-from-top-2">
             <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white shrink-0">
@@ -334,7 +338,7 @@ export default function CheckoutPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-black text-lg md:text-xl text-primary italic leading-none">₹{item.price * item.quantity}</p>
-                          <button onClick={() => removeFromCart(item.cartId)} className="text-muted-foreground hover:text-destructive mt-2 transition-colors p-1">
+                          <button type="button" onClick={() => removeFromCart(item.cartId)} className="text-muted-foreground hover:text-destructive mt-2 transition-colors p-1">
                             <Trash2 className="w-3.5 h-3.5 ml-auto" />
                           </button>
                         </div>
@@ -342,7 +346,7 @@ export default function CheckoutPage() {
                     ))}
                   </div>
                 </Card>
-                <Button onClick={handleNext} className="w-full h-14 md:h-16 rounded-2xl text-base md:text-lg font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">Confirm & Continue</Button>
+                <Button type="button" onClick={handleNext} className="w-full h-14 md:h-16 rounded-2xl text-base md:text-lg font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">Confirm & Continue</Button>
               </div>
             )}
 
@@ -359,6 +363,7 @@ export default function CheckoutPage() {
                   ].map((type) => (
                     <button
                       key={type.id}
+                      type="button"
                       onClick={() => setOrderType(type.id)}
                       className={cn(
                         "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2",
@@ -375,6 +380,19 @@ export default function CheckoutPage() {
 
                 <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-xl bg-white dark:bg-zinc-900">
                   <CardContent className="p-6 md:p-10 space-y-6">
+                    {!user && (
+                      <div className="p-5 bg-primary/5 rounded-2xl border border-dashed border-primary/20 flex flex-col items-center text-center gap-3">
+                         <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary"><LogIn className="w-5 h-5" /></div>
+                         <div>
+                            <p className="text-[11px] font-black uppercase">Authentication Recommended</p>
+                            <p className="text-[9px] font-medium text-muted-foreground uppercase leading-tight">Sign in to save address and track in real-time.</p>
+                         </div>
+                         <Link href={`/login?redirect=${encodeURIComponent('/checkout')}`} className="w-full">
+                            <Button type="button" variant="outline" className="w-full h-10 rounded-xl border-primary/20 text-primary font-black uppercase text-[8px] tracking-widest hover:bg-primary hover:text-white">Login to Account</Button>
+                         </Link>
+                      </div>
+                    )}
+
                     <div className="grid md:grid-cols-2 gap-5 md:gap-8">
                       <div className="space-y-1.5">
                         <Label className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Full Identity</Label>
@@ -411,9 +429,9 @@ export default function CheckoutPage() {
                   </CardContent>
                 </Card>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={handleBack} className="h-14 md:h-16 rounded-2xl px-6 md:px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
-                  <Button onClick={handleNext} className="flex-1 h-14 md:h-16 rounded-2xl text-sm md:text-base font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">
-                    {user ? 'Select Payment' : 'Login to Continue'}
+                  <Button type="button" variant="outline" onClick={handleBack} className="h-14 md:h-16 rounded-2xl px-6 md:px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
+                  <Button type="button" onClick={handleNext} className="flex-1 h-14 md:h-16 rounded-2xl text-sm md:text-base font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20">
+                    {user ? 'Select Payment' : 'Continue to Settle'}
                   </Button>
                 </div>
               </div>
@@ -466,8 +484,8 @@ export default function CheckoutPage() {
                 )}
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={handleBack} className="h-14 md:h-16 rounded-2xl px-6 md:px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
-                  <Button onClick={handleSubmit} disabled={loading || isOffline} className="flex-1 h-14 md:h-16 rounded-2xl text-sm md:text-base font-black uppercase tracking-widest bg-primary shadow-2xl shadow-primary/30">
+                  <Button type="button" variant="outline" onClick={handleBack} className="h-14 md:h-16 rounded-2xl px-6 md:px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
+                  <Button type="button" onClick={handleSubmit} disabled={loading || isOffline} className="flex-1 h-14 md:h-16 rounded-2xl text-sm md:text-base font-black uppercase tracking-widest bg-primary shadow-2xl shadow-primary/30">
                     {loading ? <Loader2 className="animate-spin" /> : isOffline ? 'Signal Required' : 'Settle Order'}
                   </Button>
                 </div>
@@ -489,10 +507,10 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex flex-col sm:flex-row justify-center gap-3 md:gap-5 pt-4">
                   <Link href={`/orders/${orderId}`} className="flex-1 sm:flex-none">
-                    <Button className="w-full rounded-xl px-10 h-14 font-black uppercase text-[9px] tracking-widest bg-primary">Track Order</Button>
+                    <Button type="button" className="w-full rounded-xl px-10 h-14 font-black uppercase text-[9px] tracking-widest bg-primary">Track Order</Button>
                   </Link>
                   <Link href="/" className="flex-1 sm:flex-none">
-                    <Button variant="outline" className="w-full rounded-xl px-10 h-14 font-black uppercase text-[9px] tracking-widest border-2">Return Home</Button>
+                    <Button type="button" variant="outline" className="w-full rounded-xl px-10 h-14 font-black uppercase text-[9px] tracking-widest border-2">Return Home</Button>
                   </Link>
                 </div>
               </Card>
@@ -516,7 +534,7 @@ export default function CheckoutPage() {
                             <p className="text-[7px] font-bold text-green-600 dark:text-emerald-500/60 uppercase">Activated</p>
                          </div>
                       </div>
-                      <button onClick={removePromo} className="text-green-700 dark:text-emerald-400 hover:text-destructive transition-colors p-1.5"><X className="w-4 h-4" /></button>
+                      <button type="button" onClick={removePromo} className="text-green-700 dark:text-emerald-400 hover:text-destructive transition-colors p-1.5"><X className="w-4 h-4" /></button>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -529,7 +547,7 @@ export default function CheckoutPage() {
                             suppressHydrationWarning
                             disabled={isOffline}
                           />
-                          <Button onClick={handleApplyCoupon} disabled={couponLoading || !couponInput || isOffline} className="h-11 rounded-xl font-black text-[8px] uppercase px-5 bg-primary">Apply</Button>
+                          <Button type="button" onClick={handleApplyCoupon} disabled={couponLoading || !couponInput || isOffline} className="h-11 rounded-xl font-black text-[8px] uppercase px-5 bg-primary">Apply</Button>
                        </div>
                     </div>
                   )}
