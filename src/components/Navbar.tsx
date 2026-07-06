@@ -183,7 +183,7 @@ export const Navbar = () => {
               ) : (
                 <Link href="/login" className="hidden md:block">
                   <Button type="button" variant="ghost" className={cn("h-9 rounded-full px-5 font-black uppercase text-[10px] tracking-widest gap-2 border border-transparent transition-all", isHeroState ? "text-white hover:bg-white/10 hover:border-white/20" : "text-foreground hover:bg-secondary")}>
-                    <LogIn className="w-3.5 h-3.5" /> Login
+                    login
                   </Button>
                 </Link>
               )
@@ -223,7 +223,7 @@ export const Navbar = () => {
                           </div>
                           <Link href="/login" onClick={() => setIsMenuOpen(false)}>
                             <Button type="button" className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest bg-primary shadow-lg shadow-primary/20 gap-2">
-                               <LogIn className="w-4 h-4" /> Login to Account
+                               login to account
                             </Button>
                           </Link>
                         </div>
