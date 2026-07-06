@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "AdminProfile": {
@@ -9,6 +10,7 @@
         "role": { "type": "string", "enum": ["admin", "cashier", "kitchen"] },
         "name": { "type": "string" },
         "username": { "type": "string" },
+        "employeeId": { "type": "string" },
         "phone": { "type": "string" },
         "status": { "type": "string", "enum": ["active", "disabled"] },
         "onlineStatus": { "type": "string", "enum": ["online", "offline", "busy"] },
@@ -25,7 +27,7 @@
     },
     "UserProfile": {
       "title": "User Profile",
-      "description": "Customer profile for authenticated users.",
+      "description": "Customer and Staff profile for authenticated users.",
       "type": "object",
       "properties": {
         "uid": { "type": "string" },
@@ -33,6 +35,9 @@
         "name": { "type": "string" },
         "photoUrl": { "type": "string" },
         "phone": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "role": { "type": "string", "enum": ["customer", "admin", "cashier", "kitchen"] },
+        "status": { "type": "string", "enum": ["active", "disabled"] },
         "address": { "type": "string" },
         "orderCount": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
@@ -63,31 +68,19 @@
     },
     "/users/{userId}": {
       "schema": "#/backend/entities/UserProfile",
-      "description": "Customer profiles keyed by Firebase UID"
+      "description": "Customer and staff profiles keyed by Firebase UID"
     },
     "/global_settings/config": {
       "schema": "#/backend/entities/GlobalSettings",
       "description": "Singleton configuration for the entire ecosystem"
     },
     "/orders/{orderId}": {
-      "schema": "Order",
+      "schema": "object",
       "description": "Collection of customer and store orders"
     },
     "/products/{productId}": {
-      "schema": "FoodItem",
-      "description": "Inventory management"
-    },
-    "/reviews/{reviewId}": {
-      "schema": "Review",
-      "description": "User generated food feedback"
-    },
-    "/favorites/{favId}": {
       "schema": "object",
-      "description": "User wishlists"
-    },
-    "/user_notifications/{userId}/items/{id}": {
-      "schema": "UserNotification",
-      "description": "Individual inbox items"
+      "description": "Inventory management"
     }
   }
 }

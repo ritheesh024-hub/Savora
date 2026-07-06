@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, Suspense, useCallback, useRef } from 'react';
@@ -73,23 +74,38 @@ function DashboardContent() {
           return;
         }
 
-        // 2. Staff Registry Sync
-        const adminRef = doc(db, 'admins', user.uid);
-        const adminSnap = await getDoc(adminRef);
+        // 2. Identity Registry Sync (Unified users collection)
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        let userData = userSnap.data();
 
-        if (adminSnap.exists()) {
-          const data = adminSnap.data();
-          const role = (data.role as StaffRole) || 'cashier';
+        // Fallback to legacy staff registry
+        if (!userData || !userData.role) {
+           const adminRef = doc(db, 'admins', user.uid);
+           const adminSnap = await getDoc(adminRef);
+           if (adminSnap.exists()) {
+              userData = adminSnap.data();
+           }
+        }
+
+        if (userData && userData.role) {
+          const role = (userData.role as StaffRole);
           
-          if (data.status === 'disabled') {
-            toast({ variant: "destructive", title: "Access Revoked", description: "This node is restricted." });
+          if (userData.status === 'disabled' || userData.status === 'inactive') {
+            toast({ variant: "destructive", title: "Access Revoked", description: "Your account has been disabled." });
             await auth.signOut();
             router.push('/admin/login');
             return;
           }
 
+          // Strict Admin Route Protection
+          if (role !== 'admin' && user.email !== PRIMARY_ADMIN_EMAIL) {
+             toast({ variant: "destructive", title: "Unauthorized", description: "Admin privileges required." });
+             router.push('/');
+             return;
+          }
+
           setAssignedRole(role);
-          // Staff nodes are locked to their assignment; Admin view requires explicit role
           const view = role === 'admin' 
             ? (['admin', 'cashier', 'kitchen'].includes(requestedView) ? requestedView : 'admin')
             : role;

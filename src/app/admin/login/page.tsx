@@ -1,10 +1,10 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
   signOut, 
   sendPasswordResetEmail,
   setPersistence,
@@ -21,7 +21,7 @@ import {
   ChevronLeft, Eye, EyeOff, Home
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { doc, setDoc, getDoc, serverTimestamp, collection, addDoc, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -31,7 +31,7 @@ type SelectedRole = 'admin' | 'cashier' | 'kitchen';
 export default function AdminLoginPage() {
   const [step, setStep] = useState<LoginStep>('selection');
   const [selectedRole, setSelectedRole] = useState<SelectedRole | null>(null);
-  const [email, setEmail] = useState('');
+  const [emailOrId, setEmailOrId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,10 +48,11 @@ export default function AdminLoginPage() {
     async function checkExistingAuth() {
       if (!userLoading && user && db) {
         try {
-          const adminRef = doc(db, 'admins', user.uid);
-          const adminSnap = await getDoc(adminRef);
+          const userRef = doc(db, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
+          const userData = userSnap.data();
           
-          if (user.email === PRIMARY_ADMIN_EMAIL || (adminSnap.exists() && adminSnap.data().status === 'active')) {
+          if (user.email === PRIMARY_ADMIN_EMAIL || (userData && userData.role === 'admin' && userData.status === 'active')) {
             router.push('/admin/dashboard');
           }
         } catch (e) {
@@ -67,25 +68,9 @@ export default function AdminLoginPage() {
     setSelectedRole(role);
     setStep('auth');
     if (role === 'admin') {
-      setEmail(PRIMARY_ADMIN_EMAIL);
+      setEmailOrId(PRIMARY_ADMIN_EMAIL);
     } else {
-      setEmail('');
-    }
-  };
-
-  const logStaffLogin = async (uid: string, userEmail: string, role: string) => {
-    if (!db) return;
-    try {
-      await addDoc(collection(db, 'login_events'), {
-        uid,
-        email: userEmail,
-        name: userEmail === PRIMARY_ADMIN_EMAIL ? "Master Admin" : (userEmail.split('@')[0]),
-        role,
-        timestamp: serverTimestamp(),
-        platform: 'Staff Hub'
-      });
-    } catch (logErr) {
-      console.warn("Audit logging failed", logErr);
+      setEmailOrId('');
     }
   };
 
@@ -96,100 +81,80 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       await setPersistence(auth, browserLocalPersistence);
-      const normalizedEmail = email.trim().toLowerCase();
-      const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
-      let uid = '';
+      let targetEmail = emailOrId.trim().toLowerCase();
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail);
 
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
-        uid = userCredential.user.uid;
-      } catch (signInError: any) {
-        if (isPrimary && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
-           try {
-             const createCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
-             uid = createCredential.user.uid;
-             toast({ title: "Master Setup Complete", description: "Identity registry initialized." });
-           } catch (createError: any) {
-             if (createError.code === 'auth/email-already-in-use') {
-                toast({ variant: "destructive", title: "Auth Failed", description: "Incorrect password for Master Admin." });
-                setLoading(false);
-                return;
-             }
-             throw createError;
-           }
+      // --- ADMIN ID LOOKUP PROTOCOL ---
+      if (!isEmail) {
+        const q = query(collection(db, 'users'), where('employeeId', '==', targetEmail));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          targetEmail = querySnapshot.docs[0].data().email;
         } else {
-          throw signInError;
-        }
-      }
-
-      // --- STAFF IDENTITY LINKING (CRITICAL FIX) ---
-      const adminRef = doc(db, 'admins', uid);
-      const adminSnap = await getDoc(adminRef);
-      
-      if (isPrimary) {
-        const adminData = { 
-          id: uid,
-          uid: uid,
-          email: normalizedEmail, 
-          name: "Master Admin",
-          role: 'admin',
-          status: 'active',
-          onlineStatus: 'online',
-          lastLoginAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
-        await setDoc(adminRef, adminData, { merge: true });
-      } else {
-        // If doc at UID doesn't exist, search for placeholder by email
-        if (!adminSnap.exists()) {
-          const q = query(collection(db, 'admins'), where('email', '==', normalizedEmail));
-          const placeholderSnap = await getDocs(q);
-          
-          if (!placeholderSnap.empty) {
-            const placeholderDoc = placeholderSnap.docs[0];
-            const staffData = placeholderDoc.data();
-            const oldId = placeholderDoc.id;
-
-            // Migrate placeholder to UID path to satisfy Security Rules
-            await setDoc(adminRef, {
-              ...staffData,
-              id: uid,
-              uid: uid,
-              status: 'active',
-              onlineStatus: 'online',
-              lastLoginAt: serverTimestamp()
-            });
-
-            // Clean up placeholder if IDs differ
-            if (oldId !== uid) {
-              await deleteDoc(doc(db, 'admins', oldId));
-            }
+          // Fallback check in legacy admins collection
+          const qLegacy = query(collection(db, 'admins'), where('employeeId', '==', targetEmail));
+          const legacySnap = await getDocs(qLegacy);
+          if (!legacySnap.empty) {
+            targetEmail = legacySnap.docs[0].data().email;
           } else {
-            // No record found by email either
-            await signOut(auth);
-            toast({ variant: "destructive", title: "Access Denied", description: "Unauthorized email address." });
+            toast({ variant: "destructive", title: "Authentication Failed", description: "Invalid Admin ID or Password." });
             setLoading(false);
             return;
           }
-        } else {
-          // Standard login for existing linked staff
-          if (adminSnap.data().status === 'disabled') {
-            await signOut(auth);
-            toast({ variant: "destructive", title: "Access Revoked", description: "Account disabled." });
-            setLoading(false);
-            return;
-          }
-          await setDoc(adminRef, { lastLoginAt: serverTimestamp(), onlineStatus: 'online' }, { merge: true });
         }
       }
 
-      await logStaffLogin(uid, normalizedEmail, isPrimary ? 'admin' : (selectedRole || 'staff'));
+      // --- FIREBASE AUTH HANDSHAKE ---
+      const userCredential = await signInWithEmailAndPassword(auth, targetEmail, password);
+      const uid = userCredential.user.uid;
+
+      // --- ROLE & STATUS VERIFICATION NODE ---
+      const userRef = doc(db, 'users', uid);
+      let userSnap = await getDoc(userRef);
+      let userData = userSnap.data();
+
+      // If user doc doesn't exist or doesn't have role, check legacy admins
+      if (!userData || !userData.role) {
+        const adminRef = doc(db, 'admins', uid);
+        const adminSnap = await getDoc(adminRef);
+        if (adminSnap.exists()) {
+          userData = adminSnap.data();
+          // Auto-migrate to users collection if missing
+          await setDoc(userRef, {
+            ...userData,
+            uid: uid,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      }
+
+      if (!userData || (selectedRole === 'admin' && userData.role !== 'admin' && targetEmail !== PRIMARY_ADMIN_EMAIL)) {
+        await signOut(auth);
+        toast({ variant: "destructive", title: "Authentication Failed", description: "Invalid Admin ID or Password." });
+        setLoading(false);
+        return;
+      }
+
+      if (userData.status === 'disabled' || userData.status === 'inactive') {
+        await signOut(auth);
+        toast({ variant: "destructive", title: "Access Revoked", description: "Your account has been disabled." });
+        setLoading(false);
+        return;
+      }
+
+      // Record successful login
+      await setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+      
+      toast({ title: "Authorized", description: `Welcome back, ${userData.name || 'Admin'}.` });
       router.push('/admin/dashboard');
 
     } catch (error: any) {
-      let message = error.message || "An unexpected error occurred.";
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-        message = "Verify your credentials and try again.";
+      let message = "Invalid Admin ID or Password.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        message = "Invalid Admin ID or Password.";
+      } else if (error.message) {
+        message = error.message;
       }
       toast({ variant: "destructive", title: "Authentication Failed", description: message });
     } finally {
@@ -253,17 +218,16 @@ export default function AdminLoginPage() {
         <form onSubmit={handleAuth}>
           <CardContent className="space-y-5 px-8">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Staff Email</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Admin ID or Email</Label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
-                  type="email" 
-                  placeholder="name@ezzybites.com" 
+                  type="text" 
+                  placeholder={selectedRole === 'admin' ? "Admin ID or Email" : "Employee ID or Email"} 
                   className="h-14 pl-12 rounded-xl font-bold bg-secondary/20" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
+                  value={emailOrId} 
+                  onChange={(e) => setEmailOrId(e.target.value)} 
                   required 
-                  disabled={selectedRole === 'admin' && loading} 
                 />
               </div>
             </div>
@@ -271,8 +235,8 @@ export default function AdminLoginPage() {
               <div className="flex justify-between items-center ml-1">
                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Password</Label>
                 <button type="button" onClick={() => {
-                  if (auth && email) {
-                    sendPasswordResetEmail(auth, email).then(() => toast({ title: "Reset Sent", description: "Check your email." }));
+                  if (auth && emailOrId.includes('@')) {
+                    sendPasswordResetEmail(auth, emailOrId).then(() => toast({ title: "Reset Sent", description: "Check your email." }));
                   } else {
                     toast({ variant: "destructive", title: "Email Required", description: "Enter your email to reset password." });
                   }
@@ -285,7 +249,7 @@ export default function AdminLoginPage() {
                   className="h-14 pl-12 pr-12 rounded-xl bg-secondary/20 font-bold" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
-                  required={!loading} 
+                  required 
                   minLength={6} 
                 />
                 <button 
