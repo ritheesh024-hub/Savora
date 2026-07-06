@@ -31,7 +31,6 @@ import { useNotifications } from '@/hooks/use-notifications';
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -152,7 +151,6 @@ export const Navbar = () => {
                 <SheetContent side="right" className="w-[300px] p-0 border-none bg-background flex flex-col z-[60] shadow-3xl">
                    <SheetHeader className="p-6 border-b bg-zinc-50 dark:bg-zinc-900/50">
                      <SheetTitle className="text-xl font-black font-headline uppercase tracking-tighter italic">Ezzy<span className="text-primary">Bites</span> Menu</SheetTitle>
-                     <SheetDescription className="text-[10px] font-bold uppercase tracking-widest opacity-60">Global Navigation Hub</SheetDescription>
                    </SheetHeader>
                    <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
                       {menuItems.map((item) => {
