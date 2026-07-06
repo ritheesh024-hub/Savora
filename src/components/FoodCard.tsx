@@ -39,10 +39,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
     trackProductView(item);
   }, [item, trackProductView]);
 
-  const toggleFavorite = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const toggleFavorite = async () => {
     if (!user) {
       setIsAuthModalOpen(true);
       return;
@@ -65,9 +62,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
     }
   };
 
-  const handleAddClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAddClick = () => {
     if (item.isBeverage || item.isCustomizable) {
       setIsCustomizing(true);
     } else {
@@ -77,14 +72,12 @@ export const FoodCard = ({ item }: FoodCardProps) => {
     }
   };
 
-  const handleQtyChange = (delta: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleQtyChange = (delta: number) => {
     const targetItem = cart.find(i => i.id === item.id);
     if (targetItem) {
       updateQuantity(targetItem.cartId, delta);
     } else if (delta > 0) {
-      handleAddClick(e);
+      handleAddClick();
     }
   };
 
@@ -147,12 +140,12 @@ export const FoodCard = ({ item }: FoodCardProps) => {
           <div className="flex items-center justify-between mt-auto gap-2">
             <span className="text-xs md:text-lg font-black text-primary italic">₹{item.price}</span>
 
-            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+            <div className="shrink-0">
               {cartItemCount > 0 ? (
                 <div className="flex items-center gap-1 bg-primary text-white rounded-lg md:rounded-xl h-7 md:h-9 px-1 shadow-md">
-                  <button type="button" onClick={(e) => handleQtyChange(-1, e)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Minus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
+                  <button type="button" onClick={() => handleQtyChange(-1)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Minus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
                   <span className="text-[8px] md:text-xs font-black w-3 text-center">{cartItemCount}</span>
-                  <button type="button" onClick={(e) => handleQtyChange(1, e)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Plus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
+                  <button type="button" onClick={() => handleQtyChange(1)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Plus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
                 </div>
               ) : (
                 <Button 
@@ -172,7 +165,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
         <BeverageCustomizer item={item} isOpen={isCustomizing} onClose={() => setIsCustomizing(false)} onConfirm={(opts) => { addToCart(item, opts); setIsCustomizing(false); }} />
       )}
       
-      <ProductDetails item={item} isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} onAddToCart={() => { setIsDetailsOpen(false); handleAddClick({ preventDefault: () => {}, stopPropagation: () => {} } as any); }} />
+      <ProductDetails item={item} isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} onAddToCart={() => { setIsDetailsOpen(false); handleAddClick(); }} />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </>
   );

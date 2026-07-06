@@ -86,9 +86,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
     }
   }, [reviews, aiSummary, summarizing, isOpen]);
 
-  const handleAddToCartFinal = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAddToCartFinal = () => {
     if (cartItem) {
       onClose();
     } else {
@@ -100,9 +98,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
     }
   };
 
-  const adjustQty = (delta: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const adjustQty = (delta: number) => {
     if (cartItem) {
       updateQuantity(cartItem.cartId, delta);
     } else {
@@ -217,7 +213,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
           <div className="flex items-center gap-3 bg-white dark:bg-zinc-800 rounded-xl p-1.5 shadow-sm border border-border/40">
             <button 
               type="button"
-              onClick={(e) => adjustQty(-1, e)}
+              onClick={() => adjustQty(-1)}
               className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-secondary transition-colors"
             >
               <Minus className="w-4 h-4" />
@@ -225,7 +221,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
             <span className="w-6 text-center font-black text-sm">{cartItem?.quantity || localQty}</span>
             <button 
               type="button"
-              onClick={(e) => adjustQty(1, e)}
+              onClick={() => adjustQty(1)}
               className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-secondary transition-colors"
             >
               <Plus className="w-4 h-4" />
