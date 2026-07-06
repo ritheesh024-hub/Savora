@@ -3,7 +3,7 @@
 /**
  * @fileOverview Hardened Firebase configuration.
  * Explicitly maps environment variables for high-integrity client-side bundling.
- * Includes support for regional database nodes.
+ * Includes support for regional database nodes and measurement telemetry.
  */
 
 export const firebaseConfig = {
