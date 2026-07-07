@@ -30,9 +30,26 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated();
-      // Allow unauthenticated lookup by employeeId for login if limited - strictly for MVP
       allow list: if true; 
       allow write: if isOwner(userId) || isAdmin();
+    }
+
+    match /favorites/{favId} {
+      allow read, write: if isAuthenticated() && (
+        (resource == null && request.resource.data.userId == request.auth.uid) ||
+        (resource != null && resource.data.userId == request.auth.uid)
+      );
+    }
+
+    match /addresses/{addrId} {
+      allow read, write: if isAuthenticated() && (
+        (resource == null && request.resource.data.userId == request.auth.uid) ||
+        (resource != null && resource.data.userId == request.auth.uid)
+      );
+    }
+
+    match /user_notifications/{userId}/{document=**} {
+      allow read, write: if isOwner(userId) || isAdmin();
     }
 
     match /orders/{orderId} {
@@ -53,6 +70,32 @@ service cloud.firestore {
     }
 
     match /global_settings/config {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /reviews/{id} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /analytics/{id} {
+      allow create: if true;
+      allow read, write: if isAdmin();
+    }
+
+    match /activity_logs/{id} {
+      allow create: if isStaff();
+      allow read, write: if isAdmin();
+    }
+
+    match /login_events/{id} {
+      allow create: if true;
+      allow read, write: if isAdmin();
+    }
+
+    match /notifications/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
