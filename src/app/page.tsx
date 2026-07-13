@@ -12,7 +12,8 @@ import {
   Timer, Info, Heart, MessageSquare,
   Map,
   CheckCircle2,
-  Plus
+  Plus,
+  ChefHat
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
