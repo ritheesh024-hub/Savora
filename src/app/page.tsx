@@ -64,8 +64,8 @@ export default function Home() {
       <main className="flex-1 space-y-8 md:space-y-16">
         
         {/* PREMIUM INTEGRATED HERO CONTAINER */}
-        <div className="p-3 md:p-6 lg:p-8 pt-24 md:pt-32">
-          <div className="rounded-[3rem] md:rounded-[4.5rem] overflow-hidden border border-white/10 shadow-4xl relative bg-black min-h-[600px] md:min-h-[85vh] flex items-center">
+        <div className="p-3 md:p-6 lg:p-8 h-[92vh] min-h-[700px]">
+          <div className="rounded-[3rem] md:rounded-[4.5rem] overflow-hidden border border-white/10 shadow-4xl relative bg-black h-full flex items-center">
             
             {/* AMBIENT BACKGROUND SYSTEM */}
             <div className="absolute inset-0 z-0">
@@ -73,7 +73,7 @@ export default function Home() {
                 src={heroBg}
                 alt="Premium Culinary Backdrop"
                 fill
-                className="object-cover opacity-60 scale-105"
+                className="object-cover opacity-60"
                 priority
                 data-ai-hint="premium food"
               />
@@ -103,7 +103,7 @@ export default function Home() {
             </div>
 
             {/* HERO CONTENT ENGINE */}
-            <div className="container mx-auto px-8 md:px-20 relative z-20 max-w-7xl py-20">
+            <div className="container mx-auto px-8 md:px-20 relative z-20 max-w-7xl pt-32 pb-20">
               <div className="max-w-4xl space-y-10 animate-in fade-in slide-in-from-left-8 duration-1000">
                 
                 {/* PREMIUM BADGE */}

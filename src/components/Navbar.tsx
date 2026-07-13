@@ -107,14 +107,14 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
 
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-in-out px-4 md:px-8",
-      scrolled ? "py-3" : "py-6"
+      "fixed left-0 right-0 z-50 transition-all duration-700 ease-in-out px-4 md:px-8",
+      isHeroState ? "top-3 md:top-6 lg:top-8" : (scrolled ? "top-0 py-3" : "top-0 py-6")
     )}>
       <div className={cn(
         "container mx-auto max-w-7xl h-[72px] md:h-[80px] flex items-center justify-between gap-6 px-6 md:px-10 transition-all duration-500 rounded-[2rem] md:rounded-[2.5rem]",
         scrolled 
           ? "bg-white/80 dark:bg-black/80 backdrop-blur-3xl border border-white/20 dark:border-white/5 shadow-3xl" 
-          : "bg-white/10 backdrop-blur-md border border-white/10"
+          : (isHeroState ? "bg-white/5 backdrop-blur-md border border-white/10" : "bg-white/10 backdrop-blur-md border border-white/10")
       )}>
         {/* LOGO NODE */}
         <Link href="/" className="transition-transform active:scale-95 shrink-0">
@@ -222,7 +222,10 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
               </DropdownMenu>
             ) : (
               <Link href="/login" className="hidden md:block">
-                <Button type="button" className="h-12 rounded-full px-8 font-black uppercase text-[10px] tracking-widest gap-2 bg-orange-gradient text-white shadow-xl hover:scale-[1.02] transition-all border-none">
+                <Button type="button" className={cn(
+                  "h-12 rounded-full px-8 font-black uppercase text-[10px] tracking-widest gap-2 shadow-xl hover:scale-[1.02] transition-all border-none",
+                  isHeroState ? "bg-white text-black" : "bg-orange-gradient text-white"
+                )}>
                   <User className="w-4 h-4" /> login
                 </Button>
               </Link>
