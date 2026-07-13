@@ -18,8 +18,7 @@ import {
   LifeBuoy,
   User,
   LogOut,
-  ChevronDown,
-  LogIn
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -51,7 +50,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from '@/hooks/use-toast';
 
-export const Navbar = () => {
+interface NavbarProps {
+  isIntegrated?: boolean;
+}
+
+export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -114,26 +117,29 @@ export const Navbar = () => {
 
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-      scrolled 
-        ? "bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b py-2 shadow-xl" 
-        : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-3"
+      "z-50 transition-all duration-500",
+      isIntegrated 
+        ? "absolute top-0 left-0 right-0 py-4 md:py-6" 
+        : "fixed top-0 left-0 right-0 py-2",
+      !isIntegrated && scrolled 
+        ? "bg-white/95 dark:bg-black/95 backdrop-blur-3xl border-b shadow-xl" 
+        : !isIntegrated ? "bg-white/5 dark:bg-black/5 backdrop-blur-sm" : ""
     )}>
-      <div className="container mx-auto px-4 max-w-7xl">
+      <div className="container mx-auto px-4 md:px-8 max-w-7xl">
         <div className="h-10 md:h-12 flex items-center justify-between gap-4">
           <Link href="/" className="transition-transform active:scale-95">
-            <Logo variant={isHeroState ? 'light' : (isDarkMode ? 'light' : 'dark')} size="sm" className="shrink-0" />
+            <Logo variant={isHeroState || isIntegrated ? 'light' : (isDarkMode ? 'light' : 'dark')} size="sm" className="shrink-0" />
           </Link>
 
-          <div className="flex-1 max-w-sm hidden md:block">
+          <div className="flex-1 max-w-sm hidden lg:block">
             <form onSubmit={handleSearchSubmit} className="relative group">
-              <Search className={cn("absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10", isHeroState ? "text-white/60" : "text-muted-foreground")} />
+              <Search className={cn("absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10", isHeroState || isIntegrated ? "text-white/60" : "text-muted-foreground")} />
               <Input 
                 value={navSearch}
                 onChange={(e) => setNavSearch(e.target.value)}
                 placeholder="Search bites..." 
-                className={cn("w-full h-9 pl-10 rounded-xl border-none transition-all font-black text-[10px] uppercase", 
-                  isHeroState ? "bg-white/10 !text-white placeholder:text-white/40" : "bg-secondary/60 dark:bg-zinc-900 !text-foreground")}
+                className={cn("w-full h-10 pl-10 rounded-xl border-none transition-all font-black text-[10px] uppercase", 
+                  isHeroState || isIntegrated ? "bg-white/10 !text-white placeholder:text-white/40" : "bg-secondary/60 dark:bg-zinc-900 !text-foreground")}
               />
             </form>
           </div>
@@ -141,7 +147,7 @@ export const Navbar = () => {
           <div className="flex items-center gap-1.5 md:gap-3">
             {mounted && user && (
               <NotificationCenter>
-                <Button type="button" variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-all relative", isHeroState ? "text-white" : "text-foreground")}>
+                <Button type="button" variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-all relative", isHeroState || isIntegrated ? "text-white hover:bg-white/10" : "text-foreground hover:bg-secondary")}>
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">{unreadCount}</span>}
                 </Button>
@@ -149,24 +155,23 @@ export const Navbar = () => {
             )}
 
             <CartDrawer>
-              <Button type="button" variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-all relative", isHeroState ? "text-white" : "text-foreground")}>
+              <Button type="button" variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-all relative", isHeroState || isIntegrated ? "text-white hover:bg-white/10" : "text-foreground hover:bg-secondary")}>
                 <ShoppingBag className="w-5 h-5" />
                 {cart.length > 0 && <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">{cart.reduce((acc, i) => acc + i.quantity, 0)}</span>}
               </Button>
             </CartDrawer>
 
-            {/* DESKTOP LOGIN/PROFILE */}
             {mounted && (
               user ? (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <button type="button" className={cn("hidden md:flex items-center gap-2 p-1 pl-2 pr-3 rounded-full transition-all border", isHeroState ? "bg-white/10 border-white/10 hover:bg-white/20" : "bg-secondary/60 border-transparent hover:bg-secondary")}>
+                    <button type="button" className={cn("hidden md:flex items-center gap-2 p-1 pl-2 pr-3 rounded-full transition-all border", isHeroState || isIntegrated ? "bg-white/10 border-white/10 hover:bg-white/20" : "bg-secondary/60 border-transparent hover:bg-secondary")}>
                       <Avatar className="h-7 w-7 border-2 border-primary shadow-sm">
                         <AvatarImage src={user.photoURL || ''} />
                         <AvatarFallback className="text-[10px] font-black bg-primary text-white">{user.displayName?.slice(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
-                      <span className={cn("text-[10px] font-black uppercase tracking-tighter truncate max-w-[80px]", isHeroState ? "text-white" : "text-foreground")}>{user.displayName?.split(' ')[0]}</span>
-                      <ChevronDown className={cn("w-3 h-3 opacity-40", isHeroState ? "text-white" : "text-foreground")} />
+                      <span className={cn("text-[10px] font-black uppercase tracking-tighter truncate max-w-[80px]", isHeroState || isIntegrated ? "text-white" : "text-foreground")}>{user.displayName?.split(' ')[0]}</span>
+                      <ChevronDown className={cn("w-3 h-3 opacity-40", isHeroState || isIntegrated ? "text-white" : "text-foreground")} />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-4xl border-none mt-2">
@@ -182,7 +187,7 @@ export const Navbar = () => {
                 </DropdownMenu>
               ) : (
                 <Link href="/login" className="hidden md:block">
-                  <Button type="button" variant="ghost" className={cn("h-9 rounded-full px-5 font-black uppercase text-[10px] tracking-widest gap-2 border border-transparent transition-all", isHeroState ? "text-white hover:bg-white/10 hover:border-white/20" : "text-foreground hover:bg-secondary")}>
+                  <Button type="button" variant="ghost" className={cn("h-10 rounded-full px-6 font-black uppercase text-[10px] tracking-widest gap-2 border border-transparent transition-all", isHeroState || isIntegrated ? "text-white hover:bg-white/10 border-white/10" : "text-foreground hover:bg-secondary")}>
                     login
                   </Button>
                 </Link>
@@ -192,7 +197,7 @@ export const Navbar = () => {
             <div className="md:hidden">
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-transform active:scale-90", isHeroState ? "text-white" : "text-foreground")}>
+                  <Button type="button" variant="ghost" size="icon" className={cn("rounded-full w-10 h-10 transition-transform active:scale-90", isHeroState || isIntegrated ? "text-white hover:bg-white/10" : "text-foreground hover:bg-secondary")}>
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
@@ -202,7 +207,6 @@ export const Navbar = () => {
                      <SheetDescription className="sr-only">Access your profile, orders, and application settings.</SheetDescription>
                    </SheetHeader>
 
-                   {/* MOBILE PROFILE SECTION */}
                    <div className="p-6 border-b bg-zinc-50 dark:bg-zinc-900/50">
                       {user ? (
                         <div className="flex items-center gap-4">
