@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   Clock,
   Home,
-  ChevronRight
+  ChevronRight,
+  Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -152,7 +153,7 @@ const OrderCard = ({ order, onUpdateStatus, now, assignedRole }: any) => {
         <config.icon className="w-3 h-3" />
       </div>
 
-      <CardContent className="p-3 flex-1 flex flex-col gap-2 bg-white dark:bg-zinc-900">
+      <CardContent className="p-3 flex-1 flex flex-col gap-3 bg-white dark:bg-zinc-900">
         <div className="min-w-0">
           <h4 className="font-black text-xs uppercase truncate leading-none mb-1">{order.customerName}</h4>
           <div className="flex items-center gap-1 opacity-50">
@@ -161,7 +162,20 @@ const OrderCard = ({ order, onUpdateStatus, now, assignedRole }: any) => {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1 mt-auto">
+        <div className="space-y-1.5 border-y border-dashed py-2 my-1">
+           {order.items?.map((item: any, i: number) => (
+             <div key={i} className="flex justify-between items-center gap-2">
+                <p className="text-[10px] font-black uppercase truncate flex-1">
+                   {item.name}
+                   {item.customization && <span className="text-primary lowercase text-[8px] ml-1">({item.customization.size})</span>}
+                   {item.selectedVariant && <span className="text-blue-500 lowercase text-[8px] ml-1">({item.selectedVariant.name})</span>}
+                </p>
+                <span className="text-[10px] font-black bg-secondary px-1 rounded">x{item.quantity}</span>
+             </div>
+           ))}
+        </div>
+
+        <div className="flex flex-wrap gap-1 mt-auto pt-1">
           <Badge variant="secondary" className="bg-secondary/60 text-[7px] font-black uppercase px-1.5 h-4">
             {order.items?.length || 0} Items
           </Badge>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -6,19 +7,24 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogDescription
+  DialogDescription,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { 
   Star, 
   ShoppingBag, 
   Loader2,
   Plus,
   Minus,
-  Bot
+  Bot,
+  Layers,
+  CheckCircle2
 } from 'lucide-react';
-import { FoodItem, useStore } from '@/app/lib/store';
+import { FoodItem, useStore, ProductVariant } from '@/app/lib/store';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import Image from 'next/image';
@@ -40,17 +46,32 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
   const [localQty, setLocalQty] = useState(1);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [summarizing, setSummarizing] = useState(false);
+  const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const hasSummarized = useRef(false);
 
-  const cartItem = useMemo(() => cart.find(i => i.id === item.id), [cart, item.id]);
+  const availableVariants = useMemo(() => item.variants?.filter(v => v.isAvailable) || [], [item.variants]);
   
   useEffect(() => {
     if (isOpen) {
-      setLocalQty(cartItem?.quantity || 1);
+      setLocalQty(1);
       setAiSummary(null);
       hasSummarized.current = false;
+      if (availableVariants.length > 0) {
+        setSelectedVariantId(availableVariants[0].id);
+      }
     }
-  }, [isOpen, cartItem]);
+  }, [isOpen, availableVariants]);
+
+  const cartItem = useMemo(() => {
+    if (item.hasVariants) {
+      return cart.find(i => i.id === item.id && i.selectedVariant?.id === selectedVariantId);
+    }
+    return cart.find(i => i.id === item.id);
+  }, [cart, item.id, item.hasVariants, selectedVariantId]);
+
+  const selectedVariant = useMemo(() => 
+    item.variants?.find(v => v.id === selectedVariantId), 
+  [item.variants, selectedVariantId]);
 
   const reviewsQuery = useMemo(() => {
     if (!db || !item.id || !isOpen) return null;
@@ -90,10 +111,12 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
     if (cartItem) {
       onClose();
     } else {
+      const variant = item.hasVariants ? selectedVariant : undefined;
       for(let i = 0; i < localQty; i++) {
-        addToCart(item);
+        addToCart(item, undefined, variant);
       }
-      toast({ title: "Added to Tray", description: `${localQty} x ${item.name}` });
+      const label = variant ? `${item.name} (${variant.name})` : item.name;
+      toast({ title: "Added to Tray", description: `${localQty} x ${label}` });
       onClose();
     }
   };
@@ -139,14 +162,41 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
                    </Badge>
                    {item.isFeatured && <Badge className="bg-primary text-white border-none font-black text-[7px] uppercase px-2 py-0.5 rounded-md">Bestseller</Badge>}
                 </div>
-                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter leading-tight">{item.name}</h2>
+                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter leading-tight italic">{item.name}</h2>
               </div>
-              <p className="text-2xl md:text-3xl font-black text-primary italic shrink-0">₹{item.price}</p>
+              <p className="text-2xl md:text-3xl font-black text-primary italic shrink-0">
+                ₹{item.hasVariants ? (selectedVariant?.price || item.price) : item.price}
+              </p>
             </div>
 
             <p className="text-sm md:text-base font-medium text-muted-foreground leading-relaxed">
               {item.description}
             </p>
+
+            {/* VARIANT SELECTOR */}
+            {item.hasVariants && item.variants && item.variants.length > 0 && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                 <div className="flex items-center gap-2 text-primary font-black uppercase text-[8px] tracking-[0.2em]">
+                    <Layers className="w-3 h-3" /> Select Portion Size
+                 </div>
+                 <RadioGroup value={selectedVariantId} onValueChange={setSelectedVariantId} className="grid grid-cols-2 gap-3">
+                    {item.variants.map((v) => (
+                      <Label
+                        key={v.id}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all",
+                          !v.isAvailable ? "opacity-30 grayscale cursor-not-allowed border-dashed" :
+                          selectedVariantId === v.id ? "border-primary bg-primary/5 shadow-sm" : "border-muted hover:border-primary/20"
+                        )}
+                      >
+                         <RadioGroupItem value={v.id} className="sr-only" disabled={!v.isAvailable} />
+                         <span className={cn("font-black text-[10px] uppercase", selectedVariantId === v.id ? "text-primary" : "text-muted-foreground")}>{v.name}</span>
+                         <span className="font-black text-[11px] italic">₹{v.price}</span>
+                      </Label>
+                    ))}
+                 </RadioGroup>
+              </div>
+            )}
 
             {(summarizing || aiSummary) && (
               <div className="p-5 bg-primary/5 rounded-[1.5rem] border border-dashed border-primary/20 space-y-3 animate-in fade-in slide-in-from-top-2">
@@ -172,10 +222,10 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
             <div className="pt-6 border-t border-dashed space-y-6">
                <div className="flex items-center justify-between">
                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
-                    <Star className="w-3.5 h-3.5 fill-primary" /> Customer Pulse
+                    <Star className="w-3 h-3 fill-primary text-primary" /> Customer Pulse
                   </h4>
                   <div className="flex items-center gap-2">
-                    <Star className="w-3 h-3 fill-primary text-primary" />
+                    <Star className="w-2.5 h-2.5 fill-primary text-primary" />
                     <span className="text-[9px] font-black">{displayRating} Node Rating</span>
                   </div>
                </div>
@@ -234,7 +284,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
             className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary text-white shadow-xl shadow-primary/20 gap-3"
           >
             <ShoppingBag className="w-4 h-4" />
-            {cartItem ? 'Sync Selection' : `Add to Tray • ₹${item.price * (cartItem?.quantity || localQty)}`}
+            {cartItem ? 'Sync Selection' : `Add to Tray • ₹${(selectedVariant?.price || item.price) * (cartItem?.quantity || localQty)}`}
           </Button>
         </div>
       </DialogContent>

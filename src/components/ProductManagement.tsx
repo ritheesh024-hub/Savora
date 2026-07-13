@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,7 +15,9 @@ import {
   Search,
   Filter,
   Zap,
-  X
+  X,
+  Layers,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -34,7 +37,7 @@ import {
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, doc, setDoc, deleteDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
-import { FoodItem } from '@/app/lib/store';
+import { FoodItem, ProductVariant } from '@/app/lib/store';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { CATEGORIES } from '@/app/lib/menu-data';
@@ -60,7 +63,9 @@ export const ProductManagement = () => {
     imageUrl: '',
     isAvailable: true,
     isFeatured: false,
-    isVeg: true
+    isVeg: true,
+    hasVariants: false,
+    variants: [] as ProductVariant[]
   });
 
   const filteredProducts = useMemo(() => {
@@ -88,13 +93,46 @@ export const ProductManagement = () => {
         imageUrl: item.imageUrl,
         isAvailable: item.isAvailable,
         isFeatured: item.isFeatured,
-        isVeg: item.isVeg ?? true
+        isVeg: item.isVeg ?? true,
+        hasVariants: item.hasVariants ?? false,
+        variants: item.variants || []
       });
     } else {
       setEditingItem(null);
-      setFormData({ name: '', description: '', category: 'Biryani', price: 0, imageUrl: '', isAvailable: true, isFeatured: false, isVeg: true });
+      setFormData({ 
+        name: '', 
+        description: '', 
+        category: 'Biryani', 
+        price: 0, 
+        imageUrl: '', 
+        isAvailable: true, 
+        isFeatured: false, 
+        isVeg: true,
+        hasVariants: false,
+        variants: []
+      });
     }
     setIsModalOpen(true);
+  };
+
+  const addVariant = () => {
+    const newVariant: ProductVariant = {
+      id: `v-${Date.now()}`,
+      name: 'Regular',
+      price: formData.price || 0,
+      isAvailable: true
+    };
+    setFormData({ ...formData, variants: [...formData.variants, newVariant], hasVariants: true });
+  };
+
+  const removeVariant = (id: string) => {
+    const updated = formData.variants.filter((v: any) => v.id !== id);
+    setFormData({ ...formData, variants: updated, hasVariants: updated.length > 0 });
+  };
+
+  const updateVariant = (id: string, field: string, value: any) => {
+    const updated = formData.variants.map((v: any) => v.id === id ? { ...v, [field]: value } : v);
+    setFormData({ ...formData, variants: updated });
   };
 
   const handleSave = async () => {
@@ -105,10 +143,16 @@ export const ProductManagement = () => {
     setSaveLoading(true);
     const id = editingItem ? editingItem.id : `PROD-${Date.now()}`;
     const productRef = doc(db, 'products', id);
+    
+    // If variants exist, set base price to the first variant's price
+    const finalPrice = formData.hasVariants && formData.variants.length > 0 
+      ? Number(formData.variants[0].price) 
+      : Number(formData.price);
+
     const finalData = { 
       ...formData, 
       id, 
-      price: Number(formData.price), 
+      price: finalPrice, 
       updatedAt: serverTimestamp(),
       createdAt: editingItem?.createdAt || serverTimestamp() 
     };
@@ -169,7 +213,7 @@ export const ProductManagement = () => {
                      <Badge className={cn("px-2 py-0.5 rounded-md font-black text-[6px] uppercase border-none", item.isAvailable ? "bg-emerald-500 text-white" : "bg-zinc-500 text-white")}>
                        {item.isAvailable ? 'LIVE' : 'IDLE'}
                      </Badge>
-                     {item.isFeatured && <Badge className="bg-primary text-white border-none text-[6px] font-black px-2 py-0.5 rounded-md">PROMO</Badge>}
+                     {item.hasVariants && <Badge className="bg-blue-500 text-white border-none text-[6px] font-black px-2 py-0.5 rounded-md">SIZES</Badge>}
                   </div>
                 </div>
                 <CardContent className="p-3.5 flex flex-col flex-1">
@@ -200,66 +244,116 @@ export const ProductManagement = () => {
       )}
 
       <Dialog open={isModalOpen} onOpenChange={(open) => !open && setIsModalOpen(false)}>
-        <DialogContent className="max-w-xl rounded-[2rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
+        <DialogContent className="max-w-3xl w-[95vw] rounded-[2rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950 max-h-[90vh] flex flex-col">
           <div className="p-6 bg-primary text-white shrink-0 flex justify-between items-center">
              <DialogHeader>
                 <DialogTitle className="text-2xl font-black font-headline uppercase tracking-tighter italic leading-none">{editingItem ? 'Edit Protocol' : 'New Entry'}</DialogTitle>
-                <DialogDescription className="sr-only">Add or edit product inventory details.</DialogDescription>
+                <DialogDescription className="text-white/60 font-bold text-[8px] uppercase tracking-widest mt-1">Registry Handshake Hub</DialogDescription>
              </DialogHeader>
           </div>
-          <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto scrollbar-hide">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Label</Label>
-                <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Dish name" className="h-11 rounded-xl bg-secondary/30 border-none font-bold" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Valuation (₹)</Label>
-                <Input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="h-11 rounded-xl bg-secondary/30 border-none font-black" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Cluster</Label>
-                <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
-                   <SelectTrigger className="h-11 rounded-xl bg-secondary/30 border-none font-black uppercase text-[9px] tracking-widest px-4"><SelectValue /></SelectTrigger>
-                   <SelectContent className="rounded-xl">
-                      {CATEGORIES.filter(c => c !== 'All').map(c => <SelectItem key={c} value={c} className="font-bold text-[10px] uppercase">{c}</SelectItem>)}
-                   </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Dietary Node</Label>
-                <Select value={formData.isVeg ? 'veg' : 'nonveg'} onValueChange={v => setFormData({...formData, isVeg: v === 'veg'})}>
-                   <SelectTrigger className="h-11 rounded-xl bg-secondary/30 border-none font-black uppercase text-[9px] tracking-widest px-4"><SelectValue /></SelectTrigger>
-                   <SelectContent className="rounded-xl">
-                      <SelectItem value="veg" className="font-bold text-[10px]">VEG</SelectItem>
-                      <SelectItem value="nonveg" className="font-bold text-[10px]">NON-VEG</SelectItem>
-                   </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Asset URL</Label>
-              <Input value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} className="h-11 rounded-xl bg-secondary/30 border-none font-medium" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-               <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl">
-                  <span className="text-[10px] font-black uppercase">Live Node</span>
-                  <Switch checked={formData.isAvailable} onCheckedChange={v => setFormData({...formData, isAvailable: v})} />
+          
+          <div className="p-6 space-y-8 overflow-y-auto scrollbar-hide">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               {/* Left Column: Basic Info */}
+               <div className="space-y-6">
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Asset URL</Label>
+                    <Input value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} className="h-11 rounded-xl bg-secondary/30 border-none font-medium" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Label</Label>
+                    <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Dish name" className="h-11 rounded-xl bg-secondary/30 border-none font-bold text-base" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Cluster</Label>
+                      <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
+                         <SelectTrigger className="h-11 rounded-xl bg-secondary/30 border-none font-black uppercase text-[9px] tracking-widest px-4"><SelectValue /></SelectTrigger>
+                         <SelectContent className="rounded-xl">
+                            {CATEGORIES.filter(c => c !== 'All').map(c => <SelectItem key={c} value={c} className="font-bold text-[10px] uppercase">{c}</SelectItem>)}
+                         </SelectContent>
+                      </Select>
+                    </div>
+                    {!formData.hasVariants && (
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Valuation (₹)</Label>
+                        <Input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="h-11 rounded-xl bg-secondary/30 border-none font-black" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                     <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Manifest Description</Label>
+                     <Input value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="h-11 rounded-xl bg-secondary/30 border-none font-medium" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl">
+                        <span className="text-[10px] font-black uppercase">Live</span>
+                        <Switch checked={formData.isAvailable} onCheckedChange={v => setFormData({...formData, isAvailable: v})} />
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl">
+                        <span className="text-[10px] font-black uppercase">Featured</span>
+                        <Switch checked={formData.isFeatured} onCheckedChange={v => setFormData({...formData, isFeatured: v})} />
+                    </div>
+                  </div>
                </div>
-               <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl">
-                  <span className="text-[10px] font-black uppercase">Featured</span>
-                  <Switch checked={formData.isFeatured} onCheckedChange={v => setFormData({...formData, isFeatured: v})} />
+
+               {/* Right Column: Variants */}
+               <div className="space-y-6">
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2">
+                       <Layers className="w-3.5 h-3.5" /> Size Variants
+                    </h5>
+                    <Button onClick={addVariant} variant="ghost" className="h-7 px-3 rounded-lg font-black uppercase text-[8px] tracking-widest text-primary hover:bg-primary/10">
+                       Add Size +
+                    </Button>
+                  </div>
+
+                  {formData.category === 'Shawarma' && !formData.hasVariants && (
+                    <div className="p-4 bg-primary/5 rounded-2xl border border-dashed border-primary/20 flex items-center justify-between gap-4">
+                       <p className="text-[9px] font-bold text-primary/60 uppercase leading-relaxed">Shawarma products usually require size nodes (Mini/Regular/Jumbo).</p>
+                       <Button onClick={addVariant} className="h-8 rounded-lg bg-primary text-white font-black uppercase text-[8px] px-3 shrink-0">Enable</Button>
+                    </div>
+                  )}
+
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
+                    {formData.variants.map((v: any, i: number) => (
+                      <div key={v.id} className="p-4 bg-secondary/20 dark:bg-zinc-900 rounded-2xl border space-y-4 group relative">
+                        <button onClick={() => removeVariant(v.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-rose-500 hover:bg-rose-50 p-1 rounded-lg">
+                           <X className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="grid grid-cols-2 gap-3">
+                           <div className="space-y-1">
+                              <Label className="text-[7px] font-black uppercase opacity-40">Label</Label>
+                              <Input value={v.name} onChange={e => updateVariant(v.id, 'name', e.target.value)} className="h-9 rounded-lg bg-white dark:bg-zinc-800 border-none text-[10px] font-black uppercase" placeholder="e.g. Mini" />
+                           </div>
+                           <div className="space-y-1">
+                              <Label className="text-[7px] font-black uppercase opacity-40">Price (₹)</Label>
+                              <Input type="number" value={v.price} onChange={e => updateVariant(v.id, 'price', e.target.value)} className="h-9 rounded-lg bg-white dark:bg-zinc-800 border-none text-[10px] font-black" />
+                           </div>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-dashed">
+                           <div className="flex items-center gap-2">
+                              <span className="text-[8px] font-black uppercase opacity-40">Available</span>
+                              <Switch size="sm" checked={v.isAvailable} onCheckedChange={checked => updateVariant(v.id, 'isAvailable', checked)} />
+                           </div>
+                           <Badge variant="outline" className="border-none bg-primary/5 text-primary font-black text-[7px] px-1.5 h-4">NODE #{i+1}</Badge>
+                        </div>
+                      </div>
+                    ))}
+                    {formData.variants.length === 0 && (
+                      <div className="py-20 text-center opacity-10 flex flex-col items-center gap-4">
+                         <Layers className="w-10 h-10" />
+                         <p className="font-black uppercase tracking-[0.3em] text-[10px]">No variants defined</p>
+                      </div>
+                    )}
+                  </div>
                </div>
             </div>
           </div>
-          <DialogFooter className="p-6 bg-zinc-50 dark:bg-zinc-900 border-t flex gap-2">
-             <Button variant="outline" className="h-12 flex-1 rounded-xl font-black uppercase text-[9px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Later</Button>
-             <Button className="h-12 flex-[2] rounded-xl font-black uppercase text-[9px] tracking-widest bg-primary text-white shadow-xl shadow-primary/20" onClick={handleSave} disabled={saveLoading}>
+
+          <DialogFooter className="p-6 bg-zinc-50 dark:bg-zinc-900 border-t flex flex-col sm:flex-row gap-3">
+             <Button variant="outline" className="h-14 flex-1 rounded-xl font-black uppercase text-[9px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Abort Protocol</Button>
+             <Button className="h-14 flex-[2] rounded-xl font-black uppercase text-[9px] tracking-widest bg-primary text-white shadow-xl shadow-primary/20" onClick={handleSave} disabled={saveLoading}>
                {saveLoading ? <Loader2 className="animate-spin w-4 h-4" /> : 'Commit to Registry'}
              </Button>
           </DialogFooter>

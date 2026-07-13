@@ -39,6 +39,7 @@ export const MENU_ITEMS: FoodItem[] = [
 export const CATEGORIES = [
   'All', 
   'Biryani', 
+  'Shawarma',
   'Momos', 
   'Noodles', 
   'Fried Rice', 

@@ -1,13 +1,15 @@
+
 "use client"
 import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/app/lib/store';
-import { ShoppingBag, Minus, Plus, X, ChevronRight, Truck } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, X, ChevronRight, Truck, Layers } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from './ui/separator';
 import { useGlobalSettings } from '@/hooks/use-global-settings';
+import { cn } from '@/lib/utils';
 
 export const CartDrawer = ({ children }: { children: React.ReactNode }) => {
   const { cart, updateQuantity, removeFromCart, getTotal } = useStore();
@@ -28,7 +30,7 @@ export const CartDrawer = ({ children }: { children: React.ReactNode }) => {
       <SheetContent className="w-full sm:max-w-md flex flex-col p-0 rounded-l-[2rem] md:rounded-l-[3rem] border-none shadow-3xl bg-background">
         <SheetHeader className="p-5 md:p-8 border-b bg-card">
           <div className="flex items-center justify-between">
-            <SheetTitle className="flex items-center gap-3 text-xl md:text-2xl font-black font-headline tracking-tight">
+            <SheetTitle className="flex items-center gap-3 text-xl md:text-2xl font-black font-headline tracking-tight uppercase">
               <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                 <ShoppingBag className="w-4.5 h-4.5" />
               </div>
@@ -37,7 +39,7 @@ export const CartDrawer = ({ children }: { children: React.ReactNode }) => {
           </div>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-5 md:px-8 py-4">
+        <div className="flex-1 overflow-y-auto px-5 md:px-8 py-4 scrollbar-hide">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
               <div className="w-24 h-24 bg-secondary rounded-3xl flex items-center justify-center opacity-10">
@@ -52,7 +54,7 @@ export const CartDrawer = ({ children }: { children: React.ReactNode }) => {
               </SheetTrigger>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               {cart.map((item) => (
                 <div key={item.cartId} className="flex gap-4 group">
                   <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-secondary shadow-sm">
@@ -66,7 +68,7 @@ export const CartDrawer = ({ children }: { children: React.ReactNode }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-0.5">
-                      <h4 className="font-black text-sm md:text-base truncate pr-2 tracking-tight uppercase">{item.name}</h4>
+                      <h4 className="font-black text-sm md:text-base truncate pr-2 tracking-tight uppercase italic">{item.name}</h4>
                       <button 
                         onClick={() => removeFromCart(item.cartId)}
                         className="text-muted-foreground hover:text-destructive transition-colors p-1"
@@ -75,15 +77,22 @@ export const CartDrawer = ({ children }: { children: React.ReactNode }) => {
                       </button>
                     </div>
                     
-                    {item.customization && (
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        <span className="text-[7px] font-black uppercase tracking-widest bg-primary/5 text-primary px-1.5 py-0.5 rounded-md">{item.customization.temp}</span>
-                        <span className="text-[7px] font-black uppercase tracking-widest bg-secondary text-muted-foreground px-1.5 py-0.5 rounded-md">{item.customization.size}</span>
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {item.selectedVariant && (
+                        <span className="text-[7px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                          <Layers className="w-2 h-2" /> {item.selectedVariant.name}
+                        </span>
+                      )}
+                      {item.customization && (
+                        <>
+                          <span className="text-[7px] font-black uppercase tracking-widest bg-primary/5 text-primary px-1.5 py-0.5 rounded-md">{item.customization.temp}</span>
+                          <span className="text-[7px] font-black uppercase tracking-widest bg-secondary text-muted-foreground px-1.5 py-0.5 rounded-md">{item.customization.size}</span>
+                        </>
+                      )}
+                    </div>
 
                     <div className="flex items-center justify-between mt-3">
-                      <p className="text-base md:text-lg font-black text-primary italic">₹{item.price}</p>
+                      <p className="text-base md:text-lg font-black text-primary italic leading-none">₹{item.price * item.quantity}</p>
                       <div className="flex items-center bg-secondary rounded-lg px-1.5 h-8 gap-1">
                         <button 
                           onClick={() => updateQuantity(item.cartId, -1)}

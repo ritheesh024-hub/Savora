@@ -12,6 +12,14 @@ export interface BeverageOptions {
   addons: string[];
 }
 
+export interface ProductVariant {
+  id: string;
+  name: string;
+  price: number;
+  discountPrice?: number;
+  isAvailable: boolean;
+}
+
 export interface FoodItem {
   id: string;
   name: string;
@@ -22,7 +30,7 @@ export interface FoodItem {
   imageUrl: string;
   isVeg: boolean;
   rating: number;
-  ratingSum?: number; // Aggregated total of all ratings
+  ratingSum?: number;
   reviewCount?: number;
   isAvailable: boolean;
   isBeverage?: boolean;
@@ -33,11 +41,14 @@ export interface FoodItem {
   spiceLevel?: 'None' | 'Mild' | 'Medium' | 'Hot' | 'Extra Hot';
   prepTime?: number;
   createdAt?: any;
+  hasVariants?: boolean;
+  variants?: ProductVariant[];
 }
 
 export interface CartItem extends FoodItem {
   quantity: number;
   customization?: BeverageOptions;
+  selectedVariant?: ProductVariant;
   cartId: string;
 }
 
@@ -47,7 +58,7 @@ interface AppStore {
   menuViewMode: 'small' | 'big';
   isDarkMode: boolean;
   selectedOrderType: OrderType | null;
-  addToCart: (item: FoodItem, customization?: BeverageOptions) => void;
+  addToCart: (item: FoodItem, customization?: BeverageOptions, variant?: ProductVariant) => void;
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, delta: number) => void;
   clearCart: () => void;
@@ -66,10 +77,14 @@ export const useStore = create<AppStore>()(
       menuViewMode: 'big',
       isDarkMode: false,
       selectedOrderType: null,
-      addToCart: (item, customization) => set((state) => {
-        const cartId = customization 
-          ? `${item.id}-${customization.size}-${customization.temp}-${customization.sugar}-${customization.addons.sort().join(',')}`
-          : item.id;
+      addToCart: (item, customization, variant) => set((state) => {
+        let cartId = item.id;
+        
+        if (variant) {
+          cartId = `${item.id}-v-${variant.id}`;
+        } else if (customization) {
+          cartId = `${item.id}-${customization.size}-${customization.temp}-${customization.sugar}-${customization.addons.sort().join(',')}`;
+        }
 
         const existing = state.cart.find((i) => i.cartId === cartId);
         
@@ -81,7 +96,8 @@ export const useStore = create<AppStore>()(
           };
         }
 
-        let finalPrice = item.price;
+        let finalPrice = variant ? variant.price : item.price;
+        
         if (customization) {
           if (customization.size === 'Medium') finalPrice += 20;
           if (customization.size === 'Large') finalPrice += 40;
@@ -89,7 +105,7 @@ export const useStore = create<AppStore>()(
         }
 
         return { 
-          cart: [...state.cart, { ...item, price: finalPrice, quantity: 1, customization, cartId }] 
+          cart: [...state.cart, { ...item, price: finalPrice, quantity: 1, customization, selectedVariant: variant, cartId }] 
         };
       }),
       removeFromCart: (cartId) => set((state) => ({

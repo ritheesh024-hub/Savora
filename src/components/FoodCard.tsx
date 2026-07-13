@@ -1,13 +1,15 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Star, Plus, Minus, Heart, Zap } from 'lucide-react';
-import { FoodItem, useStore } from '@/app/lib/store';
+import { FoodItem, useStore, ProductVariant } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { BeverageCustomizer } from './BeverageCustomizer';
+import { VariantSelector } from './VariantSelector';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -23,6 +25,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
   const { user } = useUser();
   const db = useFirestore();
   const [isCustomizing, setIsCustomizing] = useState(false);
+  const [isSelectingVariant, setIsSelectingVariant] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { trackProductView, trackAddToCart, trackEvent } = useAnalytics();
@@ -67,11 +70,20 @@ export const FoodCard = ({ item }: FoodCardProps) => {
     e.stopPropagation();
     if (item.isBeverage || item.isCustomizable) {
       setIsCustomizing(true);
+    } else if (item.hasVariants && item.variants && item.variants.length > 0) {
+      setIsSelectingVariant(true);
     } else {
       addToCart(item);
       trackAddToCart(item);
       toast({ title: "Added to Tray" });
     }
+  };
+
+  const handleVariantSelect = (variant: ProductVariant) => {
+    addToCart(item, undefined, variant);
+    trackAddToCart(item);
+    setIsSelectingVariant(false);
+    toast({ title: `Added ${variant.name} to Tray` });
   };
 
   const handleQtyChange = (e: React.MouseEvent, delta: number) => {
@@ -154,7 +166,9 @@ export const FoodCard = ({ item }: FoodCardProps) => {
 
           <div className="flex items-center justify-between mt-auto gap-4">
             <div className="flex flex-col">
-               <span className="text-[8px] font-black uppercase opacity-30 tracking-widest leading-none mb-0.5">Price Node</span>
+               <span className="text-[8px] font-black uppercase opacity-30 tracking-widest leading-none mb-0.5">
+                 {item.hasVariants ? 'From' : 'Price Node'}
+               </span>
                <span className="text-lg md:text-2xl font-black text-primary italic leading-none">₹{item.price}</span>
             </div>
 
@@ -182,8 +196,12 @@ export const FoodCard = ({ item }: FoodCardProps) => {
       {(item.isBeverage || item.isCustomizable) && (
         <BeverageCustomizer item={item} isOpen={isCustomizing} onClose={() => setIsCustomizing(false)} onConfirm={(opts) => { addToCart(item, opts); setIsCustomizing(false); }} />
       )}
+
+      {item.hasVariants && (
+        <VariantSelector item={item} isOpen={isSelectingVariant} onClose={() => setIsSelectingVariant(false)} onConfirm={handleVariantSelect} />
+      )}
       
-      <ProductDetails item={item} isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} onAddToCart={() => { setIsDetailsOpen(false); addToCart(item); }} />
+      <ProductDetails item={item} isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} onAddToCart={() => { setIsDetailsOpen(false); handleAddClick({ stopPropagation: () => {} } as any); }} />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </>
   );
