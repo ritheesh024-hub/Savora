@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
-import { PromoBanner } from '@/components/PromoBanner';
 import { SavorTool } from '@/components/SavorTool';
 import { 
   ArrowRight, Utensils, 
@@ -13,7 +12,8 @@ import {
   Map,
   CheckCircle2,
   Plus,
-  ChefHat
+  ChefHat,
+  TicketPercent
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -69,6 +69,13 @@ export default function Home() {
     return query(collection(db, 'reviews'), where('isHidden', '==', false), orderBy('createdAt', 'desc'), limit(10));
   }, [db]);
   const { data: reviews, loading: reviewsLoading } = useCollection<any>(reviewsQuery);
+
+  // QUERY: Active Coupons for the compact chip
+  const couponsQuery = useMemo(() => {
+    if (!db) return null;
+    return query(collection(db, 'coupons'), where('isActive', '==', true), limit(10));
+  }, [db]);
+  const { data: coupons } = useCollection<any>(couponsQuery);
 
   // QUERY: All Items (Highlights)
   const highlightsQuery = useMemo(() => {
@@ -175,7 +182,7 @@ export default function Home() {
 
         {/* MOBILE SEARCH & CATEGORIES - STICKY NODE */}
         <div className="sticky top-0 z-30 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-3xl md:hidden pt-4 pb-4 border-b shadow-xl px-4">
-           <div className="container space-y-5">
+           <div className="container space-y-4">
               <form onSubmit={handleSearch} className="relative group">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground z-10" />
                 <Input 
@@ -185,26 +192,29 @@ export default function Home() {
                   className="w-full h-14 pl-14 rounded-2xl bg-secondary/50 border-none font-bold text-base focus:ring-4 focus:ring-primary/20 shadow-inner"
                 />
               </form>
+              
+              {/* COMPACT DYNAMIC OFFER CHIP */}
+              {coupons && coupons.length > 0 && (
+                <Link href="/coupons">
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }} 
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-xl w-fit group active:scale-95 transition-all"
+                  >
+                    <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                      <TicketPercent className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-primary tracking-widest">
+                      🎉 {coupons.length} Offers Available
+                    </span>
+                    <ChevronRight className="w-3 h-3 text-primary group-hover:translate-x-1 transition-transform" />
+                  </motion.div>
+                </Link>
+              )}
+
               <Categories />
            </div>
         </div>
-
-        {/* BOUNTIES SECTION */}
-        <section className="container mx-auto px-4 max-w-7xl">
-          <div className="flex items-center justify-between mb-8">
-             <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><Zap className="w-5 h-5 fill-current" /></div>
-                <div>
-                  <h2 className="text-2xl md:text-4xl font-black font-headline uppercase tracking-tighter">Active <span className="text-primary italic">Bounties.</span></h2>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">High-yield promotional nodes</p>
-                </div>
-             </div>
-             <Link href="/coupons" className="group flex items-center gap-2 text-[10px] font-black uppercase text-primary hover:underline tracking-widest">
-                View All <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-             </Link>
-          </div>
-          <PromoBanner />
-        </section>
 
         {/* POPULAR TODAY SLIDER */}
         <section className="container mx-auto px-4 max-w-7xl">
