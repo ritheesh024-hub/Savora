@@ -63,9 +63,8 @@ export default function Home() {
 
       <main className="flex-1 space-y-8 md:space-y-16">
         
-        {/* PREMIUM INTEGRATED HERO CONTAINER */}
-        <div className="p-3 md:p-6 lg:p-8 h-[92vh] min-h-[700px]">
-          <div className="rounded-[3rem] md:rounded-[4.5rem] overflow-hidden border border-white/10 shadow-4xl relative bg-black h-full flex items-center">
+        {/* PREMIUM FULL-BLEED HERO */}
+        <div className="h-screen min-h-[700px] relative bg-black flex items-center overflow-hidden">
             
             {/* AMBIENT BACKGROUND SYSTEM */}
             <div className="absolute inset-0 z-0">
@@ -157,7 +156,6 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </div>
         </div>
 
         {/* MOBILE SEARCH & CATEGORIES */}
