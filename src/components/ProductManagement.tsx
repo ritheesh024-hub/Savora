@@ -8,14 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { 
   Plus, Edit2, Trash2, 
-  LayoutGrid, 
   Loader2, Package, Star, 
-  Power,
   ChevronLeft,
   ChevronRight,
   Search,
   Filter,
-  Layers,
   Zap,
   X
 } from 'lucide-react';
@@ -35,12 +32,12 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, doc, setDoc, deleteDoc, serverTimestamp, orderBy, writeBatch } from 'firebase/firestore';
+import { collection, query, doc, setDoc, deleteDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { FoodItem } from '@/app/lib/store';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { CATEGORIES, MENU_ITEMS } from '@/app/lib/menu-data';
+import { CATEGORIES } from '@/app/lib/menu-data';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -52,7 +49,6 @@ export const ProductManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [seedLoading, setSeedLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -125,28 +121,6 @@ export const ProductManagement = () => {
       .finally(() => setSaveLoading(false));
   };
 
-  const handleSeedData = async () => {
-    if (!db) return;
-    setSeedLoading(true);
-    try {
-      const batch = writeBatch(db);
-      MENU_ITEMS.forEach((item) => {
-        const ref = doc(db, 'products', item.id);
-        batch.set(ref, {
-          ...item,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-      });
-      await batch.commit();
-      toast({ title: "Inventory Seeded! 🚀", description: `${MENU_ITEMS.length} premium bites added to registry.` });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Seeding Failed", description: e.message });
-    } finally {
-      setSeedLoading(false);
-    }
-  };
-
   const handleDelete = (id: string) => {
     if (!db || !window.confirm("Permanently purge this item?")) return;
     deleteDoc(doc(db, 'products', id)).then(() => toast({ title: "Purge Successful" }));
@@ -160,14 +134,6 @@ export const ProductManagement = () => {
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Inventory Node: {filteredProducts.length} Items</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <Button 
-            variant="outline"
-            onClick={handleSeedData} 
-            disabled={seedLoading}
-            className="h-11 px-6 rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 border-2 flex-1 sm:flex-none"
-          >
-            {seedLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} Seed Sample
-          </Button>
           <Button onClick={() => handleOpenModal()} className="h-11 px-6 rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 bg-primary shadow-lg flex-1 sm:flex-none">
             <Plus className="w-4 h-4" /> Provision Item
           </Button>
