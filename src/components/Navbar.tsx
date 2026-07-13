@@ -21,7 +21,8 @@ import {
   ChevronDown,
   Mic,
   Moon,
-  Sun
+  Sun,
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -114,7 +115,7 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
       scrolled ? "top-0 py-3" : "top-0 py-6"
     )}>
       <div className={cn(
-        "container mx-auto max-w-7xl h-[64px] md:h-[72px] flex items-center justify-between gap-6 px-6 md:px-10 transition-all duration-500 rounded-[2.5rem] md:rounded-[3rem]",
+        "container mx-auto max-w-7xl h-[60px] md:h-[68px] flex items-center justify-between gap-6 px-6 md:px-10 transition-all duration-500 rounded-[2.5rem] md:rounded-[3rem]",
         scrolled 
           ? "bg-white/80 dark:bg-black/80 backdrop-blur-3xl border border-white/20 dark:border-white/5 shadow-3xl" 
           : (isHeroState ? "bg-white/5 backdrop-blur-md border border-white/10" : "bg-white/10 backdrop-blur-md border border-white/10")
@@ -236,10 +237,10 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
             ) : (
               <Link href="/login" className="hidden md:block">
                 <Button type="button" className={cn(
-                  "h-11 rounded-full px-8 font-black uppercase text-[11px] tracking-[0.2em] gap-3 shadow-xl hover:scale-[1.05] transition-all border-none",
+                  "h-11 rounded-full px-8 font-black uppercase text-[11px] tracking-[0.2em] shadow-xl hover:scale-[1.05] transition-all border-none",
                   isHeroState ? "bg-white text-black" : "bg-orange-gradient text-white"
                 )}>
-                  <User className="w-4.5 h-4.5" /> Login
+                  Login
                 </Button>
               </Link>
             )
