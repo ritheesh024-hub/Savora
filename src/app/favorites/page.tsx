@@ -1,6 +1,7 @@
+
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
@@ -9,10 +10,18 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { FoodCard } from '@/components/FoodCard';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 export default function FavoritesPage() {
   const { user, loading: userLoading } = useUser();
   const db = useFirestore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push(`/login?redirect=${encodeURIComponent('/favorites')}`);
+    }
+  }, [user, userLoading, router]);
 
   const favQuery = React.useMemo(() => {
     if (!db || !user) return null;
@@ -25,7 +34,7 @@ export default function FavoritesPage() {
 
   const { data: favorites, loading: favLoading } = useCollection<any>(favQuery);
 
-  if (userLoading || favLoading) {
+  if (userLoading || (user && favLoading)) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
@@ -33,6 +42,8 @@ export default function FavoritesPage() {
       </div>
     );
   }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -50,20 +61,7 @@ export default function FavoritesPage() {
           </div>
         </div>
 
-        {!user ? (
-           <div className="py-32 text-center space-y-8 bg-white dark:bg-zinc-900 rounded-[3rem] border-2 border-dashed shadow-3xl">
-              <div className="w-24 h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto">
-                <Heart className="w-10 h-10 text-muted-foreground opacity-20 mx-auto" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-black uppercase tracking-tighter">Identity Required</h3>
-                <p className="text-muted-foreground text-sm max-w-xs mx-auto font-medium">Please sign in to save and sync your favorite bites across devices.</p>
-              </div>
-              <Link href="/">
-                <Button className="rounded-full px-10 h-14 font-black uppercase text-[10px] tracking-widest bg-primary shadow-xl shadow-primary/20">Back to Gateway</Button>
-              </Link>
-           </div>
-        ) : favorites.length === 0 ? (
+        {favorites.length === 0 ? (
           <div className="py-32 text-center space-y-8 bg-white dark:bg-zinc-900 rounded-[3rem] border-2 border-dashed shadow-3xl">
             <div className="w-24 h-24 bg-secondary dark:bg-zinc-800 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner">
               <ShoppingBag className="w-10 h-10 text-muted-foreground opacity-10" />

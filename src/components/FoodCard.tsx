@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -29,7 +30,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
   
   const cartItemCount = cart.filter(i => i.id === item.id).reduce((acc, i) => acc + i.quantity, 0);
 
-  // Favorites logic
+  // Favorites logic - only build ref if user is present to avoid rule triggers
   const favDocId = user ? `${user.uid}_${item.id}` : null;
   const favRef = (db && favDocId) ? doc(db, 'favorites', favDocId) : null;
   const { data: favoriteData } = useDoc<any>(favRef);
@@ -39,7 +40,8 @@ export const FoodCard = ({ item }: FoodCardProps) => {
     trackProductView(item);
   }, [item, trackProductView]);
 
-  const toggleFavorite = async () => {
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening details
     if (!user) {
       setIsAuthModalOpen(true);
       return;
@@ -62,7 +64,8 @@ export const FoodCard = ({ item }: FoodCardProps) => {
     }
   };
 
-  const handleAddClick = () => {
+  const handleAddClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening details
     if (item.isBeverage || item.isCustomizable) {
       setIsCustomizing(true);
     } else {
@@ -72,12 +75,13 @@ export const FoodCard = ({ item }: FoodCardProps) => {
     }
   };
 
-  const handleQtyChange = (delta: number) => {
+  const handleQtyChange = (e: React.MouseEvent, delta: number) => {
+    e.stopPropagation(); // Prevent opening details
     const targetItem = cart.find(i => i.id === item.id);
     if (targetItem) {
       updateQuantity(targetItem.cartId, delta);
     } else if (delta > 0) {
-      handleAddClick();
+      handleAddClick(e);
     }
   };
 
@@ -143,9 +147,9 @@ export const FoodCard = ({ item }: FoodCardProps) => {
             <div className="shrink-0">
               {cartItemCount > 0 ? (
                 <div className="flex items-center gap-1 bg-primary text-white rounded-lg md:rounded-xl h-7 md:h-9 px-1 shadow-md">
-                  <button type="button" onClick={() => handleQtyChange(-1)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Minus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
+                  <button type="button" onClick={(e) => handleQtyChange(e, -1)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Minus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
                   <span className="text-[8px] md:text-xs font-black w-3 text-center">{cartItemCount}</span>
-                  <button type="button" onClick={() => handleQtyChange(1)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Plus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
+                  <button type="button" onClick={(e) => handleQtyChange(e, 1)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Plus className="w-2.5 h-2.5 md:w-3 md:h-3" /></button>
                 </div>
               ) : (
                 <Button 
@@ -165,7 +169,7 @@ export const FoodCard = ({ item }: FoodCardProps) => {
         <BeverageCustomizer item={item} isOpen={isCustomizing} onClose={() => setIsCustomizing(false)} onConfirm={(opts) => { addToCart(item, opts); setIsCustomizing(false); }} />
       )}
       
-      <ProductDetails item={item} isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} onAddToCart={() => { setIsDetailsOpen(false); handleAddClick(); }} />
+      <ProductDetails item={item} isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} onAddToCart={() => { setIsDetailsOpen(false); addToCart(item); }} />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </>
   );

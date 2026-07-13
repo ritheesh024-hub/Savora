@@ -1,6 +1,7 @@
+
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, deleteDoc } from 'firebase/firestore';
@@ -10,10 +11,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { useRouter } from 'next/navigation';
 
 export default function AddressesPage() {
   const { user, loading: userLoading } = useUser();
   const db = useFirestore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push(`/login?redirect=${encodeURIComponent('/addresses')}`);
+    }
+  }, [user, userLoading, router]);
 
   const addrQuery = React.useMemo(() => {
     if (!db || !user) return null;
@@ -35,13 +44,15 @@ export default function AddressesPage() {
       });
   };
 
-  if (userLoading || addrLoading) {
+  if (userLoading || (user && addrLoading)) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     );
   }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-background">
