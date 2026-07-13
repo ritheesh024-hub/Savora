@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -17,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Logo } from '@/components/Logo';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export default function QRScanLandingPage() {
   const router = useRouter();
@@ -114,7 +114,7 @@ export default function QRScanLandingPage() {
           transition={{ delay: 0.5 }}
           className="pt-8 flex flex-col items-center gap-6"
         >
-          <div className="flex items-center gap-4 py-2 px-6 bg-white dark:bg-zinc-900 rounded-full border shadow-sm">
+          <div className="flex items-center gap-4 py-2 px-6 bg-white dark:bg-zinc-950 rounded-full border shadow-sm">
              <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-3 h-3 text-emerald-500" />
                 <span className="text-[8px] font-black uppercase tracking-widest">Secure Payment</span>
@@ -132,8 +132,4 @@ export default function QRScanLandingPage() {
       </div>
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
 }

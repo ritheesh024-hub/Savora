@@ -11,7 +11,8 @@ import {
   ChevronRight, Sparkles, ShoppingBag,
   Timer, Info, Heart, MessageSquare,
   Map,
-  CheckCircle2
+  CheckCircle2,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +33,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGlobalSettings } from '@/hooks/use-global-settings';
 import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -332,7 +335,7 @@ export default function Home() {
                       </div>
                     ))}
                  </div>
-                 <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-3 py-1 font-black text-[9px] uppercase tracking-widest rounded-full">5k+ Biters</Badge>
+                 <Badge className="bg-emerald-50/10 text-emerald-500 border-none px-3 py-1 font-black text-[9px] uppercase tracking-widest rounded-full">5k+ Biters</Badge>
               </div>
               <h2 className="text-4xl md:text-6xl font-black font-headline uppercase tracking-tighter">Campus <span className="text-primary italic">Pulse.</span></h2>
               <p className="text-muted-foreground text-sm font-medium uppercase tracking-[0.4em] opacity-40">Real-time satisfaction telemetry</p>
@@ -596,8 +599,4 @@ export default function Home() {
       </footer>
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
 }
