@@ -74,6 +74,27 @@
   .bg-orange-gradient {
     @apply bg-gradient-to-r from-[#FF6B00] to-[#FF8A00];
   }
+
+  .premium-glow {
+    box-shadow: 0 0 30px rgba(255, 107, 0, 0.15);
+  }
+}
+
+@keyframes float-particle {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.8; }
+  100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
 }
 
 @keyframes float {
@@ -83,15 +104,6 @@
 
 .animate-float {
   animation: float 5s ease-in-out infinite;
-}
-
-@keyframes float-reverse {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(15px) rotate(-5deg); }
-}
-
-.animate-float-slow {
-  animation: float 8s ease-in-out infinite;
 }
 
 /* Brand Orbit Animations */
@@ -108,9 +120,3 @@
 .animate-orbit-4 { animation: orbit-4 8s linear infinite; }
 
 @media (max-width: 768px) { .animate-in { animation-duration: 400ms !important; } }
-
-/* SVG Drawing Utilities */
-.stroke-dasharray-100 { stroke-dasharray: 100; }
-.stroke-dashoffset-100 { stroke-dashoffset: 100; }
-.stroke-dashoffset-0 { stroke-dashoffset: 0; }
-.stroke-dasharray-20 { stroke-dasharray: 20; }
