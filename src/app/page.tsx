@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -22,6 +23,7 @@ import { Logo } from '@/components/Logo';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { PWAInlinePromo } from '@/components/PWAInlinePromo';
+import placeholderData from '@/app/lib/placeholder-images.json';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -49,6 +51,8 @@ export default function Home() {
     if (search.trim()) router.push(`/menu?q=${encodeURIComponent(search.trim())}`);
   };
 
+  const heroBg = placeholderData.placeholderImages.find(img => img.id === 'hero-premium-bg')?.imageUrl || '';
+
   if (!mounted) return null;
 
   return (
@@ -67,12 +71,12 @@ export default function Home() {
             <section className="relative min-h-[500px] md:min-h-[70vh] flex items-center pt-24 pb-12 overflow-hidden">
               <div className="absolute inset-0 z-0">
                 <Image 
-                  src="https://picsum.photos/seed/ezzybites-premium-hub/1920/1080"
+                  src={heroBg}
                   alt="Premium Background"
                   fill
                   className="object-cover opacity-70"
                   priority
-                  data-ai-hint="luxury food"
+                  data-ai-hint="premium food"
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20 z-10" />

@@ -1,6 +1,7 @@
 
 {
   "placeholderImages": [
+    { "id": "hero-premium-bg", "description": "High-fidelity culinary backdrop", "imageUrl": "https://as1.ftcdn.net/v2/jpg/03/32/75/44/1000_F_332754450_eEoGIDUKtt2jK5YCuvC7qWtttJB0I6dn.jpg", "imageHint": "premium food" },
     { "id": "hero-burger", "description": "Exploding 3D Burger with Ingredients", "imageUrl": "https://picsum.photos/seed/burger-explosion-3d/800/600", "imageHint": "3D burger explosion" },
     { "id": "hero-fries", "description": "3D Fries splash", "imageUrl": "https://picsum.photos/seed/crispy-fries/600/600", "imageHint": "french fries" },
     { "id": "hero-drink", "description": "Iced cola splash", "imageUrl": "https://picsum.photos/seed/ice-drink/600/600", "imageHint": "soft drink" },
@@ -17,7 +18,7 @@
     { "id": "food-noodles-1", "description": "Hakka Noodles", "imageUrl": "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=600&h=400&fit=crop", "imageHint": "hakka noodles" },
     { "id": "food-rice-1", "description": "Veg Fried Rice", "imageUrl": "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&h=600&fit=crop", "imageHint": "fried rice" },
     { "id": "food-dessert-1", "description": "Chocolate Brownie", "imageUrl": "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=600&h=400&fit=crop", "imageHint": "chocolate brownie" },
-    { "id": "tea-masala", "description": "Masala Tea", "imageUrl": "https://images.unsplash.com/photo-1544145945-f904253d0c7b?w=600&h=400&fit=crop", "imageHint": "indian chai" },
+    { "id": "tea-masala", "description": "Masala Tea", "imageUrl": "https://images.unsplash.com/photo-1544145945-f904253d0c7b?w=600&h=600&fit=crop", "imageHint": "indian chai" },
     { "id": "tea-ginger", "description": "Ginger Tea", "imageUrl": "https://images.unsplash.com/photo-1594631252845-29fc4586c562?w=600&h=400&fit=crop", "imageHint": "ginger tea" },
     { "id": "tea-green", "description": "Green Tea", "imageUrl": "https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?w=600&h=400&fit=crop", "imageHint": "green tea" },
     { "id": "tea-lemon", "description": "Lemon Tea", "imageUrl": "https://images.unsplash.com/photo-1576092729250-59c240b7966d?w=600&h=400&fit=crop", "imageHint": "lemon tea" },
