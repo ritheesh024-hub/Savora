@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -108,10 +109,10 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
   return (
     <nav className={cn(
       "fixed left-0 right-0 z-50 transition-all duration-700 ease-in-out px-4 md:px-8",
-      scrolled ? "top-0 py-3" : "top-0 py-6"
+      scrolled ? "top-0 py-2.5" : "top-0 py-5"
     )}>
       <div className={cn(
-        "container mx-auto max-w-7xl h-[72px] md:h-[80px] flex items-center justify-between gap-6 px-6 md:px-10 transition-all duration-500 rounded-[2rem] md:rounded-[2.5rem]",
+        "container mx-auto max-w-7xl h-[60px] md:h-[68px] flex items-center justify-between gap-6 px-6 md:px-10 transition-all duration-500 rounded-[2rem] md:rounded-[2.5rem]",
         scrolled 
           ? "bg-white/80 dark:bg-black/80 backdrop-blur-3xl border border-white/20 dark:border-white/5 shadow-3xl" 
           : (isHeroState ? "bg-white/5 backdrop-blur-md border border-white/10" : "bg-white/10 backdrop-blur-md border border-white/10")
@@ -128,7 +129,7 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
         )}>
           <form onSubmit={handleSearchSubmit} className="relative group">
             <Search className={cn(
-              "absolute left-5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 transition-colors z-10",
+              "absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10",
               isHeroState ? "text-white/40" : "text-muted-foreground/40",
               isSearchFocused && "text-primary"
             )} />
@@ -139,7 +140,7 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
               onBlur={() => setIsSearchFocused(false)}
               placeholder="Search your favourite food..." 
               className={cn(
-                "w-full h-12 pl-14 pr-12 rounded-full border-none transition-all font-bold text-sm shadow-inner",
+                "w-full h-10 pl-14 pr-12 rounded-full border-none transition-all font-bold text-sm shadow-inner",
                 isHeroState 
                   ? "bg-white/10 !text-white placeholder:text-white/40 hover:bg-white/20" 
                   : "bg-secondary/60 dark:bg-zinc-900 !text-foreground",
@@ -147,7 +148,7 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
               )}
             />
             <Mic className={cn(
-              "absolute right-5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 opacity-40 hover:text-primary cursor-pointer transition-colors",
+              "absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40 hover:text-primary cursor-pointer transition-colors",
               isHeroState ? "text-white" : "text-foreground"
             )} />
           </form>
@@ -158,12 +159,12 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
           {mounted && user && (
             <NotificationCenter>
               <button type="button" className={cn(
-                "w-11 h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all relative border border-transparent",
+                "w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center transition-all relative border border-transparent",
                 isHeroState ? "bg-white/10 text-white hover:bg-white/20" : "bg-secondary/60 dark:bg-zinc-900 text-foreground hover:bg-primary/5 hover:border-primary/20"
               )}>
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">
+                  <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">
                     {unreadCount}
                   </span>
                 )}
@@ -173,12 +174,12 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
 
           <CartDrawer>
             <button type="button" className={cn(
-              "w-11 h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all relative border border-transparent",
+              "w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center transition-all relative border border-transparent",
               isHeroState ? "bg-white/10 text-white hover:bg-white/20" : "bg-secondary/60 dark:bg-zinc-900 text-foreground hover:bg-primary/5 hover:border-primary/20"
             )}>
               <ShoppingBag className="w-5 h-5" />
               {cart.length > 0 && (
-                <span className="absolute top-0 right-0 w-4.5 h-4.5 bg-primary text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">
+                <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">
                   {cart.reduce((acc, i) => acc + i.quantity, 0)}
                 </span>
               )}
@@ -190,18 +191,18 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <button type="button" className={cn(
-                    "hidden md:flex items-center gap-3 p-1.5 pl-2 pr-4 rounded-full transition-all border group",
+                    "hidden md:flex items-center gap-3 p-1 rounded-full transition-all border group",
                     isHeroState ? "bg-white/10 border-white/10 hover:bg-white/20" : "bg-secondary/60 dark:bg-zinc-900 border-transparent hover:bg-secondary"
                   )}>
                     <Avatar className="h-8 w-8 border-2 border-primary shadow-xl group-hover:scale-105 transition-transform">
                       <AvatarImage src={user.photoURL || ''} />
                       <AvatarFallback className="text-[10px] font-black bg-primary text-white">{user.displayName?.slice(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col items-start text-left">
+                    <div className="flex flex-col items-start text-left pr-2">
                        <span className={cn("text-[10px] font-black uppercase tracking-tight leading-none mb-0.5", isHeroState ? "text-white" : "text-foreground")}>{user.displayName?.split(' ')[0]}</span>
-                       <span className={cn("text-[8px] font-bold opacity-40 uppercase", isHeroState ? "text-white" : "text-foreground")}>Authenticated</span>
+                       <span className={cn("text-[8px] font-bold opacity-40 uppercase", isHeroState ? "text-white" : "text-foreground")}>Auth</span>
                     </div>
-                    <ChevronDown className={cn("w-3.5 h-3.5 opacity-40", isHeroState ? "text-white" : "text-foreground")} />
+                    <ChevronDown className={cn("w-3 h-3 opacity-40", isHeroState ? "text-white" : "text-foreground")} />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 rounded-[2rem] p-3 shadow-4xl border-none mt-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-2xl">
@@ -223,7 +224,7 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
             ) : (
               <Link href="/login" className="hidden md:block">
                 <Button type="button" className={cn(
-                  "h-12 rounded-full px-8 font-black uppercase text-[10px] tracking-widest gap-2 shadow-xl hover:scale-[1.02] transition-all border-none",
+                  "h-10 rounded-full px-7 font-black uppercase text-[10px] tracking-widest gap-2 shadow-xl hover:scale-[1.02] transition-all border-none",
                   isHeroState ? "bg-white text-black" : "bg-orange-gradient text-white"
                 )}>
                   <User className="w-4 h-4" /> login
@@ -236,10 +237,10 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <SheetTrigger asChild>
                 <button type="button" className={cn(
-                  "w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-90",
+                  "w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90",
                   isHeroState ? "bg-white/10 text-white hover:bg-white/20" : "bg-secondary/60 dark:bg-zinc-900 text-foreground"
                 )}>
-                  <Menu className="w-5.5 h-5.5" />
+                  <Menu className="w-5 h-5" />
                 </button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[310px] p-0 border-none bg-background flex flex-col z-[60] shadow-4xl rounded-l-[3rem]">
