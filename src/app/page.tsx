@@ -12,8 +12,7 @@ import {
   Map,
   CheckCircle2,
   Plus,
-  ChefHat,
-  TicketPercent
+  ChefHat
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,13 +61,6 @@ export default function Home() {
     return query(collection(db, 'reviews'), where('isHidden', '==', false), orderBy('createdAt', 'desc'), limit(10));
   }, [db]);
   const { data: reviews, loading: reviewsLoading } = useCollection<any>(reviewsQuery);
-
-  // QUERY: Active Coupons for the compact chip
-  const couponsQuery = useMemo(() => {
-    if (!db) return null;
-    return query(collection(db, 'coupons'), where('isActive', '==', true), limit(10));
-  }, [db]);
-  const { data: coupons } = useCollection<any>(couponsQuery);
 
   // QUERY: All Items (Highlights)
   const highlightsQuery = useMemo(() => {
@@ -186,25 +178,6 @@ export default function Home() {
                 />
               </form>
               
-              {/* COMPACT DYNAMIC OFFER CHIP */}
-              {coupons && coupons.length > 0 && (
-                <Link href="/coupons">
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }} 
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-xl w-fit group active:scale-95 transition-all"
-                  >
-                    <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                      <TicketPercent className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase text-primary tracking-widest">
-                      🎉 {coupons.length} Offers Available
-                    </span>
-                    <ChevronRight className="w-3 h-3 text-primary group-hover:translate-x-1 transition-transform" />
-                  </motion.div>
-                </Link>
-              )}
-
               <Categories />
            </div>
         </div>
