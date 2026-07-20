@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -11,7 +12,6 @@ import {
   Timer, Info, MessageSquare,
   Map,
   CheckCircle2,
-  Plus,
   ChefHat
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -62,12 +62,23 @@ export default function Home() {
   }, [db]);
   const { data: reviews, loading: reviewsLoading } = useCollection<any>(reviewsQuery);
 
-  // QUERY: All Items (Highlights)
+  // QUERY: All Items (Highlights) - Increased limit for categorized menu
   const highlightsQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), limit(15));
+    return query(collection(db, 'products'), limit(50));
   }, [db]);
   const { data: menuItems, loading: menuLoading } = useCollection<FoodItem>(highlightsQuery);
+
+  const categorizedItems = useMemo(() => {
+    if (!menuItems) return {};
+    const groups: Record<string, FoodItem[]> = {};
+    menuItems.forEach(item => {
+      const cat = item.category || 'Other';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(item);
+    });
+    return groups;
+  }, [menuItems]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,7 +109,6 @@ export default function Home() {
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20 z-10" />
-              <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] bg-primary/10 blur-[140px] rounded-full z-15 animate-pulse" />
             </div>
 
             <div className="container mx-auto px-6 md:px-16 lg:px-24 relative z-20 max-w-7xl pt-20">
@@ -125,10 +135,9 @@ export default function Home() {
                     Elite Flavor <br />
                     <span className="text-primary italic relative">
                       Guaranteed.
-                      <div className="absolute -bottom-2 left-0 w-full h-1 md:h-2 bg-primary/30 blur-sm rounded-full" />
                     </span>
                   </h1>
-                  <p className="text-base md:text-xl text-white/60 max-w-xl leading-relaxed font-medium">
+                  <p className="text-base md:text-xl text-white/60 max-w-xl leading-relaxed font-medium italic">
                     Premium culinary engineering delivered at hyper-speed. Experience the future of campus dining nodes.
                   </p>
                 </div>
@@ -182,7 +191,7 @@ export default function Home() {
            </div>
         </div>
 
-        {/* POPULAR TODAY SLIDER */}
+        {/* POPULAR TODAY SLIDER (TOP PICKS) */}
         <section className="container mx-auto px-4 max-w-7xl">
            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
               <div className="space-y-1">
@@ -193,11 +202,6 @@ export default function Home() {
                 <h2 className="text-3xl md:text-5xl font-black font-headline uppercase tracking-tighter">Popular <span className="text-primary italic">Bites.</span></h2>
                 <p className="text-muted-foreground text-sm font-medium italic">"The most requested flavor nodes in the Pocharam sector."</p>
               </div>
-              <Link href="/menu">
-                <Button variant="outline" className="h-12 px-8 rounded-xl border-2 font-black uppercase text-[10px] tracking-widest gap-2 group">
-                  See Entire Catalog <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
            </div>
            
            <div className="flex overflow-x-auto gap-6 pb-6 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x">
@@ -205,12 +209,33 @@ export default function Home() {
                 [1, 2, 3, 4, 5].map(i => <div key={i} className="min-w-[240px] aspect-[4/5] bg-secondary animate-pulse rounded-3xl shrink-0" />)
               ) : (
                 popularItems?.map((item) => (
-                  <div key={item.id} className="min-w-[220px] md:min-w-[260px] snap-start">
-                    <FoodCard item={item} />
+                  <div key={item.id} className="min-w-[260px] md:min-w-[320px] snap-start">
+                    <FoodCard item={item} variant="card" />
                   </div>
                 ))
               )}
            </div>
+        </section>
+
+        {/* CATEGORIZED FULL MENU (SWIGGY/ZOMATO STYLE) */}
+        <section className="container mx-auto px-4 max-w-4xl pb-20">
+          <div className="space-y-16">
+            {Object.entries(categorizedItems).map(([category, items]) => (
+              <div key={category} id={`section-${category}`} className="space-y-6 scroll-mt-24">
+                <div className="flex items-center justify-between pb-4 border-b-2 border-zinc-900/5">
+                  <h3 className="text-xl md:text-2xl font-black uppercase tracking-tighter italic flex items-center gap-3">
+                    {category} 
+                    <Badge variant="secondary" className="bg-zinc-100 text-zinc-500 border-none font-black text-[10px] px-2">{items.length}</Badge>
+                  </h3>
+                </div>
+                <div className="divide-y divide-zinc-100">
+                  {items.map(item => (
+                    <FoodCard key={item.id} item={item} variant="list" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
 
         {/* COMBO OFFERS */}
@@ -424,7 +449,7 @@ export default function Home() {
                     <f.icon className="w-10 h-10" />
                   </div>
                   <div className="space-y-2">
-                    <h4 className="text-2xl font-black uppercase tracking-tight italic">{f.title}</h4>
+                    <h4 className="text-2xl font-black uppercase tracking tight italic">{f.title}</h4>
                     <p className="text-white/40 font-medium text-sm leading-relaxed italic">"{f.desc}"</p>
                   </div>
                 </div>
