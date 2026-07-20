@@ -19,7 +19,7 @@ interface FirebaseInstances {
 
 declare global {
   interface Window {
-    __EZZY_FIREBASE_STATION__?: FirebaseInstances;
+    __SAVORA_FIREBASE_STATION__?: FirebaseInstances;
   }
 }
 
@@ -30,13 +30,13 @@ export function initializeFirebase(): FirebaseInstances {
 
   try {
     // Return cached instances if already initialized
-    if (window.__EZZY_FIREBASE_STATION__ && window.__EZZY_FIREBASE_STATION__.app) {
-      return window.__EZZY_FIREBASE_STATION__;
+    if (window.__SAVORA_FIREBASE_STATION__ && window.__SAVORA_FIREBASE_STATION__.app) {
+      return window.__SAVORA_FIREBASE_STATION__;
     }
 
     // Integrity Check: Prevent initialization if API key is missing
     if (!firebaseConfig.apiKey || firebaseConfig.apiKey.length < 5) {
-      console.warn('⚠️ [Ezzy Ops] Handshake Aborted: Missing or invalid API key.');
+      console.warn('⚠️ [Savora Ops] Handshake Aborted: Missing or invalid API key.');
       return { app: null, db: null, auth: null };
     }
 
@@ -49,19 +49,19 @@ export function initializeFirebase(): FirebaseInstances {
     if (typeof window !== 'undefined') {
       enableMultiTabIndexedDbPersistence(db).catch((err) => {
         if (err.code === 'failed-precondition') {
-          console.warn('⚠️ [Ezzy PWA] Persistence Conflict: Multi-tab restriction active.');
+          console.warn('⚠️ [Savora PWA] Persistence Conflict: Multi-tab restriction active.');
         } else if (err.code === 'unimplemented') {
-          console.warn('⚠️ [Ezzy PWA] Persistence Unsupported: Browser environment restricted.');
+          console.warn('⚠️ [Savora PWA] Persistence Unsupported: Browser environment restricted.');
         }
       });
     }
 
     const instances = { app, db, auth };
-    window.__EZZY_FIREBASE_STATION__ = instances;
+    window.__SAVORA_FIREBASE_STATION__ = instances;
     
     return instances;
   } catch (error) {
-    console.error('🔥 [Ezzy Ops] Firebase Boot Error:', error);
+    console.error('🔥 [Savora Ops] Firebase Boot Error:', error);
     return { app: null, db: null, auth: null };
   }
 }

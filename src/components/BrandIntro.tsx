@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -19,7 +18,7 @@ export const BrandIntro = () => {
 
   useEffect(() => {
     const isPC = typeof window !== 'undefined' && window.innerWidth >= 1024;
-    const hasSeenIntro = sessionStorage.getItem('eb_luxury_v3_shown');
+    const hasSeenIntro = sessionStorage.getItem('savora_luxury_intro_shown');
 
     if (!ENABLE_BRAND_INTRO || isPC || hasSeenIntro) {
       setIsVisible(false);
@@ -34,7 +33,7 @@ export const BrandIntro = () => {
       setTimeout(() => setStage(4), 2700),  // Seamless Merge (2.7s)
       setTimeout(() => {
         setIsVisible(false);
-        sessionStorage.setItem('eb_luxury_v3_shown', 'true');
+        sessionStorage.setItem('savora_luxury_intro_shown', 'true');
       }, 3200), // Cleanup
     ];
 
@@ -153,7 +152,7 @@ export const BrandIntro = () => {
                 )}
               >
                 <h1 className="text-4xl font-black font-headline tracking-tighter text-foreground uppercase mb-2">
-                  Ezzy<span className="text-primary italic">Bites</span>
+                  Savora
                 </h1>
                 <p className="text-[9px] font-black uppercase tracking-[0.5em] text-muted-foreground/40">
                   Fast • Fresh • Delicious

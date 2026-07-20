@@ -41,7 +41,7 @@ export const Logo = ({ className, variant = 'color', size = 'md', hideText = fal
           colors[variant],
           sizes[size].text
         )}>
-          Ezzy<span className="text-primary italic">Bites</span>
+          Savora
         </span>
       )}
     </div>

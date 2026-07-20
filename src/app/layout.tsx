@@ -62,10 +62,10 @@ function ServiceWorkerRegistration() {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(
           (registration) => {
-            console.log('✅ [Ezzy PWA] ServiceWorker registration successful');
+            console.log('✅ [Savora PWA] ServiceWorker registration successful');
           },
           (err) => {
-            console.warn('❌ [Ezzy PWA] ServiceWorker registration failed: ', err);
+            console.warn('❌ [Savora PWA] ServiceWorker registration failed: ', err);
           }
         );
       });
@@ -90,11 +90,11 @@ export default function RootLayout({
         {/* PWA / Mobile Meta Tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="EzzyBites" />
+        <meta name="apple-mobile-web-app-title" content="Savora" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#ff6600" />
-        <link rel="apple-touch-icon" href="https://placehold.co/192x192/ff6600/ffffff?text=EB" />
+        <link rel="apple-touch-icon" href="https://placehold.co/192x192/ff6600/ffffff?text=S" />
         <link rel="manifest" href="/manifest.json" />
         
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />

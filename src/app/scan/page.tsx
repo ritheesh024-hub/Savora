@@ -67,7 +67,7 @@ export default function QRScanLandingPage() {
           <Logo size="lg" hideText className="mx-auto" />
           <div className="space-y-2">
             <h1 className="text-4xl font-black font-headline uppercase tracking-tighter">
-              👋 Welcome to <span className="text-primary italic">EzzyBites</span>
+              👋 Welcome to <span className="text-primary italic">Savora</span>
             </h1>
             <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest opacity-60">
               Order directly from your phone.
@@ -126,7 +126,7 @@ export default function QRScanLandingPage() {
              </div>
           </div>
           <p className="text-[9px] font-black uppercase tracking-[0.5em] text-primary/30">
-            Ezzy Bites • Quantum Ordering v5.0
+            Savora • Quantum Ordering v5.0
           </p>
         </motion.div>
       </div>

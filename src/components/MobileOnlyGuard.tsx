@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -44,7 +43,7 @@ export const MobileOnlyGuard = ({ children }: { children: React.ReactNode }) => 
               Exclusive <span className="text-primary italic">Mobile</span> <br /> Experience
             </h1>
             <p className="text-muted-foreground text-lg font-medium leading-relaxed">
-              Ezzy Bites is a premium food-tech platform optimized for on-the-go lifestyle. Please open this link on your mobile or tablet.
+              Savora is a premium food-tech platform optimized for on-the-go lifestyle. Please open this link on your mobile or tablet.
             </p>
           </div>
 
@@ -68,7 +67,7 @@ export const MobileOnlyGuard = ({ children }: { children: React.ReactNode }) => 
 
           <div className="pt-8 border-t border-dashed">
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/40">
-              Ezzy Bites Premium • 2025
+              Savora Premium • 2025
             </p>
           </div>
         </div>

@@ -1,7 +1,6 @@
-
 'use server';
 /**
- * @fileOverview High-Integrity Order Support AI for Ezzy Bites.
+ * @fileOverview High-Integrity Order Support AI for Savora.
  * Synchronized with live Firestore order nodes and operational policy.
  * Resolves logic failures with resilient error recovery.
  */
@@ -39,7 +38,7 @@ const prompt = ai.definePrompt({
   name: 'ezzySupportPrompt',
   input: { schema: SupportAIInputSchema },
   output: { schema: SupportAIOutputSchema },
-  prompt: `You are "Ezzy AI", the logistics and flavor assistant for "Ezzy Bites".
+  prompt: `You are "Savora AI", the logistics and flavor assistant for "Savora".
 You MUST provide answers based ONLY on the REAL-TIME REGISTRY DATA provided. 
 
 --- OPERATIONAL GUIDELINES ---
@@ -93,7 +92,7 @@ const supportAIFlow = ai.defineFlow(
       if (!output) throw new Error('AI Hub failed to yield logic.');
       return output;
     } catch (error) {
-      console.error('🔥 [Ezzy AI] Logic Error:', error);
+      console.error('🔥 [Savora AI] Logic Error:', error);
       return { 
         reply: "I'm having trouble syncing with our logistics hub. Please call our station directly for immediate assistance.",
         protocolAction: 'CALL_RESTAURANT',

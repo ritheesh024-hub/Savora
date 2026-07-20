@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A Genkit flow for generating marketing copy for a daily special food item.
@@ -34,7 +33,7 @@ const promoPrompt = ai.definePrompt({
     }) 
   },
   output: { schema: DailySpecialOutputSchema },
-  prompt: `You are a creative marketing expert for "Ezzy Bites".
+  prompt: `You are a creative marketing expert for "Savora".
 Generate a promotion for: {{{dishName}}}.
 The base price is ₹{{{basePrice}}} and we are offering a {{{discountPercent}}}% discount.
 Final price: ₹{{{calculatedFinalPrice}}}.`,
@@ -56,7 +55,7 @@ const dailySpecialGeneratorFlow = ai.defineFlow(
       if (!output) throw new Error('Failed to generate promotion.');
       return output;
     } catch (error) {
-      console.error('🔥 [Ezzy AI] Daily Special Flow Error:', error);
+      console.error('🔥 [Savora AI] Daily Special Flow Error:', error);
       throw error;
     }
   }

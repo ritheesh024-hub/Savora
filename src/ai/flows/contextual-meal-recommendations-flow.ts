@@ -34,7 +34,7 @@ const mealRecommendationPrompt = ai.definePrompt({
   name: 'mealRecommendationPrompt',
   input: { schema: ContextualMealRecommendationsInputSchema },
   output: { schema: ContextualMealRecommendationsOutputSchema },
-  prompt: `You are an AI assistant for "Ezzy Bites". Provide 2-3 personalized meal recommendations for:
+  prompt: `You are an AI assistant for "Savora". Provide 2-3 personalized meal recommendations for:
 - Weather: {{{weather}}}
 - Time: {{{timeOfDay}}}
 - Mood: {{{userMood}}}`

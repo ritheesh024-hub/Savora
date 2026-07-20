@@ -7,7 +7,7 @@ import { useFirestore } from '@/firebase';
 /**
  * @fileOverview Global Configuration Hook
  * Establishes a real-time listener to the 'global_settings/config' document.
- * This is the Single Source of Truth for the entire EzzyBites ecosystem.
+ * This is the Single Source of Truth for the entire Savora ecosystem.
  */
 
 export interface GlobalSettings {
@@ -35,9 +35,9 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   deliveryActive: true,
   codEnabled: true,
   onlinePayEnabled: true,
-  storeName: 'Ezzy Bites',
+  storeName: 'Savora',
   contactNumber: '8639366800',
-  supportEmail: 'support@ezzybites.com',
+  supportEmail: 'support@savora.com',
   address: 'Near Anurag University, Pocharam, Hyderabad',
   deliveryRadius: 3,
   openTime: '08:00',

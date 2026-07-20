@@ -98,7 +98,7 @@ export const SmartPermissionModal = ({ type, onClose, onConfirm }: SmartPermissi
             </div>
 
             <div className="p-6 bg-zinc-50 dark:bg-zinc-900 border-t flex justify-center">
-               <p className="text-[8px] font-black uppercase tracking-[0.4em] opacity-30">Ezzy Bites • Identity Verified</p>
+               <p className="text-[8px] font-black uppercase tracking-[0.4em] opacity-30">Savora • Identity Verified</p>
             </div>
           </div>
         )}

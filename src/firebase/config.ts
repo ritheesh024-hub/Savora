@@ -19,5 +19,5 @@ export const firebaseConfig = {
 
 // Diagnostic Node: Log warning if keys are missing in the browser environment
 if (typeof window !== 'undefined' && !firebaseConfig.apiKey) {
-  console.warn('⚠️ [Ezzy Ops] Firebase Handshake Pending: NEXT_PUBLIC_FIREBASE_API_KEY is not detected.');
+  console.warn('⚠️ [Savora Ops] Firebase Handshake Pending: NEXT_PUBLIC_FIREBASE_API_KEY is not detected.');
 }

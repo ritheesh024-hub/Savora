@@ -17,7 +17,7 @@ export const SplashScreen = () => {
 
   useEffect(() => {
     // 1. Check if we should show the splash screen
-    const hasSeenSplash = sessionStorage.getItem('eb_splash_shown');
+    const hasSeenSplash = sessionStorage.getItem('savora_splash_shown');
     
     // Check if mobile (screen < 768px)
     const isMobile = window.innerWidth < 768;
@@ -38,7 +38,7 @@ export const SplashScreen = () => {
     // 3. Set total duration (1.8 seconds is the sweet spot)
     const endTimer = setTimeout(() => {
       setIsVisible(false);
-      sessionStorage.setItem('eb_splash_shown', 'true');
+      sessionStorage.setItem('savora_splash_shown', 'true');
     }, 1800);
 
     return () => {
@@ -77,7 +77,7 @@ export const SplashScreen = () => {
         shouldAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       )}>
         <h1 className="text-4xl font-black font-headline tracking-tighter text-white uppercase">
-          Ezzy<span className="text-primary italic">Bites</span>
+          Savora
         </h1>
         <div className="flex items-center justify-center gap-2 mt-2">
           <span className="w-1 h-1 rounded-full bg-primary/40 animate-pulse" />

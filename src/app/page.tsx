@@ -254,7 +254,7 @@ export default function Home() {
            </div>
            <div className="container mx-auto px-8 relative z-10 max-w-7xl">
               <div className="text-center mb-16 space-y-3">
-                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20 text-primary font-black uppercase text-[8px] tracking-[0.3em] mb-4">
+                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-white/20 text-primary font-black uppercase text-[8px] tracking-[0.3em] mb-4">
                     <ChefHat className="w-3 h-3" /> Chef's Executive Protocol
                  </div>
                  <h2 className="text-4xl md:text-6xl font-black font-headline uppercase tracking-tighter italic">Today's <span className="text-primary">Specials.</span></h2>
@@ -367,7 +367,7 @@ export default function Home() {
                         <div className="flex items-center gap-4">
                            <Avatar className="h-12 w-12 rounded-xl shadow-lg border-2 border-white dark:border-zinc-800 shrink-0">
                               <AvatarImage src={rev.userPhoto} />
-                              <AvatarFallback className="bg-primary/10 text-primary font-black text-sm">{(rev.userName || 'EB').slice(0, 2)}</AvatarFallback>
+                              <AvatarFallback className="bg-primary/10 text-primary font-black text-sm">{(rev.userName || 'S').slice(0, 2)}</AvatarFallback>
                            </Avatar>
                            <div>
                               <h4 className="font-black text-sm uppercase tracking-tight truncate max-w-[120px]">{rev.userName}</h4>
@@ -466,7 +466,7 @@ export default function Home() {
                        </div>
                     </div>
 
-                    <Button onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings?.address || 'Ezzy Bites Pocharam')}`)} className="h-16 w-full rounded-2xl bg-zinc-950 text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-3xl gap-4 hover:bg-primary transition-all">
+                    <Button onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings?.address || 'Savora Pocharam')}`)} className="h-16 w-full rounded-2xl bg-zinc-950 text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-3xl gap-4 hover:bg-primary transition-all">
                        <Map className="w-5 h-5" /> Launch Navigation Hub
                     </Button>
                  </CardContent>
@@ -491,7 +491,7 @@ export default function Home() {
           </div>
           <div className="container mx-auto px-8 relative z-10 max-w-7xl">
             <div className="text-center mb-16 space-y-3">
-               <h2 className="text-4xl md:text-6xl font-black font-headline uppercase tracking-tighter">The Ezzy <span className="text-primary italic">Standard.</span></h2>
+               <h2 className="text-4xl md:text-6xl font-black font-headline uppercase tracking-tighter">The Savora <span className="text-primary italic">Standard.</span></h2>
                <p className="text-white/40 font-medium text-sm md:text-lg max-w-xl mx-auto italic opacity-80">Zero-compromise culinary engineering delivered at the speed of campus life.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-14">
@@ -579,7 +579,7 @@ export default function Home() {
                 <li><Link href="/support" className="hover:text-primary transition-colors flex items-center gap-3"><ArrowRight className="w-3.5 h-3.5" /> AI Support Hub</Link></li>
                 <li><Link href="/settings" className="hover:text-primary transition-colors flex items-center gap-3"><ArrowRight className="w-3.5 h-3.5" /> User Configuration</Link></li>
                 <li><Link href="/admin/login" className="hover:text-primary transition-colors flex items-center gap-3"><ArrowRight className="w-3.5 h-3.5" /> Staff Terminal</Link></li>
-                <li className="pt-2 text-[8px] opacity-40 font-medium lowercase">Emergency: support@ezzybites.com</li>
+                <li className="pt-2 text-[8px] opacity-40 font-medium lowercase">Emergency: support@savora.com</li>
               </ul>
             </div>
 
@@ -599,7 +599,7 @@ export default function Home() {
           </div>
 
           <div className="border-t border-zinc-200 dark:border-zinc-800 pt-12 text-center flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-[9px] text-muted-foreground font-black uppercase tracking-[0.5em] opacity-30">© {new Date().getFullYear()} EZZY BITES • QUANTUM FOOD-TECH PROTOCOL</p>
+            <p className="text-[9px] text-muted-foreground font-black uppercase tracking-[0.5em] opacity-30">© {new Date().getFullYear()} SAVORA • QUANTUM FOOD-TECH PROTOCOL</p>
             <div className="flex items-center gap-8 text-[8px] font-black uppercase tracking-widest text-muted-foreground opacity-30">
                <Link href="/policy/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
                <Link href="/policy/terms" className="hover:text-primary transition-colors">Terms of Node</Link>
