@@ -8,7 +8,7 @@ import {
   ShieldCheck, Clock, Search,
   Zap, Star, Flame, MapPin, Phone,
   ChevronRight, Sparkles, ShoppingBag,
-  Timer, Info, Heart, MessageSquare,
+  Timer, Info, MessageSquare,
   Map,
   CheckCircle2,
   Plus,
@@ -55,13 +55,6 @@ export default function Home() {
     return query(collection(db, 'products'), where('isPopular', '==', true), limit(8));
   }, [db]);
   const { data: popularItems, loading: popularLoading } = useCollection<FoodItem>(popularQuery);
-
-  // QUERY: Today's Specials
-  const specialsQuery = useMemo(() => {
-    if (!db) return null;
-    return query(collection(db, 'products'), where('isFeatured', '==', true), limit(4));
-  }, [db]);
-  const { data: specialItems, loading: specialsLoading } = useCollection<FoodItem>(specialsQuery);
 
   // QUERY: Latest Reviews
   const reviewsQuery = useMemo(() => {
@@ -244,53 +237,6 @@ export default function Home() {
                   </div>
                 ))
               )}
-           </div>
-        </section>
-
-        {/* TODAY'S SPECIALS (FEATURED) */}
-        <section className="py-20 bg-zinc-950 text-white rounded-[3rem] md:rounded-[5rem] mx-4 md:mx-8 relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-20 opacity-5">
-              <Sparkles className="w-80 h-80 text-primary rotate-12" />
-           </div>
-           <div className="container mx-auto px-8 relative z-10 max-w-7xl">
-              <div className="text-center mb-16 space-y-3">
-                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-white/20 text-primary font-black uppercase text-[8px] tracking-[0.3em] mb-4">
-                    <ChefHat className="w-3 h-3" /> Chef's Executive Protocol
-                 </div>
-                 <h2 className="text-4xl md:text-6xl font-black font-headline uppercase tracking-tighter italic">Today's <span className="text-primary">Specials.</span></h2>
-                 <p className="text-white/40 font-medium text-sm md:text-lg max-w-xl mx-auto italic">High-fidelity culinary experiments available for a limited epoch.</p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
-                 {specialsLoading ? (
-                   [1, 2, 3, 4].map(i => <div key={i} className="h-80 bg-white/5 rounded-3xl animate-pulse" />)
-                 ) : (
-                   specialItems?.map((item) => (
-                     <motion.div key={item.id} whileHover={{ y: -10 }} className="group">
-                        <Card className="rounded-[2rem] border-none bg-white/5 backdrop-blur-xl overflow-hidden shadow-2xl hover:bg-white/10 transition-all border border-white/5">
-                           <div className="aspect-square relative overflow-hidden">
-                              <Image src={item.imageUrl} alt={item.name} fill className="object-cover group-hover:scale-110 transition-all duration-700" unoptimized />
-                              <div className="absolute top-4 left-4">
-                                 <Badge className="bg-primary text-white border-none font-black text-[7px] uppercase tracking-widest px-3 py-1 rounded-md">Recommended</Badge>
-                              </div>
-                           </div>
-                           <CardContent className="p-6 text-center space-y-4">
-                              <h4 className="font-black text-lg uppercase tracking-tight truncate text-white">{item.name}</h4>
-                              <p className="text-[10px] text-white/50 line-clamp-2 leading-relaxed uppercase font-bold tracking-widest">{item.description}</p>
-                              <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                                 <span className="text-2xl font-black text-primary italic">₹{item.price}</span>
-                                 <Link href="/menu">
-                                    <Button size="icon" className="w-10 h-10 rounded-full bg-white text-black hover:bg-primary hover:text-white transition-all">
-                                       <Plus className="w-5 h-5" />
-                                    </Button>
-                                 </Link>
-                              </div>
-                           </CardContent>
-                        </Card>
-                     </motion.div>
-                   ))
-                 )}
-              </div>
            </div>
         </section>
 
