@@ -278,7 +278,7 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
                     ) : (
                       <div className="space-y-8">
                         <div className="space-y-2">
-                          <h3 className="text-3xl font-black font-headline uppercase tracking-tighter italic leading-none">Welcome <span className="text-primary">Biter.</span></h3>
+                          <h3 className="text-3xl font-black font-headline uppercase tracking-tighter italic leading-none">Welcome <span className="text-primary">Savora.</span></h3>
                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Authentication required for full nodes.</p>
                         </div>
                         <Link href="/login" onClick={() => setIsMenuOpen(false)}>
