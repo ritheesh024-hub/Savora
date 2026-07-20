@@ -48,13 +48,6 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  // QUERY: Highlights/Popular
-  const popularQuery = useMemo(() => {
-    if (!db) return null;
-    return query(collection(db, 'products'), where('isPopular', '==', true), limit(8));
-  }, [db]);
-  const { data: popularItems, loading: popularLoading } = useCollection<FoodItem>(popularQuery);
-
   // QUERY: Latest Reviews
   const reviewsQuery = useMemo(() => {
     if (!db) return null;
@@ -62,23 +55,12 @@ export default function Home() {
   }, [db]);
   const { data: reviews, loading: reviewsLoading } = useCollection<any>(reviewsQuery);
 
-  // QUERY: All Items (Highlights) - Increased limit for categorized menu
-  const highlightsQuery = useMemo(() => {
+  // QUERY: All Items (Unified Menu)
+  const menuQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), limit(50));
+    return query(collection(db, 'products'), limit(100));
   }, [db]);
-  const { data: menuItems, loading: menuLoading } = useCollection<FoodItem>(highlightsQuery);
-
-  const categorizedItems = useMemo(() => {
-    if (!menuItems) return {};
-    const groups: Record<string, FoodItem[]> = {};
-    menuItems.forEach(item => {
-      const cat = item.category || 'Other';
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(item);
-    });
-    return groups;
-  }, [menuItems]);
+  const { data: menuItems, loading: menuLoading } = useCollection<FoodItem>(menuQuery);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,52 +173,31 @@ export default function Home() {
            </div>
         </div>
 
-        {/* POPULAR TODAY SLIDER (TOP PICKS) */}
-        <section className="container mx-auto px-4 max-w-7xl">
+        {/* UNIFIED MENU HUB (HORIZONTAL SCROLL - 1 ROW MOBILE, 2 ROWS DESKTOP) */}
+        <section className="container mx-auto px-4 max-w-7xl pb-4">
            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 mb-1">
-                   <Badge className="bg-orange-500 text-white border-none text-[7px] font-black uppercase px-2 rounded-md">Trending</Badge>
-                   <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground opacity-40">Updated every 24 hours</span>
+                   <Badge className="bg-orange-500 text-white border-none text-[7px] font-black uppercase px-2 rounded-md">Live Menu</Badge>
+                   <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground opacity-40">Syncing real-time catalog</span>
                 </div>
-                <h2 className="text-2xl md:text-4xl font-black font-headline uppercase tracking-tighter">Popular <span className="text-primary italic">Bites.</span></h2>
+                <h2 className="text-2xl md:text-4xl font-black font-headline uppercase tracking-tighter">Our <span className="text-primary italic">Menu.</span></h2>
               </div>
            </div>
            
-           <div className="flex overflow-x-auto gap-4 md:gap-6 pb-6 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x">
-              {popularLoading ? (
-                [1, 2, 3, 4, 5].map(i => <div key={i} className="min-w-[220px] aspect-[4/5] bg-secondary animate-pulse rounded-3xl shrink-0" />)
-              ) : (
-                popularItems?.map((item) => (
-                  <div key={item.id} className="min-w-[240px] md:min-w-[280px] snap-start">
-                    <FoodCard item={item} variant="card" />
-                  </div>
-                ))
-              )}
-           </div>
-        </section>
-
-        {/* CATEGORIZED FULL MENU (HORIZONTAL ROWS) */}
-        <section className="container mx-auto px-4 max-w-7xl pb-12">
-          <div className="space-y-10 md:space-y-14">
-            {Object.entries(categorizedItems).map(([category, items]) => (
-              <div key={category} id={`section-${category}`} className="space-y-4 scroll-mt-24">
-                <div className="flex items-center justify-between pb-3 border-b-2 border-zinc-900/5">
-                  <h3 className="text-lg md:text-xl font-black uppercase tracking-tighter italic flex items-center gap-3">
-                    {category} 
-                    <Badge variant="secondary" className="bg-zinc-100 text-zinc-500 border-none font-black text-[9px] px-2 h-5 flex items-center">{items.length}</Badge>
-                  </h3>
-                </div>
-                <div className="flex overflow-x-auto gap-4 md:gap-6 pb-6 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x">
-                  {items.map(item => (
-                    <div key={item.id} className="min-w-[220px] md:min-w-[260px] snap-start">
-                      <FoodCard item={item} variant="card" />
+           <div className="overflow-x-auto scrollbar-hide snap-x -mx-4 px-4 md:mx-0 md:px-0 pb-10">
+              <div className="grid grid-flow-col grid-rows-1 md:grid-rows-2 gap-4 md:gap-6 auto-cols-max">
+                 {menuLoading ? (
+                   [1, 2, 3, 4, 5, 6, 7, 8].map(i => <div key={i} className="w-[220px] md:w-[260px] aspect-[4/5] bg-secondary animate-pulse rounded-3xl shrink-0" />)
+                 ) : (
+                   menuItems?.map((item) => (
+                    <div key={item.id} className="w-[240px] md:w-[280px] snap-start h-full">
+                       <FoodCard item={item} variant="card" />
                     </div>
-                  ))}
-                </div>
+                  ))
+                 )}
               </div>
-            ))}
-          </div>
+           </div>
         </section>
 
         {/* COMBO OFFERS */}
