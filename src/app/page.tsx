@@ -122,7 +122,7 @@ export default function Home() {
                    {settings && (
                      <div className={cn(
                        "inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-[8px] font-black uppercase tracking-widest backdrop-blur-md",
-                       settings.isOpen ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" : "bg-rose-500/20 border-rose-500/30 text-rose-400"
+                       settings.isOpen ? "bg-emerald-50/20 border-emerald-500/30 text-emerald-400" : "bg-rose-500/20 border-rose-500/30 text-rose-400"
                      )}>
                         <div className={cn("w-1 h-1 rounded-full animate-ping", settings.isOpen ? "bg-emerald-500" : "bg-rose-500")} />
                         {settings.isOpen ? 'Operational Now' : 'Station Dormant'}
@@ -216,8 +216,8 @@ export default function Home() {
            </div>
         </section>
 
-        {/* CATEGORIZED FULL MENU (SWIGGY/ZOMATO STYLE) */}
-        <section className="container mx-auto px-4 max-w-4xl pb-12">
+        {/* CATEGORIZED FULL MENU (HORIZONTAL ROWS) */}
+        <section className="container mx-auto px-4 max-w-7xl pb-12">
           <div className="space-y-10 md:space-y-14">
             {Object.entries(categorizedItems).map(([category, items]) => (
               <div key={category} id={`section-${category}`} className="space-y-4 scroll-mt-24">
@@ -227,9 +227,11 @@ export default function Home() {
                     <Badge variant="secondary" className="bg-zinc-100 text-zinc-500 border-none font-black text-[9px] px-2 h-5 flex items-center">{items.length}</Badge>
                   </h3>
                 </div>
-                <div className="divide-y divide-zinc-100">
+                <div className="flex overflow-x-auto gap-4 md:gap-6 pb-6 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x">
                   {items.map(item => (
-                    <FoodCard key={item.id} item={item} variant="list" />
+                    <div key={item.id} className="min-w-[220px] md:min-w-[260px] snap-start">
+                      <FoodCard item={item} variant="card" />
+                    </div>
                   ))}
                 </div>
               </div>
