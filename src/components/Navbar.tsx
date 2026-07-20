@@ -283,7 +283,7 @@ export const Navbar = ({ isIntegrated = false }: NavbarProps) => {
                         </div>
                         <Link href="/login" onClick={() => setIsMenuOpen(false)}>
                           <Button type="button" className="w-full h-16 rounded-[1.8rem] font-black uppercase text-[11px] tracking-[0.2em] bg-primary shadow-xl shadow-primary/20 gap-3 group">
-                             Sign In Protocol <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                             Sign in <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                           </Button>
                         </Link>
                       </div>
