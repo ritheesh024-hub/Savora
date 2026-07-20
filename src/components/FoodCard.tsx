@@ -23,10 +23,10 @@ interface FoodCardProps {
 
 const VegIcon = ({ isVeg }: { isVeg: boolean }) => (
   <div className={cn(
-    "w-4 h-4 border-2 flex items-center justify-center rounded-[4px] shrink-0",
+    "w-3.5 h-3.5 border-2 flex items-center justify-center rounded-[3px] shrink-0",
     isVeg ? "border-green-600" : "border-red-600"
   )}>
-    <div className={cn("w-1.5 h-1.5 rounded-full", isVeg ? "bg-green-600" : "bg-red-600")} />
+    <div className={cn("w-1 h-1 rounded-full", isVeg ? "bg-green-600" : "bg-red-600")} />
   </div>
 );
 
@@ -115,28 +115,28 @@ export const FoodCard = ({ item, variant = 'card' }: FoodCardProps) => {
       <>
         <div 
           onClick={() => setIsDetailsOpen(true)}
-          className="flex justify-between py-10 gap-6 group cursor-pointer border-b border-zinc-100 last:border-0"
+          className="flex justify-between py-6 md:py-8 gap-5 group cursor-pointer border-b border-zinc-100 last:border-0"
         >
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-1.5 min-w-0">
             <div className="flex items-center gap-2">
               <VegIcon isVeg={item.isVeg} />
-              {item.isFeatured && <span className="text-[10px] font-black uppercase text-orange-500 flex items-center gap-1"><Zap className="w-3 h-3 fill-current" /> Bestseller</span>}
+              {item.isFeatured && <span className="text-[9px] font-black uppercase text-orange-500 flex items-center gap-1"><Zap className="w-2.5 h-2.5 fill-current" /> Bestseller</span>}
             </div>
-            <h3 className="text-lg md:text-xl font-black text-zinc-900 group-hover:text-primary transition-colors italic">{item.name}</h3>
-            <p className="font-black text-zinc-900">₹{item.price}</p>
-            <div className="flex items-center gap-1.5 text-xs text-green-700 font-black">
+            <h3 className="text-base md:text-lg font-black text-zinc-900 group-hover:text-primary transition-colors italic truncate pr-4">{item.name}</h3>
+            <p className="font-black text-zinc-900 text-sm md:text-base leading-none">₹{item.price}</p>
+            <div className="flex items-center gap-1.5 text-[10px] text-green-700 font-black pt-0.5">
               <div className="flex items-center gap-0.5 bg-green-50 px-1.5 py-0.5 rounded">
-                <Star className="w-3 h-3 fill-current" /> {displayRating}
+                <Star className="w-2.5 h-2.5 fill-current" /> {displayRating}
               </div>
               {item.reviewCount && <span className="text-zinc-400 font-bold">({item.reviewCount})</span>}
             </div>
-            <p className="text-sm text-zinc-500 font-medium leading-relaxed max-w-md line-clamp-2 italic">
+            <p className="text-xs text-zinc-500 font-medium leading-relaxed max-w-md line-clamp-2 italic pt-1">
               {item.description}
             </p>
           </div>
 
           <div className="relative shrink-0 flex flex-col items-center">
-            <div className="relative w-32 h-32 md:w-44 md:h-40 rounded-2xl overflow-hidden shadow-xl bg-secondary/30">
+            <div className="relative w-28 h-28 md:w-36 md:h-32 rounded-xl overflow-hidden shadow-lg bg-secondary/30">
               <Image 
                 src={item.imageUrl} 
                 alt={item.name} 
@@ -146,23 +146,23 @@ export const FoodCard = ({ item, variant = 'card' }: FoodCardProps) => {
               />
             </div>
             
-            <div className="absolute -bottom-3 w-[85%] max-w-[120px]">
+            <div className="absolute -bottom-2 w-[85%] max-w-[100px]">
               {cartItemCount > 0 ? (
-                <div className="bg-white text-primary border border-zinc-200 shadow-2xl rounded-xl h-10 flex items-center justify-between px-2">
-                  <button onClick={(e) => handleQtyChange(e, -1)} className="p-1.5 hover:bg-zinc-50 rounded-lg transition-colors"><Minus className="w-3.5 h-3.5" /></button>
-                  <span className="font-black text-sm">{cartItemCount}</span>
-                  <button onClick={(e) => handleQtyChange(e, 1)} className="p-1.5 hover:bg-zinc-50 rounded-lg transition-colors"><Plus className="w-3.5 h-3.5" /></button>
+                <div className="bg-white text-primary border border-zinc-200 shadow-2xl rounded-lg h-9 flex items-center justify-between px-1.5">
+                  <button onClick={(e) => handleQtyChange(e, -1)} className="p-1 hover:bg-zinc-50 rounded-md transition-colors"><Minus className="w-3 h-3" /></button>
+                  <span className="font-black text-xs">{cartItemCount}</span>
+                  <button onClick={(e) => handleQtyChange(e, 1)} className="p-1 hover:bg-zinc-50 rounded-md transition-colors"><Plus className="w-3 h-3" /></button>
                 </div>
               ) : (
                 <Button 
                   onClick={handleAddClick}
                   variant="outline"
-                  className="w-full h-10 bg-white hover:bg-zinc-50 text-primary border border-zinc-200 shadow-2xl font-black uppercase text-[10px] tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all"
+                  className="w-full h-9 bg-white hover:bg-zinc-50 text-primary border border-zinc-200 shadow-2xl font-black uppercase text-[9px] tracking-widest rounded-lg hover:scale-105 active:scale-95 transition-all"
                 >
                   ADD
                 </Button>
               )}
-              {item.isCustomizable && <p className="text-[7px] font-black uppercase text-zinc-400 text-center mt-1.5 tracking-tighter">Customizable</p>}
+              {item.isCustomizable && <p className="text-[6px] font-black uppercase text-zinc-400 text-center mt-1 tracking-tighter">Customizable</p>}
             </div>
           </div>
         </div>
@@ -183,7 +183,7 @@ export const FoodCard = ({ item, variant = 'card' }: FoodCardProps) => {
     <>
       <div 
         onClick={() => setIsDetailsOpen(true)}
-        className="group bg-white dark:bg-zinc-900 rounded-[2rem] border border-border/30 hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col h-full relative cursor-pointer active:scale-[0.98] shadow-sm hover:border-primary/20"
+        className="group bg-white dark:bg-zinc-900 rounded-[1.8rem] border border-border/30 hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col h-full relative cursor-pointer active:scale-[0.98] shadow-sm hover:border-primary/20"
       >
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary/30">
           <Image 
@@ -194,46 +194,46 @@ export const FoodCard = ({ item, variant = 'card' }: FoodCardProps) => {
             unoptimized 
           />
           
-          <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+          <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
              <VegIcon isVeg={item.isVeg} />
           </div>
 
-          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+          <div className="absolute top-3 right-3 z-10 flex flex-col gap-2">
             <button 
               type="button"
               onClick={toggleFavorite}
-              className="w-9 h-9 rounded-full bg-white/95 dark:bg-black/95 backdrop-blur-xl flex items-center justify-center shadow-xl active:scale-75 transition-all"
+              className="w-8 h-8 rounded-full bg-white/95 dark:bg-black/95 backdrop-blur-xl flex items-center justify-center shadow-lg active:scale-75 transition-all"
             >
-              <Heart className={cn("w-4.5 h-4.5", isFavorited ? "fill-primary text-primary" : "text-muted-foreground")} />
+              <Heart className={cn("w-4 h-4", isFavorited ? "fill-primary text-primary" : "text-muted-foreground")} />
             </button>
           </div>
           
-          <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-end">
-             <div className="bg-white/90 backdrop-blur px-2 py-0.5 rounded flex items-center gap-1 shadow-lg">
-                <Star className="w-3 h-3 fill-primary text-primary" />
-                <span className="text-[10px] font-black">{displayRating}</span>
+          <div className="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-end">
+             <div className="bg-white/90 backdrop-blur px-1.5 py-0.5 rounded flex items-center gap-1 shadow-md">
+                <Star className="w-2.5 h-2.5 fill-primary text-primary" />
+                <span className="text-[9px] font-black">{displayRating}</span>
              </div>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col p-5 min-w-0">
-          <h3 className="text-base md:text-lg font-black uppercase tracking-tighter leading-tight line-clamp-1 mb-1 italic">
+        <div className="flex-1 flex flex-col p-4 min-w-0">
+          <h3 className="text-sm md:text-base font-black uppercase tracking-tight leading-tight line-clamp-1 mb-1 italic">
             {item.name}
           </h3>
-          <div className="flex items-center justify-between mt-auto gap-4">
-            <p className="text-lg md:text-xl font-black text-primary italic leading-none">₹{item.price}</p>
+          <div className="flex items-center justify-between mt-auto gap-3">
+            <p className="text-base md:text-lg font-black text-primary italic leading-none">₹{item.price}</p>
             <div className="shrink-0 relative">
               {cartItemCount > 0 ? (
-                <div className="flex items-center gap-2 bg-primary text-white rounded-xl h-10 px-2 shadow-xl">
-                  <button type="button" onClick={(e) => handleQtyChange(e, -1)} className="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded-lg transition-colors"><Minus className="w-3.5 h-3.5" /></button>
-                  <span className="text-xs font-black w-5 text-center">{cartItemCount}</span>
-                  <button type="button" onClick={(e) => handleQtyChange(e, 1)} className="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded-lg transition-colors"><Plus className="w-3.5 h-3.5" /></button>
+                <div className="flex items-center gap-2 bg-primary text-white rounded-lg h-9 px-2 shadow-lg">
+                  <button type="button" onClick={(e) => handleQtyChange(e, -1)} className="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded-md transition-colors"><Minus className="w-3 h-3" /></button>
+                  <span className="text-[11px] font-black w-4 text-center">{cartItemCount}</span>
+                  <button type="button" onClick={(e) => handleQtyChange(e, 1)} className="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded-md transition-colors"><Plus className="w-3 h-3" /></button>
                 </div>
               ) : (
                 <Button 
                   type="button"
                   onClick={handleAddClick} 
-                  className="rounded-xl h-10 px-6 font-black uppercase text-[10px] bg-white border border-zinc-200 text-primary shadow-lg hover:bg-zinc-50 active:scale-95 transition-all"
+                  className="rounded-lg h-9 px-4 font-black uppercase text-[9px] bg-white border border-zinc-200 text-primary shadow-md hover:bg-zinc-50 active:scale-95 transition-all"
                 >
                   ADD
                 </Button>
